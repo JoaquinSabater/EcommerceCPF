@@ -1,14 +1,16 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense,useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import MobileMenu from './MobileMenu';
 import Search, { SearchSkeleton } from './Search';
+import CartSidebar from './CartSidebar';
 
 const SITE_NAME = '';
 
 export default function NavBar() {
+  const [cartOpen, setCartOpen] = useState(false);
   const menu = [
     { title: 'baterias', path: '/baterias' },
     { title: 'cables', path: '/cables' },
@@ -94,8 +96,9 @@ export default function NavBar() {
       </div>
 
       {/* Cart */}
+      {/* Cart */}
       <div className="flex items-center justify-end md:w-1/3">
-        <button className="relative">
+        <button onClick={() => setCartOpen(true)} className="relative">
           <Image
             src="/cart.svg"
             width={30}
@@ -108,6 +111,9 @@ export default function NavBar() {
           </div>
         </button>
       </div>
+
+      {/* Cart Sidebar */}
+      <CartSidebar isOpen={cartOpen} onClose={() => setCartOpen(false)} />
     </nav>
   );
 }
