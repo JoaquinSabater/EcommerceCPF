@@ -3,12 +3,6 @@ import CollectionsDropdown from "@/components/Filters/CollectionsDropdown"; // A
 
 export default function Diseño() {
   return (
-    <div className="flex">
-      <CollectionsSidebar />
-      <main className="flex-1">
-        {/* Aquí va el contenido principal (productos, etc.) */}
-        <CollectionsDropdown />
-      </main>
-    </div>
+  <div></div>
   );
 }

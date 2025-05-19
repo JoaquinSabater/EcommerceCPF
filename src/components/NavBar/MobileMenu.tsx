@@ -23,7 +23,7 @@ export default function MobileMenu({ menu }: { menu: MenuItem[] }) {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="block md:hidden p-2 border rounded text-white"
+        className="block md:hidden p-2 border rounded text-black bg-white"
       >
         <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none">
           <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="2" />
@@ -31,17 +31,12 @@ export default function MobileMenu({ menu }: { menu: MenuItem[] }) {
       </button>
 
       {isOpen && (
-        <div className="fixed inset-0 z-50 bg-black p-4 space-y-6 overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-white p-4 space-y-6 overflow-y-auto">
           {/* Close button */}
           <div className="flex justify-start">
-            <button onClick={() => setIsOpen(false)} className="p-2 border rounded text-white">
+            <button onClick={() => setIsOpen(false)} className="p-2 border rounded text-black bg-white">
               <XMarkIcon className="h-6 w-6" />
             </button>
-          </div>
-
-          {/* Search */}
-          <div className="px-2">
-            <Search />
           </div>
 
           {/* Navigation */}
@@ -54,12 +49,12 @@ export default function MobileMenu({ menu }: { menu: MenuItem[] }) {
                     onClick={() => {
                       if (!item.submenu) setIsOpen(false);
                     }}
-                    className="text-white text-xl transition-all duration-200 hover:underline hover:decoration-white hover:underline-offset-4 hover:decoration-2"
+                    className="text-black text-xl transition-all duration-200 hover:underline hover:decoration-black hover:underline-offset-4 hover:decoration-2"
                   >
                     {item.title}
                   </Link>
                   {item.submenu && (
-                    <button onClick={() => toggleSubmenu(item.title)} className="text-white ml-2">
+                    <button onClick={() => toggleSubmenu(item.title)} className="text-black ml-2">
                       {expanded === item.title ? (
                         <ChevronUpIcon className="h-5 w-5" />
                       ) : (
@@ -77,7 +72,7 @@ export default function MobileMenu({ menu }: { menu: MenuItem[] }) {
                         key={subItem.title}
                         href={subItem.path}
                         onClick={() => setIsOpen(false)}
-                        className="text-neutral-300 text-base hover:text-white"
+                        className="text-neutral-700 text-base hover:text-black"
                       >
                         {subItem.title}
                       </Link>

@@ -33,19 +33,19 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
   return (
     <div
       ref={sidebarRef}
-      className={`fixed top-0 right-0 z-50 h-full w-80 max-w-full bg-black text-white shadow-lg transition-transform duration-300 ${
+      className={`fixed top-0 right-0 z-50 h-full w-80 max-w-full bg-white text-black shadow-lg transition-transform duration-300 ${
         isOpen ? 'translate-x-0' : 'translate-x-full'
       }`}
     >
-      <div className="flex items-center justify-between p-4 border-b border-neutral-800">
+      <div className="flex items-center justify-between p-4 border-b border-neutral-200">
         <h2 className="text-lg font-semibold">Mi carrito</h2>
-        <button onClick={onClose} className="p-2 border rounded">
+        <button onClick={onClose} className="p-2 border rounded text-black bg-white">
           <XMarkIcon className="h-6 w-6" />
         </button>
       </div>
 
       <div className="flex flex-col items-center justify-center h-full space-y-4">
-        <Image src="/cart.svg" width={48} height={48} alt="Empty cart" className="dark:invert" />
+        <Image src="/cart.svg" width={48} height={48} alt="Empty cart" />
         <p className="text-xl font-semibold text-center">Tu carrito está vacío</p>
       </div>
     </div>
