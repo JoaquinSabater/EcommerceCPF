@@ -6,11 +6,14 @@ import Image from 'next/image';
 import MobileMenu from './MobileMenu';
 import Search, { SearchSkeleton } from './Search';
 import CartSidebar from './CartSidebar';
+import { useCart } from '@/components/CartContext'; // Agrega este import arriba
+
 
 const SITE_NAME = '';
 
 export default function NavBar() {
   const [cartOpen, setCartOpen] = useState(false);
+  const { cart } = useCart();
   const menu = [
     { title: 'baterias', path: '/baterias' },
     { title: 'cables', path: '/cables' },
@@ -35,6 +38,8 @@ export default function NavBar() {
       ]
     }
   ];
+
+    const totalItems = cart.reduce((sum, item) => sum + item.cantidad, 0);
 
 return (
     <nav className="flex items-center justify-between p-4 lg:px-6 bg-white relative">
@@ -93,11 +98,10 @@ return (
             alt="shopping cart icon"
           />
           <div className="rounded-full flex justify-center items-center bg-orange-600 text-xs text-white absolute w-5 h-5 -top-2 -right-2">
-            0
+            {totalItems}
           </div>
         </button>
       </div>
-
       <CartSidebar isOpen={cartOpen} onClose={() => setCartOpen(false)} />
     </nav>
   );
