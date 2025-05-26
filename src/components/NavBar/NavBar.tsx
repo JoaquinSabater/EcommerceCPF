@@ -21,6 +21,7 @@ export default function NavBar() {
       submenu: [
         { title: 'Silicona', path: '/fundas/silicona' },
         { title: 'Lisas', path: '/fundas/lisas' },
+        { title: 'Flip wallet', path: '/fundas/flipWallet' },
         { title: 'Diseño', path: '/fundas/diseno' }
       ]
     },
@@ -30,7 +31,6 @@ export default function NavBar() {
       submenu: [
         { title: 'Popsockets', path: '/accesorios/popsockets' },
         { title: 'Aros de luz', path: '/accesorios/arosDeLuz' },
-        { title: 'Flip wallet', path: '/accesorios/flipWallet' },
         { title: 'Earbuds', path: '/accesorios/earbuds' }
       ]
     }
