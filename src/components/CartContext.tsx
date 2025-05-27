@@ -43,7 +43,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         {
           codigo_interno: articulo.codigo_interno,
           modelo: articulo.modelo,
-          item_nombre: articulo.item_nombre, // Usa el nombre del item
+          item_nombre: articulo.item_nombre, 
           cantidad: 1,
           precio_venta: articulo.precio_venta,
         },

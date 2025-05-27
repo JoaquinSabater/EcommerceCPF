@@ -10,7 +10,7 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
   const sidebarRef = useRef<HTMLDivElement>(null);
   const { cart, changeQuantity } = useCart();
 
-    // Lee el valor del dólar desde el entorno
+  // Lee el valor del dólar desde el entorno
   const dolar = Number(process.env.NEXT_PUBLIC_DOLAR || 1);
 
   // Calcula el total gastado en dólares
@@ -18,7 +18,6 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
     (sum, item) => sum + (item.cantidad * item.precio_venta) / dolar,
     0
   );
-
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -52,9 +51,6 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
       <div className="flex items-center justify-between p-4 border-b border-neutral-200">
         <h2 className="text-lg font-semibold flex items-center gap-2">
           Mi carrito
-          <span className="text-sm font-normal text-gray-500">
-            {totalUSD.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2 })}
-          </span>
         </h2>
         <button onClick={onClose} className="p-2 border rounded text-black bg-white">
           <XMarkIcon className="h-6 w-6" />
@@ -67,8 +63,8 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
           <p className="text-xl font-semibold text-center">Tu carrito está vacío</p>
         </div>
       ) : (
-        <div className="p-4">
-          <ul className="space-y-4">
+        <div className="flex flex-col h-[calc(100%-64px)]"> {/* Ajusta 64px si cambias el alto del header */}
+          <ul className="space-y-4 flex-1 overflow-y-auto p-4">
             {cart.map((item) => (
               <li key={item.codigo_interno} className="flex items-center justify-between">
                 <div>
@@ -84,6 +80,20 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
               </li>
             ))}
           </ul>
+          <div className="border-t border-neutral-200 pt-4 px-4 pb-4 bg-white">
+            <div className="flex justify-between items-center mb-4">
+              <span className="font-semibold">Total</span>
+              <span className="text-lg font-bold">
+                {totalUSD.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2 })}
+              </span>
+            </div>
+            <button
+              className="w-full bg-orange-600 text-white py-2 rounded hover:bg-orange-700 transition"
+              // onClick={handleBuy} // Puedes agregar tu lógica aquí
+            >
+              Comprar
+            </button>
+          </div>
         </div>
       )}
     </div>
