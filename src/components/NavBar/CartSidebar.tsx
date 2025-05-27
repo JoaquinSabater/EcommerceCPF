@@ -73,7 +73,7 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
               <li key={item.codigo_interno} className="flex items-center justify-between">
                 <div>
                   <div className="font-medium">{item.modelo}</div>
-                  <div className="text-xs text-gray-500">{item.nombre}</div>
+                  <div className="text-xs text-gray-500">{item.item_nombre}</div>
                 </div>
                 <QuantityButton
                   onAdd={() => changeQuantity(item.codigo_interno, 1)}

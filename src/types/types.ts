@@ -13,4 +13,5 @@ export type Articulo = {
   precio_venta: number;
   ubicacion: string;
   stock_actual: number;
+  item_nombre: string;
 };

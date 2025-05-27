@@ -5,7 +5,7 @@ import { Articulo } from "@/types/types";
 type CartItem = {
   codigo_interno: string;
   modelo: string;
-  nombre: string;
+  item_nombre: string;
   cantidad: number;
   precio_venta: number; 
 };
@@ -28,28 +28,28 @@ export function useCart() {
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
 
-    const addToCart = (articulo: Articulo, nombre: string) => {
+  const addToCart = (articulo: Articulo) => {
     setCart((prev) => {
-        const found = prev.find((i) => i.codigo_interno === articulo.codigo_interno);
-        if (found) {
+      const found = prev.find((i) => i.codigo_interno === articulo.codigo_interno);
+      if (found) {
         return prev.map((i) =>
-            i.codigo_interno === articulo.codigo_interno
+          i.codigo_interno === articulo.codigo_interno
             ? { ...i, cantidad: i.cantidad + 1 }
             : i
         );
-        }
-        return [
+      }
+      return [
         ...prev,
         {
-            codigo_interno: articulo.codigo_interno,
-            modelo: articulo.modelo,
-            nombre,
-            cantidad: 1,
-            precio_venta: articulo.precio_venta, // <--- agrega esto
+          codigo_interno: articulo.codigo_interno,
+          modelo: articulo.modelo,
+          item_nombre: articulo.item_nombre, // Usa el nombre del item
+          cantidad: 1,
+          precio_venta: articulo.precio_venta,
         },
-        ];
+      ];
     });
-    };
+  };
 
   const removeFromCart = (codigo_interno: string) => {
     setCart((prev) =>
