@@ -15,6 +15,7 @@ type CartContextType = {
   addToCart: (articulo: Articulo, nombre: string) => void;
   removeFromCart: (codigo_interno: string) => void;
   changeQuantity: (codigo_interno: string, delta: number) => void;
+  setItemQuantity: (codigo_interno: string, cantidad: number, articulo?: Articulo) => void;
 };
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -28,7 +29,7 @@ export function useCart() {
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
 
-  const addToCart = (articulo: Articulo) => {
+  const addToCart = (articulo: Articulo, nombre: string) => {
     setCart((prev) => {
       const found = prev.find((i) => i.codigo_interno === articulo.codigo_interno);
       if (found) {
@@ -75,8 +76,39 @@ export function CartProvider({ children }: { children: ReactNode }) {
     );
   };
 
+  const setItemQuantity = (codigo_interno: string, cantidad: number, articulo?: Articulo) => {
+    setCart((prev) => {
+      const found = prev.find((i) => i.codigo_interno === codigo_interno);
+      if (found) {
+        // Si existe, actualiza cantidad o elimina si es 0
+        if (cantidad === 0) {
+          return prev.filter((i) => i.codigo_interno !== codigo_interno);
+        } else {
+          return prev.map((i) =>
+            i.codigo_interno === codigo_interno
+              ? { ...i, cantidad: Math.max(cantidad, 0) }
+              : i
+          );
+        }
+      } else if (cantidad > 0 && articulo) {
+        // Si NO existe y cantidad > 0, lo agrega
+        return [
+          ...prev,
+          {
+            codigo_interno: articulo.codigo_interno,
+            modelo: articulo.modelo,
+            item_nombre: articulo.item_nombre,
+            cantidad,
+            precio_venta: articulo.precio_venta,
+          },
+        ];
+      }
+      return prev;
+    });
+  };
+
   return (
-    <CartContext.Provider value={{ cart, addToCart, removeFromCart, changeQuantity }}>
+    <CartContext.Provider value={{ cart, addToCart, removeFromCart, changeQuantity, setItemQuantity }}>
       {children}
     </CartContext.Provider>
   );

@@ -80,11 +80,12 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
                     <div className="text-xs text-gray-500">{item.item_nombre}</div>
                   </div>
                   <QuantityButton
-                    onAdd={() => changeQuantity(item.codigo_interno, 1)}
-                    onRemove={() => changeQuantity(item.codigo_interno, -1)}
-                  >
-                    {item.cantidad}
-                  </QuantityButton>
+                      value={item.cantidad}
+                      onAdd={() => changeQuantity(item.codigo_interno, 1)}
+                      onRemove={() => changeQuantity(item.codigo_interno, -1)}
+                      onSet={(val) => changeQuantity(item.codigo_interno, val - item.cantidad)}
+                      modelo={item.modelo}
+                    />
                 </li>
               ))}
             </ul>
