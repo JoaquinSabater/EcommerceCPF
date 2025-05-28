@@ -5,24 +5,25 @@ import { XMarkIcon } from '@heroicons/react/24/outline';
 import Image from 'next/image';
 import { useCart } from '@/components/CartContext';
 import QuantityButton from '../QuantityButton';
-import PurchaseModal from '@/app/carrito/PurchaseModal';
+import { useRouter } from 'next/navigation';
+
 
 export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const sidebarRef = useRef<HTMLDivElement>(null);
   const { cart, changeQuantity } = useCart();
-  const [showModal, setShowModal] = useState(false);
+  const router = useRouter();
 
-  // Lee el valor del dólar desde el entorno
   const dolar = Number(process.env.NEXT_PUBLIC_DOLAR || 1);
 
-  // Calcula el total gastado en dólares
   const totalUSD = cart.reduce(
     (sum, item) => sum + (item.cantidad * item.precio_venta) / dolar,
     0
   );
 
   const handleBuy = () => {
-    setShowModal(true);
+    // Guarda el carrito en localStorage para que la página de resumen lo lea
+    localStorage.setItem('cartItems', JSON.stringify(cart));
+    router.push('/carrito');
   };
 
   useEffect(() => {
@@ -104,11 +105,6 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
           </div>
         )}
       </div>
-      <PurchaseModal
-        items={cart}
-        open={showModal}
-        onClose={() => setShowModal(false)}
-      />
     </>
   );
 }

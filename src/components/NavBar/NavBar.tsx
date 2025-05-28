@@ -4,16 +4,17 @@ import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import MobileMenu from './MobileMenu';
-import Search, { SearchSkeleton } from './Search';
+import { useCart } from '@/components/CartContext';
+import { usePathname, useRouter } from 'next/navigation';
 import CartSidebar from './CartSidebar';
-import { useCart } from '@/components/CartContext'; // Agrega este import arriba
-
-
-const SITE_NAME = '';
+import { ChevronRightIcon } from '@heroicons/react/24/solid';
 
 export default function NavBar() {
   const [cartOpen, setCartOpen] = useState(false);
   const { cart } = useCart();
+  const pathname = usePathname();
+  const router = useRouter();
+
   const menu = [
     { title: 'baterias', path: '/baterias' },
     { title: 'cables', path: '/cables' },
@@ -39,9 +40,38 @@ export default function NavBar() {
     }
   ];
 
-    const totalItems = cart.reduce((sum, item) => sum + item.cantidad, 0);
+  const totalItems = cart.reduce((sum, item) => sum + item.cantidad, 0);
 
-return (
+  // Si estamos en /carrito, solo mostrar logo y botón "Seguir comprando" centrado y estilizado
+  if (pathname === '/carrito') {
+    return (
+      <nav className="flex items-center justify-between p-4 lg:px-6 bg-white relative">
+        {/* Logo a la izquierda */}
+        <div>
+          <Link href="/" className="flex items-center">
+            <Image
+              src="/logo_orange_on_transparent.png"
+              width={40}
+              height={40}
+              alt="logo"
+            />
+          </Link>
+        </div>
+        {/* Botón a la derecha, estilo texto grande con flecha */}
+        <div>
+          <button
+            className="flex items-center gap-2 text-l font-normal text-gray-700 hover:underline transition"
+            onClick={() => router.push('/')}
+          >
+            Seguir comprando
+            <ChevronRightIcon className="w-5 h-5 text-gray-700" />
+          </button>
+        </div>
+      </nav>
+    );
+  }
+
+  return (
     <nav className="flex items-center justify-between p-4 lg:px-6 bg-white relative">
       {/* Mobile Menu */}
       <div className="block md:hidden">
