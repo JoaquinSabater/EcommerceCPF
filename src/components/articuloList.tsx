@@ -21,8 +21,8 @@ export default function ArticulosList({ articulos }: ArticulosListProps) {
         return (
           <li
             key={articulo.codigo_interno}
-            className="flex items-center justify-center py-2 border rounded text-sm"
-            style={{ minHeight: 80, flexDirection: "column" }}
+            className="flex items-center justify-center py-1 bg-white/70 backdrop-blur-sm shadow-sm rounded-lg text-sm"
+            style={{ minHeight: 60, flexDirection: "column" }}
           >
             <QuantityButton
               value={cantidad}

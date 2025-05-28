@@ -29,13 +29,12 @@ export default function QuantityButton({
     if (!isNaN(parsed) && parsed >= 0) {
       if (parsed !== value) onSet(parsed);
     } else {
-      setInputValue(String(value)); // Restaura el valor anterior si el input es inválido
+      setInputValue(String(value));
     }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
-    // Permite vacío o números positivos (incluido 0)
     if (val === "" || (/^\d+$/.test(val) && parseInt(val, 10) >= 0)) {
       setInputValue(val);
     }
@@ -48,22 +47,22 @@ export default function QuantityButton({
   };
 
   return (
-    <div className="flex flex-col items-center gap-1 w-full">
-      <span className="text-xs font-medium text-gray-800 text-center leading-tight truncate w-full">{modelo}</span>
-      <div className="flex items-center bg-gray-100 rounded-lg px-1 py-0.5 gap-1">
+    <div className="flex flex-col items-center gap-0.5 w-full">
+      <span className="text-[13px] font-semibold text-gray-800 text-center leading-tight truncate w-full">{modelo}</span>
+      <div className="flex items-center bg-gray-100 rounded px-0.5 py-0 gap-0.5">
         <button
-          className="rounded bg-white border border-transparent hover:border-red-400 text-red-600 p-0.5 flex items-center justify-center"
-          style={{ width: 22, height: 22 }}
+          className="rounded bg-white border border-transparent hover:border-red-400 text-red-600 p-0 flex items-center justify-center"
+          style={{ width: 18, height: 18 }}
           onClick={onRemove}
           aria-label="Restar"
         >
-          <MinusIcon className="h-4 w-4" />
+          <MinusIcon className="h-3 w-3" />
         </button>
         {editing ? (
           <input
             type="number"
             min={0}
-            className="w-8 h-8 text-center text-base border border-gray-300 rounded bg-white outline-none mx-1"
+            className="w-6 h-6 text-center text-xs border border-gray-300 rounded bg-white outline-none mx-0.5"
             value={inputValue}
             autoFocus
             onBlur={handleInputBlur}
@@ -73,19 +72,19 @@ export default function QuantityButton({
           />
         ) : (
           <span
-            className="w-8 h-8 flex items-center justify-center text-base font-semibold text-gray-900 bg-white border border-gray-300 rounded mx-1 cursor-pointer select-none"
+            className="w-6 h-6 flex items-center justify-center text-xs font-semibold text-gray-900 bg-white border border-gray-300 rounded mx-0.5 cursor-pointer select-none"
             onClick={() => setEditing(true)}
           >
             {value}
           </span>
         )}
         <button
-          className="rounded bg-white border border-transparent hover:border-green-400 text-green-600 p-0.5 flex items-center justify-center"
-          style={{ width: 22, height: 22 }}
+          className="rounded bg-white border border-transparent hover:border-green-400 text-green-600 p-0 flex items-center justify-center"
+          style={{ width: 18, height: 18 }}
           onClick={onAdd}
           aria-label="Sumar"
         >
-          <PlusIcon className="h-4 w-4" />
+          <PlusIcon className="h-3 w-3" />
         </button>
       </div>
     </div>

@@ -80,7 +80,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setCart((prev) => {
       const found = prev.find((i) => i.codigo_interno === codigo_interno);
       if (found) {
-        // Si existe, actualiza cantidad o elimina si es 0
         if (cantidad === 0) {
           return prev.filter((i) => i.codigo_interno !== codigo_interno);
         } else {
@@ -91,7 +90,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
           );
         }
       } else if (cantidad > 0 && articulo) {
-        // Si NO existe y cantidad > 0, lo agrega
         return [
           ...prev,
           {
