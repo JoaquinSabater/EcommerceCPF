@@ -36,9 +36,8 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
   );
 
   const handleBuy = () => {
-    // Guarda el carrito en localStorage para que la página de resumen lo lea
     localStorage.setItem('cartItems', JSON.stringify(cart));
-    router.push('/carrito');
+    router.push('/public/carrito');
   };
 
   useEffect(() => {

@@ -16,26 +16,26 @@ export default function NavBar() {
   const router = useRouter();
 
   const menu = [
-    { title: 'baterias', path: '/baterias' },
-    { title: 'cables', path: '/cables' },
-    { title: 'vidrios', path: '/vidrios' },
+    { title: 'baterias', path: '/public/baterias' },
+    { title: 'cables', path: '/public/cables' },
+    { title: 'vidrios', path: '/public/vidrios' },
     {
       title: 'Fundas',
-      path: '/fundas',
+      path: '/public/fundas',
       submenu: [
-        { title: 'Silicona', path: '/fundas/silicona' },
-        { title: 'Lisas', path: '/fundas/lisas' },
-        { title: 'Flip wallet', path: '/fundas/flipWallet' },
-        { title: 'Diseño', path: '/fundas/diseno' }
+        { title: 'Silicona', path: '/public/fundas/silicona' },
+        { title: 'Lisas', path: '/public/fundas/lisas' },
+        { title: 'Flip wallet', path: '/public/fundas/flipWallet' },
+        { title: 'Diseño', path: '/public/fundas/diseno' }
       ]
     },
     {
       title: 'Accesorios',
-      path: '/accesorios',
+      path: '/public/accesorios',
       submenu: [
-        { title: 'Popsockets', path: '/accesorios/popsockets' },
-        { title: 'Aros de luz', path: '/accesorios/arosDeLuz' },
-        { title: 'Earbuds', path: '/accesorios/earbuds' }
+        { title: 'Popsockets', path: '/public/accesorios/popsockets' },
+        { title: 'Aros de luz', path: '/public/accesorios/arosDeLuz' },
+        { title: 'Earbuds', path: '/public/accesorios/earbuds' }
       ]
     }
   ];
@@ -43,7 +43,7 @@ export default function NavBar() {
   const totalItems = cart.reduce((sum, item) => sum + item.cantidad, 0);
 
   // Si estamos en /carrito, solo mostrar logo y botón "Seguir comprando" centrado y estilizado
-  if (pathname === '/carrito') {
+  if (pathname === '/public/carrito') {
     return (
       <nav className="flex items-center justify-between p-4 lg:px-6 bg-white relative">
         {/* Logo a la izquierda */}
@@ -82,7 +82,7 @@ export default function NavBar() {
 
       {/* Logo centrado en mobile */}
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 md:static md:translate-x-0 md:translate-y-0 flex items-center md:gap-10">
-        <Link href="/" className="flex items-center">
+        <Link href="/public" className="flex items-center">
           <Image
             src="/logo_orange_on_transparent.png"
             width={40}
