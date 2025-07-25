@@ -13,7 +13,22 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
   const { cart, changeQuantity } = useCart();
   const router = useRouter();
 
-  const dolar = Number(process.env.NEXT_PUBLIC_DOLAR || 1);
+  const [dolar, setDolar] = useState<number>(1);
+
+  useEffect(() => {
+    async function fetchDolar() {
+      try {
+        const res = await fetch('/api/dolar');
+        const data = await res.json();
+        setDolar(data.dolar || 1);
+      } catch (e) {
+        setDolar(1);
+      }
+    }
+    fetchDolar();
+  }, []);
+
+  console.log('Dolar value:', dolar);
 
   const totalUSD = cart.reduce(
     (sum, item) => sum + (item.cantidad * item.precio_venta) / dolar,

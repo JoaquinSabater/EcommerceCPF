@@ -14,3 +14,8 @@ export async function getArticulosPorPadreConStock(padre: string): Promise<Artic
   );
   return rows as Articulo[];
 }
+
+export async function getDolar(): Promise<number> {
+  const dolar = process.env.DOLAR;
+  return dolar ? parseFloat(dolar) : 1;
+}

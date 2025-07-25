@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { XMarkIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, ChevronDownIcon, ChevronUpIcon, UserCircleIcon } from '@heroicons/react/24/outline';
 import Search from './Search';
 
 type MenuItem = {
@@ -32,10 +32,20 @@ export default function MobileMenu({ menu }: { menu: MenuItem[] }) {
 
       {isOpen && (
         <div className="fixed inset-0 z-50 bg-white p-4 space-y-6 overflow-y-auto">
-          {/* Close button */}
-          <div className="flex justify-start">
+          {/* Top bar: Close + User */}
+          <div className="flex justify-between items-center">
             <button onClick={() => setIsOpen(false)} className="p-2 border rounded text-black bg-white">
               <XMarkIcon className="h-6 w-6" />
+            </button>
+            <button
+              onClick={() => {
+                setIsOpen(false);
+                window.location.href = '/admin';
+              }}
+              className="p-1"
+              aria-label="Panel de administración"
+            >
+              <UserCircleIcon className="h-8 w-8 text-gray-700 hover:text-orange-600 transition" />
             </button>
           </div>
 
@@ -87,4 +97,3 @@ export default function MobileMenu({ menu }: { menu: MenuItem[] }) {
     </>
   );
 }
-

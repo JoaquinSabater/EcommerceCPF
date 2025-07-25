@@ -7,7 +7,7 @@ import MobileMenu from './MobileMenu';
 import { useCart } from '@/components/CartContext';
 import { usePathname, useRouter } from 'next/navigation';
 import CartSidebar from './CartSidebar';
-import { ChevronRightIcon } from '@heroicons/react/24/solid';
+import { ChevronRightIcon, UserCircleIcon } from '@heroicons/react/24/solid';
 
 export default function NavBar() {
   const [cartOpen, setCartOpen] = useState(false);
@@ -118,8 +118,17 @@ export default function NavBar() {
         </ul>
       </div>
 
-      {/* Columna derecha: Cart */}
-      <div className="flex flex-1 justify-end">
+      {/* Columna derecha: User + Cart */}
+      <div className="flex flex-1 justify-end items-center gap-4">
+        {/* Botón usuario (solo desktop) */}
+        <button
+          onClick={() => router.push('/admin')}
+          className="hidden md:block p-1"
+          aria-label="Panel de administración"
+        >
+          <UserCircleIcon className="w-8 h-8 text-gray-700 hover:text-orange-600 transition" />
+        </button>
+        {/* Botón carrito */}
         <button onClick={() => setCartOpen(true)} className="relative">
           <Image
             src="/cart.svg"
