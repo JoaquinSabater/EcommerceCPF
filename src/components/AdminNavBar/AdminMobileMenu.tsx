@@ -49,17 +49,6 @@ export default function AdminMobileMenu() {
             <button onClick={() => setIsOpen(false)} className="p-2">
               <XMarkIcon className="h-7 w-7" />
             </button>
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-              <Link href="/admin" className="flex items-center">
-                <Image
-                  src="/logo_orange_on_transparent.png"
-                  width={40}
-                  height={40}
-                  alt="logo"
-                />
-                <span className="font-bold text-xl ml-2">Admin</span>
-              </Link>
-            </div>
             <div className="w-9" />
           </div>
           {/* Menú */}

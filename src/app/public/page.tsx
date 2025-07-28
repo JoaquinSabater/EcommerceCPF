@@ -1,7 +1,3 @@
-import Image from "next/image";
-import CollectionsSidebar from "@/components/Filters/CollectionsSidebar"; // Adjust the path as needed
-import CollectionsDropdown from "@/components/Filters/CollectionsDropdown"; // Adjust the path as needed
-
 export default function Home() {
   return (
     <div></div>

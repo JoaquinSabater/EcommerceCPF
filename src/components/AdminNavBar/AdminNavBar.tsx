@@ -21,7 +21,7 @@ export default function AdminNavBar() {
         <AdminMobileMenu />
       </div>
       {/* Sidebar solo visible en desktop */}
-      <aside className="hidden md:flex h-screen w-64 bg-white border-r flex-col justify-between">
+      <aside className="hidden md:flex h-screen w-64 bg-white flex-col justify-between">
         <div>
           <div className="flex items-center gap-3 px-6 py-6">
             <div className="rounded-full w-12 h-12 flex items-center justify-center">
