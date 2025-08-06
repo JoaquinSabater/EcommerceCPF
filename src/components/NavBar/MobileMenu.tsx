@@ -37,16 +37,20 @@ export default function MobileMenu({ menu }: { menu: MenuItem[] }) {
             <button onClick={() => setIsOpen(false)} className="p-2 border rounded text-black bg-white">
               <XMarkIcon className="h-6 w-6" />
             </button>
-            <button
-              onClick={() => {
-                setIsOpen(false);
-                window.location.href = '/admin';
-              }}
-              className="p-1"
-              aria-label="Panel de administración"
-            >
-              <UserCircleIcon className="h-8 w-8 text-gray-700 hover:text-orange-600 transition" />
-            </button>
+            
+            {/* Solo el icono de usuario */}
+            <div className="flex items-center">
+              <button
+                onClick={() => {
+                  setIsOpen(false);
+                  window.location.href = '/admin';
+                }}
+                className="p-1"
+                aria-label="Panel de administración"
+              >
+                <UserCircleIcon className="h-8 w-8 text-gray-700 hover:text-orange-600 transition" />
+              </button>
+            </div>
           </div>
 
           {/* Navigation */}
@@ -91,6 +95,11 @@ export default function MobileMenu({ menu }: { menu: MenuItem[] }) {
                 )}
               </div>
             ))}
+            
+            {/* Search debajo de la navegación */}
+            <div className="mt-6 px-2">
+              <Search />
+            </div>
           </nav>
         </div>
       )}

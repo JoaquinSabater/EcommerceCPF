@@ -8,6 +8,8 @@ import { useCart } from '@/components/CartContext';
 import { usePathname, useRouter } from 'next/navigation';
 import CartSidebar from './CartSidebar';
 import { ChevronRightIcon, UserCircleIcon } from '@heroicons/react/24/solid';
+import Search from './Search';
+import { SearchSkeleton } from './Search';
 
 export default function NavBar() {
   const [cartOpen, setCartOpen] = useState(false);
@@ -80,8 +82,8 @@ export default function NavBar() {
         </Suspense>
       </div>
 
-      {/* Logo centrado en mobile */}
-      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 md:static md:translate-x-0 md:translate-y-0 flex items-center md:gap-10">
+      {/* Logo + Desktop Nav - Columna izquierda */}
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 md:static md:translate-x-0 md:translate-y-0 flex items-center md:gap-10 md:flex-1">
         <Link href="/public" className="flex items-center">
           <Image
             src="/logo_orange_on_transparent.png"
@@ -91,7 +93,7 @@ export default function NavBar() {
           />
         </Link>
         {/* Desktop Nav */}
-        <ul className="hidden md:flex flex-1 items-center gap-6 text-sm">
+        <ul className="hidden md:flex items-center gap-6 text-sm">
           {menu.map((item) => (
             <li key={item.title} className="relative group">
               <Link
@@ -118,8 +120,15 @@ export default function NavBar() {
         </ul>
       </div>
 
-      {/* Columna derecha: User + Cart */}
-      <div className="flex flex-1 justify-end items-center gap-4">
+      {/* Search - Columna central */}
+      <div className="hidden md:flex md:justify-center md:flex-1">
+        <Suspense fallback={<SearchSkeleton />}>
+          <Search />
+        </Suspense>
+      </div>
+
+      {/* User + Cart - Columna derecha */}
+      <div className="flex justify-end items-center gap-4 md:flex-1">
         {/* Botón usuario (solo desktop) */}
         <button
           onClick={() => router.push('/admin')}
@@ -144,4 +153,5 @@ export default function NavBar() {
       <CartSidebar isOpen={cartOpen} onClose={() => setCartOpen(false)} />
     </nav>
   );
+
 }
