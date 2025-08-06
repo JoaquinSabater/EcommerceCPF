@@ -12,7 +12,7 @@ type CartItem = {
 
 type CartContextType = {
   cart: CartItem[];
-  addToCart: (articulo: Articulo, nombre: string) => void;
+  addToCart: (articulo: Articulo, nombre: string, cantidad?: number) => void;
   removeFromCart: (codigo_interno: string) => void;
   changeQuantity: (codigo_interno: string, delta: number) => void;
   setItemQuantity: (codigo_interno: string, cantidad: number, articulo?: Articulo) => void;
@@ -29,13 +29,19 @@ export function useCart() {
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
 
-  const addToCart = (articulo: Articulo, nombre: string) => {
+  const addToCart = (articulo: Articulo, nombre: string, cantidad: number = 1) => {
+    console.log("addToCart recibió:", articulo, "cantidad:", cantidad); // Para debugging
+    
     setCart((prev) => {
       const found = prev.find((i) => i.codigo_interno === articulo.codigo_interno);
       if (found) {
         return prev.map((i) =>
           i.codigo_interno === articulo.codigo_interno
-            ? { ...i, cantidad: i.cantidad + 1 }
+            ? { 
+                ...i, 
+                cantidad: i.cantidad + cantidad,
+                precio_venta: articulo.precio_venta || i.precio_venta
+              }
             : i
         );
       }
@@ -45,8 +51,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
           codigo_interno: articulo.codigo_interno,
           modelo: articulo.modelo,
           item_nombre: articulo.item_nombre, 
-          cantidad: 1,
-          precio_venta: articulo.precio_venta,
+          cantidad: cantidad,
+          precio_venta: Number(articulo.precio_venta) || 0,
         },
       ];
     });

@@ -30,8 +30,8 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
 
   console.log('Dolar value:', dolar);
 
-  const totalUSD = cart.reduce(
-    (sum, item) => sum + (item.cantidad * item.precio_venta) / dolar,
+  const totalLocal = cart.reduce(
+    (sum, item) => sum + (item.cantidad * item.precio_venta),
     0
   );
 
@@ -100,7 +100,7 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
                       onSet={(val) => changeQuantity(item.codigo_interno, val - item.cantidad)}
                       modelo={item.modelo}
                       hideModelo={true}
-                      size="normal" // <--- Agrega esto
+                      size="normal"
                     />
                 </li>
               ))}
@@ -109,7 +109,7 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
               <div className="flex justify-between items-center mb-4">
                 <span className="font-semibold">Total</span>
                 <span className="text-lg font-bold">
-                  {totalUSD.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2 })}
+                    ${totalLocal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                 </span>
               </div>
               <button

@@ -15,3 +15,9 @@ export type Articulo = {
   stock_actual: number;
   item_nombre: string;
 };
+
+export type categorias = {
+  id: number;
+  nombre: string;
+  imagen?: string;
+}

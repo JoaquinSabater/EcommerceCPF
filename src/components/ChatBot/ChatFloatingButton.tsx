@@ -44,7 +44,7 @@ export default function ChatFloatingButton() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 z-50 bg-orange-500 hover:bg-orange-600 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg transition"
+        className="fixed bottom-6 left-6 z-50 bg-orange-500 hover:bg-orange-600 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg transition"
         aria-label="Abrir chat"
       >
         <svg width="28" height="28" fill="none" viewBox="0 0 24 24">
@@ -54,16 +54,16 @@ export default function ChatFloatingButton() {
 
       {open && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-end"
+          className="fixed inset-0 z-50 flex items-end justify-start"
           onClick={handleBackdropClick}
         >
           <div
             ref={modalRef}
-            className="relative bg-white rounded-2xl shadow-xl w-full max-w-xs mx-4 mb-24 p-4 border"
+            className="relative bg-white rounded-2xl shadow-xl w-full max-w-xs mx-4 mb-24 px-4 py-4 border"
             style={{ borderRadius: '20px' }}
           >
             <div
-              className="absolute right-8 -bottom-5 w-0 h-0"
+              className="absolute left-5 -bottom-5 w-0 h-0"
               style={{
                 borderLeft: "16px solid transparent",
                 borderRight: "16px solid transparent",
