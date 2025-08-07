@@ -21,9 +21,12 @@ export default function Search() {
         placeholder="Buscar productos..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        className="w-full rounded-lg border border-neutral-200 bg-white px-4 py-2 text-sm text-black placeholder-gray-500"
+        className="w-full rounded-lg border border-neutral-200 bg-white px-4 py-2 text-sm text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-orange-600"
       />
-      <button type="submit" className="absolute right-3 top-2 text-gray-500">
+      <button 
+        type="submit" 
+        className="absolute right-3 top-2 text-gray-500 hover:text-white hover:bg-orange-600 rounded-full p-1 transition-colors duration-200"
+      >
         <MagnifyingGlassIcon className="h-5 w-5" />
       </button>
     </form>

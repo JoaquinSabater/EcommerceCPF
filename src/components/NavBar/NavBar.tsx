@@ -10,8 +10,11 @@ import CartSidebar from './CartSidebar';
 import { ChevronRightIcon, UserCircleIcon } from '@heroicons/react/24/solid';
 import Search from './Search';
 import { SearchSkeleton } from './Search';
+import { useAuth } from '@/hooks/useAuth';
+import { User } from '@/types/types'; // ← Si necesitas usar el tipo directamente
 
 export default function NavBar() {
+  const { user, logout }: { user: User | null, logout: () => void } = useAuth(); // ← Tipado explícito
   const [cartOpen, setCartOpen] = useState(false);
   const { cart } = useCart();
   const pathname = usePathname();

@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { PencilIcon } from "@heroicons/react/24/outline";
 import DetalleMobile from "@/components/DetalleProducto/DetalleMobile";
 import DetalleDesktop from "@/components/DetalleProducto/DetalleDesktop";
 import ModelosSelector from "@/components/DetalleProducto/ModelosSelector";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Caracteristica {
   label: string;
@@ -44,8 +46,9 @@ export default function DetalleProductoModal({ itemId, isOpen, onClose }: Detall
   const [precio, setPrecio] = useState<number>(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { isAdmin } = useAuth(); 
 
-  // Función para obtener los detalles del producto
+  
   const fetchProductoDetalle = async (id: string) => {
     try {
       const response = await fetch(`/api/detalle?id=${id}`);
@@ -60,7 +63,6 @@ export default function DetalleProductoModal({ itemId, isOpen, onClose }: Detall
     }
   };
 
-  // Función para obtener el precio
   const fetchPrecio = async (id: string) => {
     try {
       const response = await fetch(`/api/precio?itemId=${id}`);
@@ -75,7 +77,7 @@ export default function DetalleProductoModal({ itemId, isOpen, onClose }: Detall
     }
   };
 
-  // Función para formatear el producto
+
   const formatearProducto = (detalle: DetalleProducto, precio: number): ProductoFormateado => {
     return {
       imagen: detalle.foto1_url,
@@ -90,6 +92,11 @@ export default function DetalleProductoModal({ itemId, isOpen, onClose }: Detall
         { label: "Pegamento", value: detalle.pegamento || "No especificado" },
       ],
     };
+  };
+
+
+  const handleEditProduct = () => {
+    console.log('Editando producto con ID:', itemId);
   };
 
   // Efecto para cargar datos cuando se abre el modal
@@ -148,9 +155,22 @@ export default function DetalleProductoModal({ itemId, isOpen, onClose }: Detall
       
       {/* Modal Content - Made larger */}
       <div className="relative bg-white rounded-lg shadow-2xl max-w-[95vw] lg:max-w-6xl xl:max-w-7xl mx-auto max-h-[95vh] overflow-y-auto w-full">
-        {/* Header con botón de cerrar */}
+        {/* Header con botón de cerrar y botón de editar */}
         <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center z-10 rounded-t-lg">
-          <h2 className="text-xl font-semibold">Detalle del Producto</h2>
+          <div className="flex items-center gap-4">
+            <h2 className="text-xl font-semibold">Detalle del Producto</h2>
+            {/* Botón de editar - Solo visible para admin */}
+            {isAdmin && (
+              <button
+                onClick={handleEditProduct}
+                className="flex items-center gap-2 px-3 py-2 text-sm bg-orange-100 text-orange-700 hover:bg-orange-200 rounded-lg transition-colors"
+                title="Editar producto"
+              >
+                <PencilIcon className="w-4 h-4" />
+                <span className="hidden sm:inline">Editar</span>
+              </button>
+            )}
+          </div>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors p-1 hover:bg-gray-100 rounded-full"

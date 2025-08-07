@@ -21,3 +21,19 @@ export type categorias = {
   nombre: string;
   imagen?: string;
 }
+
+export interface User {
+  id: number;
+  nombre: string;
+  apellido: string;
+  email: string;
+  telefono: string;
+  domicilio: string;
+  cuil: string;
+  isAdmin?: boolean;
+}
+
+export interface LoginResponse {
+  success: boolean;
+  user: User;
+}
