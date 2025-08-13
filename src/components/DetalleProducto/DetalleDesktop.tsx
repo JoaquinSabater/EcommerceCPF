@@ -4,7 +4,6 @@ export default function DetalleDesktop({ producto }: { producto: any }) {
   return (
     <div className="rounded-lg bg-white shadow-sm">
       <div className="flex w-full items-start p-6">
-        {/* Información a la izquierda */}
         <div className="flex-1 flex flex-col justify-start pr-8">
           <div className="mb-2 text-xs text-gray-500">Vidrio templado</div>
           <div className="font-bold text-3xl mb-2">{producto.nombre}</div>
@@ -31,7 +30,6 @@ export default function DetalleDesktop({ producto }: { producto: any }) {
             </table>
           </div>
         </div>
-        {/* Imagen a la derecha */}
         <div className="flex-1 flex items-start justify-center">
           <Image
             src={producto.imagen}

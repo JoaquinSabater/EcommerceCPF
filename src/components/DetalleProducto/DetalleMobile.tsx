@@ -1,15 +1,34 @@
 import Image from "next/image";
+import React from "react";
 
-export default function DetalleMobile({ producto }: { producto: any }) {
+interface Caracteristica {
+  label: string;
+  value: string;
+}
+
+interface ProductoFormateado {
+  imagen: string;
+  nombre: string;
+  descripcion: string;
+  precio: number;
+  caracteristicas: Caracteristica[];
+  imagenes?: string[];
+}
+
+interface DetalleMobileProps {
+  producto: ProductoFormateado;
+}
+
+export default function DetalleMobile({ producto }: DetalleMobileProps) {
   return (
     <div className="p-4 rounded-lg bg-white shadow-sm">
-      <div className="flex justify-center mb-4">
+      <div className="flex-1 flex items-start justify-center">
         <Image
           src={producto.imagen}
           alt={producto.nombre}
-          width={220}
-          height={220}
-          className="object-contain rounded"
+          width={380}
+          height={500}
+          className="object-contain rounded max-h-[500px] w-auto"
         />
       </div>
       <div className="mb-2 text-xs text-gray-500">Vidrio templado</div>

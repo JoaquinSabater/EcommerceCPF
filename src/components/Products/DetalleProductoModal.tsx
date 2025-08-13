@@ -5,6 +5,7 @@ import { PencilIcon } from "@heroicons/react/24/outline";
 import DetalleMobile from "@/components/DetalleProducto/DetalleMobile";
 import DetalleDesktop from "@/components/DetalleProducto/DetalleDesktop";
 import ModelosSelector from "@/components/DetalleProducto/ModelosSelector";
+import EditProductModal from "@/components/Products/EditProductModal";
 import { useAuth } from "@/hooks/useAuth";
 
 interface Caracteristica {
@@ -29,6 +30,7 @@ interface DetalleProducto {
 
 interface ProductoFormateado {
   imagen: string;
+  imagenes: string[];
   nombre: string;
   descripcion: string;
   precio: number;
@@ -46,9 +48,10 @@ export default function DetalleProductoModal({ itemId, isOpen, onClose }: Detall
   const [precio, setPrecio] = useState<number>(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
   const { isAdmin } = useAuth(); 
 
-  
   const fetchProductoDetalle = async (id: string) => {
     try {
       const response = await fetch(`/api/detalle?id=${id}`);
@@ -77,13 +80,21 @@ export default function DetalleProductoModal({ itemId, isOpen, onClose }: Detall
     }
   };
 
-
   const formatearProducto = (detalle: DetalleProducto, precio: number): ProductoFormateado => {
+    // Crear array con todas las imágenes disponibles
+    const todasLasImagenes = [
+      detalle.foto1_url,
+      detalle.foto2_url,
+      detalle.foto3_url,
+      detalle.foto4_url,
+    ].filter((img): img is string => typeof img === 'string' && img.trim() !== ''); // Filtrar imágenes vacías o null y asegurar solo strings
+
     return {
       imagen: detalle.foto1_url,
       nombre: detalle.item_nombre,
       descripcion: detalle.descripcion,
       precio: precio,
+      imagenes: todasLasImagenes, 
       caracteristicas: [
         { label: "Material", value: detalle.material || "No especificado" },
         { label: "Espesor", value: detalle.espesor || "No especificado" },
@@ -94,12 +105,45 @@ export default function DetalleProductoModal({ itemId, isOpen, onClose }: Detall
     };
   };
 
-
+  // Función para abrir el modal de edición
   const handleEditProduct = () => {
-    console.log('Editando producto con ID:', itemId);
+    if (detalleProducto) {
+      setShowEditModal(true);
+    }
   };
 
-  // Efecto para cargar datos cuando se abre el modal
+  // Función para cerrar el modal de edición
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
+  };
+
+  // Función para guardar los cambios del producto
+  const handleSaveProduct = async (updatedProduct: DetalleProducto) => {
+    setIsUpdating(true);
+    
+    try {
+      // Actualizar el estado local con los nuevos datos
+      setDetalleProducto(updatedProduct);
+      
+      // Cerrar el modal de edición
+      setShowEditModal(false);
+      
+      // Mostrar mensaje de éxito
+      console.log('✅ Producto actualizado exitosamente:', updatedProduct.item_nombre);
+      
+      // Opcional: Mostrar una notificación toast aquí
+      // showSuccessNotification('Producto actualizado exitosamente');
+      
+    } catch (error) {
+      console.error('Error al procesar la actualización:', error);
+      // Opcional: Mostrar notificación de error
+      // showErrorNotification('Error al actualizar el producto');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  // Cargar datos del producto
   useEffect(() => {
     if (isOpen && itemId) {
       const loadData = async () => {
@@ -128,7 +172,12 @@ export default function DetalleProductoModal({ itemId, isOpen, onClose }: Detall
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose();
+        // Si el modal de edición está abierto, cerrarlo primero
+        if (showEditModal) {
+          setShowEditModal(false);
+        } else {
+          onClose();
+        }
       }
     };
 
@@ -141,79 +190,119 @@ export default function DetalleProductoModal({ itemId, isOpen, onClose }: Detall
       document.removeEventListener('keydown', handleEscape);
       document.body.style.overflow = 'unset';
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, showEditModal, onClose]);
+
+  // Función para cerrar el modal principal
+  const handleCloseMainModal = () => {
+    // Si hay una actualización en progreso, no permitir cerrar
+    if (isUpdating) return;
+    
+    // Si el modal de edición está abierto, cerrarlo primero
+    if (showEditModal) {
+      setShowEditModal(false);
+      return;
+    }
+    
+    onClose();
+  };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Overlay with blur effect - Changed to show page content */}
-      <div 
-        className="absolute inset-0 backdrop-blur-sm bg-[rgba(255,255,255,0.1)]"
-        onClick={onClose}
-      />
-      
-      {/* Modal Content - Made larger */}
-      <div className="relative bg-white rounded-lg shadow-2xl max-w-[95vw] lg:max-w-6xl xl:max-w-7xl mx-auto max-h-[95vh] overflow-y-auto w-full">
-        {/* Header con botón de cerrar y botón de editar */}
-        <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center z-10 rounded-t-lg">
-          <div className="flex items-center gap-4">
-            <h2 className="text-xl font-semibold">Detalle del Producto</h2>
-            {/* Botón de editar - Solo visible para admin */}
-            {isAdmin && (
-              <button
-                onClick={handleEditProduct}
-                className="flex items-center gap-2 px-3 py-2 text-sm bg-orange-100 text-orange-700 hover:bg-orange-200 rounded-lg transition-colors"
-                title="Editar producto"
-              >
-                <PencilIcon className="w-4 h-4" />
-                <span className="hidden sm:inline">Editar</span>
-              </button>
-            )}
-          </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors p-1 hover:bg-gray-100 rounded-full"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        {/* Content */}
-        <div className="p-6 lg:p-8">
-          {loading ? (
-            <div className="flex items-center justify-center py-20">
-              <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500"></div>
-            </div>
-          ) : error ? (
-            <div className="text-center py-20">
-              <p className="text-red-500 text-lg">{error}</p>
-              <button 
-                onClick={onClose}
-                className="mt-4 px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
-              >
-                Cerrar
-              </button>
-            </div>
-          ) : detalleProducto ? (
-            <div className="min-h-[60vh]">
-              {/* Mobile */}
-              <div className="md:hidden space-y-6">
-                <DetalleMobile producto={formatearProducto(detalleProducto, precio)} />
-                <ModelosSelector subcategoriaId={parseInt(itemId)} />
-              </div>
+    <>
+      {/* Modal Principal */}
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        {/* Overlay */}
+        <div 
+          className="absolute inset-0 backdrop-blur-sm bg-[rgba(255,255,255,0.1)]"
+          onClick={handleCloseMainModal}
+        />
+        
+        {/* Modal Content */}
+        <div className="relative bg-white rounded-lg shadow-2xl max-w-[95vw] lg:max-w-6xl xl:max-w-7xl mx-auto max-h-[95vh] overflow-y-auto w-full">
+          {/* Header */}
+          <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center z-10 rounded-t-lg">
+            <div className="flex items-center gap-4">
+              <h2 className="text-xl font-semibold">
+                Detalle del Producto
+                {isUpdating && (
+                  <span className="ml-2 text-sm text-green-600 font-normal">
+                    ✅ Actualizado
+                  </span>
+                )}
+              </h2>
               
-              {/* Desktop */}
-              <div className="hidden md:flex flex-col space-y-8">
-                <DetalleDesktop producto={formatearProducto(detalleProducto, precio)} />
-                <ModelosSelector subcategoriaId={parseInt(itemId)} />
-              </div>
+              {/* Botón de editar - Solo visible para admin */}
+              {isAdmin && detalleProducto && (
+                <button
+                  onClick={handleEditProduct}
+                  disabled={loading || isUpdating}
+                  className="flex items-center gap-2 px-3 py-2 text-sm bg-orange-100 text-orange-700 hover:bg-orange-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Editar producto"
+                >
+                  <PencilIcon className="w-4 h-4" />
+                  <span className="hidden sm:inline">
+                    {loading ? 'Cargando...' : 'Editar'}
+                  </span>
+                </button>
+              )}
             </div>
-          ) : null}
+            
+            <button
+              onClick={handleCloseMainModal}
+              disabled={isUpdating}
+              className="text-gray-400 hover:text-gray-600 transition-colors p-1 hover:bg-gray-100 rounded-full disabled:opacity-50"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Content */}
+          <div className="p-6 lg:p-8">
+            {loading ? (
+              <div className="flex items-center justify-center py-20">
+                <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500"></div>
+              </div>
+            ) : error ? (
+              <div className="text-center py-20">
+                <p className="text-red-500 text-lg">{error}</p>
+                <button 
+                  onClick={handleCloseMainModal}
+                  className="mt-4 px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+                >
+                  Cerrar
+                </button>
+              </div>
+            ) : detalleProducto ? (
+              <div className="min-h-[60vh]">
+                {/* Mobile */}
+                <div className="md:hidden space-y-6">
+                  <DetalleMobile producto={formatearProducto(detalleProducto, precio)} />
+                  <ModelosSelector subcategoriaId={parseInt(itemId)} />
+                </div>
+                
+                {/* Desktop */}
+                <div className="hidden md:flex flex-col space-y-8">
+                  <DetalleDesktop producto={formatearProducto(detalleProducto, precio)} />
+                  <ModelosSelector subcategoriaId={parseInt(itemId)} />
+                </div>
+              </div>
+            ) : null}
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Modal de Edición */}
+      {detalleProducto && (
+        <EditProductModal
+          producto={detalleProducto}
+          isOpen={showEditModal}
+          onClose={handleCloseEditModal}
+          onSave={handleSaveProduct}
+        />
+      )}
+    </>
   );
 }
