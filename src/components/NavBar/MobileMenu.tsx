@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { XMarkIcon, ChevronDownIcon, ChevronUpIcon, UserCircleIcon } from '@heroicons/react/24/outline';
-import Search from './Search';
+import Search from '../Search/Search';
 
 type MenuItem = {
   title: string;

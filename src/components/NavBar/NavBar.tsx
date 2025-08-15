@@ -8,8 +8,8 @@ import { useCart } from '@/components/CartContext';
 import { usePathname, useRouter } from 'next/navigation';
 import CartSidebar from './CartSidebar';
 import { ChevronRightIcon, UserCircleIcon } from '@heroicons/react/24/solid';
-import Search from './Search';
-import { SearchSkeleton } from './Search';
+import Search from '../Search/Search';
+import { SearchSkeleton } from '../Search/Search';
 import { useAuth } from '@/hooks/useAuth';
 import { User } from '@/types/types'; // ← Si necesitas usar el tipo directamente
 

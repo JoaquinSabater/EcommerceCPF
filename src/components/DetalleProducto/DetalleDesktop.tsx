@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { CldImage } from 'next-cloudinary';
 
 export default function DetalleDesktop({ producto }: { producto: any }) {
   return (
@@ -31,12 +31,12 @@ export default function DetalleDesktop({ producto }: { producto: any }) {
           </div>
         </div>
         <div className="flex-1 flex items-start justify-center">
-          <Image
-            src={producto.imagen}
+          <CldImage
+            src={producto.imagen || 'no-image_i7m08e'}
             alt={producto.nombre}
             width={380}
             height={500}
-            className="object-contain rounded max-h-[500px] w-auto"
+            className="object-contain rounded max-h-[500px] w-auto bg-gray-100"
           />
         </div>
       </div>

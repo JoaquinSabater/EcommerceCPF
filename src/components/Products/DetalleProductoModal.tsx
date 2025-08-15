@@ -41,9 +41,15 @@ interface DetalleProductoModalProps {
   itemId: string;
   isOpen: boolean;
   onClose: () => void;
+  onUpdate?: (updatedProduct: any) => void; // Nueva prop para callback
 }
 
-export default function DetalleProductoModal({ itemId, isOpen, onClose }: DetalleProductoModalProps) {
+export default function DetalleProductoModal({ 
+  itemId, 
+  isOpen, 
+  onClose, 
+  onUpdate 
+}: DetalleProductoModalProps) {
   const [detalleProducto, setDetalleProducto] = useState<DetalleProducto | null>(null);
   const [precio, setPrecio] = useState<number>(0);
   const [loading, setLoading] = useState(false);
@@ -127,6 +133,11 @@ export default function DetalleProductoModal({ itemId, isOpen, onClose }: Detall
       
       // Cerrar el modal de edición
       setShowEditModal(false);
+      
+      // Notificar al componente padre (CategoriaCard) sobre la actualización
+      if (onUpdate) {
+        onUpdate(updatedProduct);
+      }
       
       // Mostrar mensaje de éxito
       console.log('✅ Producto actualizado exitosamente:', updatedProduct.item_nombre);

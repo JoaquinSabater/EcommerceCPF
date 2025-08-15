@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { XMarkIcon, PhotoIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { XMarkIcon, PhotoIcon, TrashIcon, StarIcon } from "@heroicons/react/24/outline";
+import { CldImage, CldUploadWidget } from 'next-cloudinary';
 
 interface DetalleProducto {
   item_id: number;
@@ -16,6 +17,7 @@ interface DetalleProducto {
   foto2_url?: string;
   foto3_url?: string;
   foto4_url?: string;
+  foto_portada?: string; // Nueva propiedad
 }
 
 interface EditProductModalProps {
@@ -25,29 +27,48 @@ interface EditProductModalProps {
   onSave: (updatedProduct: DetalleProducto) => void;
 }
 
-interface ImageFile {
-  file: File | null;
+interface ImageData {
+  publicId: string;
   url: string;
   isNew: boolean;
   toDelete: boolean;
-  publicId?: string; 
 }
 
 export default function EditProductModal({ producto, isOpen, onClose, onSave }: EditProductModalProps) {
   const [formData, setFormData] = useState<DetalleProducto>(producto);
-  const [images, setImages] = useState<ImageFile[]>([]);
+  const [images, setImages] = useState<ImageData[]>([]);
+  const [fotoPortada, setFotoPortada] = useState<ImageData>({ publicId: '', url: '', isNew: false, toDelete: false });
   const [loading, setLoading] = useState(false);
-  const [dragOver, setDragOver] = useState(false);
 
   useEffect(() => {
     if (isOpen && producto) {
       setFormData(producto);
       
-      const initialImages: ImageFile[] = [
-        { file: null, url: producto.foto1_url, isNew: false, toDelete: false },
-        { file: null, url: producto.foto2_url || '', isNew: false, toDelete: false },
-        { file: null, url: producto.foto3_url || '', isNew: false, toDelete: false },
-        { file: null, url: producto.foto4_url || '', isNew: false, toDelete: false },
+      const extractPublicId = (url: string) => {
+        if (!url) return '';
+        if (!url.startsWith('http')) return url;
+        const parts = url.split('/');
+        const uploadIndex = parts.findIndex(part => part === 'upload');
+        if (uploadIndex !== -1 && uploadIndex + 2 < parts.length) {
+          return parts.slice(uploadIndex + 2).join('/').split('.')[0];
+        }
+        return url;
+      };
+
+      // Inicializar foto de portada
+      setFotoPortada({
+        publicId: extractPublicId(producto.foto_portada || ''),
+        url: producto.foto_portada || '',
+        isNew: false,
+        toDelete: false
+      });
+
+      // Inicializar imágenes de galería
+      const initialImages: ImageData[] = [
+        { publicId: extractPublicId(producto.foto1_url), url: producto.foto1_url, isNew: false, toDelete: false },
+        { publicId: extractPublicId(producto.foto2_url || ''), url: producto.foto2_url || '', isNew: false, toDelete: false },
+        { publicId: extractPublicId(producto.foto3_url || ''), url: producto.foto3_url || '', isNew: false, toDelete: false },
+        { publicId: extractPublicId(producto.foto4_url || ''), url: producto.foto4_url || '', isNew: false, toDelete: false },
       ];
       
       setImages(initialImages);
@@ -62,61 +83,61 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
     }));
   };
 
-  const handleFileSelect = (files: FileList, index: number) => {
-    const file = files[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      alert('Solo se permiten archivos de imagen');
-      return;
+  // Manejo de foto de portada
+  const handlePortadaUpload = (result: any) => {
+    if (result.info && typeof result.info === 'object' && 'public_id' in result.info) {
+      const publicId = result.info.public_id as string;
+      const secureUrl = result.info.secure_url as string;
+      
+      console.log('Nueva foto de portada subida:', { publicId, secureUrl });
+      
+      setFotoPortada({
+        publicId: publicId,
+        url: secureUrl,
+        isNew: true,
+        toDelete: false
+      });
     }
+  };
 
-    if (file.size > 10 * 1024 * 1024) {
-      alert('El archivo no puede ser mayor a 10MB');
-      return;
+  const handleDeletePortada = () => {
+    if (fotoPortada.isNew) {
+      setFotoPortada({ publicId: '', url: '', isNew: false, toDelete: false });
+    } else {
+      setFotoPortada(prev => ({ ...prev, toDelete: true }));
     }
+  };
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
+  const handleRestorePortada = () => {
+    setFotoPortada(prev => ({ ...prev, toDelete: false }));
+  };
+
+  // Manejo de imágenes de galería (existente)
+  const handleImageUpload = (result: any, index: number) => {
+    if (result.info && typeof result.info === 'object' && 'public_id' in result.info) {
+      const publicId = result.info.public_id as string;
+      const secureUrl = result.info.secure_url as string;
+      
+      console.log('Nueva imagen subida:', { publicId, secureUrl });
+      
       setImages(prev => {
         const newImages = [...prev];
         newImages[index] = {
-          file: file,
-          url: e.target?.result as string,
+          publicId: publicId,
+          url: secureUrl,
           isNew: true,
           toDelete: false
         };
         return newImages;
       });
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleDrop = (e: React.DragEvent, index: number) => {
-    e.preventDefault();
-    setDragOver(false);
-    
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-      handleFileSelect(files, index);
     }
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(false);
   };
 
   const handleDeleteImage = (index: number) => {
     setImages(prev => {
       const newImages = [...prev];
       if (newImages[index].isNew) {
-        newImages[index] = { file: null, url: '', isNew: false, toDelete: false };
+        newImages[index] = { publicId: '', url: '', isNew: false, toDelete: false };
       } else {
         newImages[index] = { ...newImages[index], toDelete: true };
       }
@@ -132,52 +153,17 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
     });
   };
 
-  const uploadImages = async (): Promise<string[]> => {
-    const uploadPromises = images.map(async (image, index) => {
-      if (image.isNew && image.file) {
-        const formData = new FormData();
-        formData.append('file', image.file);
-        formData.append('productId', producto.item_id.toString());
-        formData.append('imageIndex', index.toString());
-
-        try {
-          const response = await fetch('/api/upload-image', {
-            method: 'POST',
-            body: formData,
-          });
-
-          if (!response.ok) throw new Error('Error al subir imagen');
-          
-          const data = await response.json();
-          return data.url;
-        } catch (error) {
-          console.error('Error uploading image:', error);
-          return image.url;
-        }
-      }
-      
-      if (image.toDelete) {
-        return '';
-      }
-      
-      return image.url;
-    });
-
-    return Promise.all(uploadPromises);
-  };
-
   const handleSave = async () => {
     setLoading(true);
     
     try {
-      const imageUrls = await uploadImages();
-      
       const updatedProduct: DetalleProducto = {
         ...formData,
-        foto1_url: imageUrls[0] || '',
-        foto2_url: imageUrls[1] || undefined,
-        foto3_url: imageUrls[2] || undefined,
-        foto4_url: imageUrls[3] || undefined,
+        foto_portada: fotoPortada.toDelete ? '' : (fotoPortada.publicId || ''),
+        foto1_url: images[0].toDelete ? '' : (images[0].publicId || ''),
+        foto2_url: images[1].toDelete ? undefined : (images[1].publicId || '') || undefined,
+        foto3_url: images[2].toDelete ? undefined : (images[2].publicId || '') || undefined,
+        foto4_url: images[3].toDelete ? undefined : (images[3].publicId || '') || undefined,
       };
 
       const response = await fetch(`/api/actualizar?id=${producto.item_id}`, {
@@ -207,21 +193,141 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
     }
   };
 
-  const renderImage = (image: ImageFile, index: number) => {
-    if (image.url && !image.toDelete) {
+  // Renderizar foto de portada
+  const renderPortadaSlot = () => {
+    if (fotoPortada.publicId && !fotoPortada.toDelete) {
       return (
-        <img
-          src={image.url}
-          alt={`Imagen ${index + 1}`}
-          className="w-full h-32 object-cover rounded"
-          onError={(e) => {
-            console.error('Error loading image:', image.url);
-            e.currentTarget.style.display = 'none';
-          }}
-        />
+        <div className="relative">
+          <CldImage
+            src={fotoPortada.publicId}
+            alt="Foto de portada"
+            width={300}
+            height={200}
+            className="w-full h-40 object-cover rounded bg-gray-100"
+          />
+          <div className="absolute top-2 right-2 flex gap-1">
+            <div className="bg-yellow-500 text-white p-1 rounded-full">
+              <StarIcon className="w-3 h-3" />
+            </div>
+            <button
+              onClick={handleDeletePortada}
+              className="bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
+            >
+              <TrashIcon className="w-3 h-3" />
+            </button>
+          </div>
+          <div className="absolute bottom-2 left-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded">
+            Portada
+          </div>
+        </div>
       );
     }
-    return null;
+
+    if (fotoPortada.toDelete) {
+      return (
+        <div className="text-center p-4 bg-red-50 rounded border-2 border-dashed border-red-300">
+          <p className="text-red-500 text-sm mb-2">Imagen de portada eliminada</p>
+          <button
+            onClick={handleRestorePortada}
+            className="text-xs text-blue-500 hover:text-blue-600"
+          >
+            Restaurar
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <CldUploadWidget
+        uploadPreset="cpf_upload"
+        options={{ 
+          maxFiles: 1,
+          folder: `productos/${producto.item_id}/portada`
+        }}
+        onSuccess={handlePortadaUpload}
+      >
+        {({ open }) => (
+          <div 
+            className="border-2 border-dashed border-yellow-300 rounded-lg p-4 text-center hover:border-yellow-500 hover:bg-yellow-50 transition-colors cursor-pointer"
+            onClick={() => open()}
+          >
+            <div className="flex items-center justify-center mb-2">
+              <StarIcon className="w-8 h-8 text-yellow-400" />
+            </div>
+            <p className="text-sm text-gray-500 mb-2">
+              Haz clic para subir imagen de portada
+            </p>
+            <p className="text-xs text-yellow-600 font-semibold">
+              FOTO PRINCIPAL (Se muestra en las cards)
+            </p>
+          </div>
+        )}
+      </CldUploadWidget>
+    );
+  };
+
+  const renderImageSlot = (image: ImageData, index: number) => {
+    if (image.publicId && !image.toDelete) {
+      return (
+        <div className="relative">
+          <CldImage
+            src={image.publicId}
+            alt={`Imagen ${index + 1}`}
+            width={300}
+            height={200}
+            className="w-full h-32 object-cover rounded bg-gray-100"
+          />
+          <div className="absolute top-2 right-2 flex gap-1">
+            <button
+              onClick={() => handleDeleteImage(index)}
+              className="bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
+            >
+              <TrashIcon className="w-3 h-3" />
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    if (image.toDelete) {
+      return (
+        <div className="text-center p-4 bg-red-50 rounded border-2 border-dashed border-red-300">
+          <p className="text-red-500 text-sm mb-2">Imagen eliminada</p>
+          <button
+            onClick={() => handleRestoreImage(index)}
+            className="text-xs text-blue-500 hover:text-blue-600"
+          >
+            Restaurar
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <CldUploadWidget
+        uploadPreset="cpf_upload"
+        options={{ 
+          maxFiles: 1,
+          folder: `productos/${producto.item_id}/galeria`
+        }}
+        onSuccess={(result) => handleImageUpload(result, index)}
+      >
+        {({ open }) => (
+          <div 
+            className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-orange-500 hover:bg-orange-50 transition-colors cursor-pointer"
+            onClick={() => open()}
+          >
+            <PhotoIcon className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+            <p className="text-sm text-gray-500 mb-2">
+              Haz clic para subir imagen
+            </p>
+            <p className="text-xs text-orange-500">
+              Galería {index + 1}
+            </p>
+          </div>
+        )}
+      </CldUploadWidget>
+    );
   };
 
   if (!isOpen) return null;
@@ -230,7 +336,7 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black bg-opacity-50" onClick={onClose} />
       
-      <div className="relative bg-white rounded-lg shadow-2xl max-w-4xl mx-auto max-h-[95vh] overflow-y-auto w-full">
+      <div className="relative bg-white rounded-lg shadow-2xl max-w-5xl mx-auto max-h-[95vh] overflow-y-auto w-full">
         <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center z-10">
           <h2 className="text-xl font-semibold">Editar Producto</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
@@ -239,6 +345,7 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
         </div>
 
         <div className="p-6 space-y-6">
+          {/* Formulario de campos */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -334,66 +441,30 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
             />
           </div>
 
+          {/* NUEVA SECCIÓN: Foto de portada */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-4">
-              Imágenes del producto (máximo 4)
+              <span className="flex items-center gap-2">
+                <StarIcon className="w-5 h-5 text-yellow-500" />
+                Foto de Portada (Se muestra en las cards del catálogo)
+              </span>
+            </label>
+            
+            <div className="max-w-md">
+              {renderPortadaSlot()}
+            </div>
+          </div>
+
+          {/* Galería de imágenes */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-4">
+              Galería de imágenes del producto (máximo 4)
             </label>
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {images.map((image, index) => (
-                <div key={index} className="relative">
-                  <div
-                    className={`border-2 border-dashed rounded-lg p-4 text-center transition-colors ${
-                      dragOver ? 'border-orange-500 bg-orange-50' : 'border-gray-300'
-                    } ${image.toDelete ? 'opacity-50 bg-red-50' : ''}`}
-                    onDrop={(e) => handleDrop(e, index)}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                  >
-                    {image.url && !image.toDelete ? (
-                      <div className="relative">
-                        {renderImage(image, index)}
-                        <div className="absolute top-2 right-2 flex gap-1">
-                          <button
-                            onClick={() => handleDeleteImage(index)}
-                            className="bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
-                          >
-                            <TrashIcon className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </div>
-                    ) : image.toDelete ? (
-                      <div className="text-center">
-                        <p className="text-red-500 text-sm mb-2">Imagen eliminada</p>
-                        <button
-                          onClick={() => handleRestoreImage(index)}
-                          className="text-xs text-blue-500 hover:text-blue-600"
-                        >
-                          Restaurar
-                        </button>
-                      </div>
-                    ) : (
-                      <div>
-                        <PhotoIcon className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                        <p className="text-sm text-gray-500 mb-2">
-                          Arrastra una imagen o
-                        </p>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => e.target.files && handleFileSelect(e.target.files, index)}
-                          className="hidden"
-                          id={`file-${index}`}
-                        />
-                        <label
-                          htmlFor={`file-${index}`}
-                          className="text-orange-500 hover:text-orange-600 cursor-pointer text-sm"
-                        >
-                          selecciona archivo
-                        </label>
-                      </div>
-                    )}
-                  </div>
+                <div key={index}>
+                  {renderImageSlot(image, index)}
                 </div>
               ))}
             </div>

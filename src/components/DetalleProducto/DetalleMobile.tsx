@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { CldImage } from 'next-cloudinary';
 import React from "react";
 
 interface Caracteristica {
@@ -22,13 +22,13 @@ interface DetalleMobileProps {
 export default function DetalleMobile({ producto }: DetalleMobileProps) {
   return (
     <div className="p-4 rounded-lg bg-white shadow-sm">
-      <div className="flex-1 flex items-start justify-center">
-        <Image
-          src={producto.imagen}
+      <div className="flex-1 flex items-start justify-center mb-4">
+        <CldImage
+          src={producto.imagen || 'no-image_i7m08e'}
           alt={producto.nombre}
           width={380}
           height={500}
-          className="object-contain rounded max-h-[500px] w-auto"
+          className="object-contain rounded max-h-[500px] w-auto bg-gray-100"
         />
       </div>
       <div className="mb-2 text-xs text-gray-500">Vidrio templado</div>

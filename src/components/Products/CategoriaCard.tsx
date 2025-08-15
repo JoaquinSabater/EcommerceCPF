@@ -2,15 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { categorias } from "@/types/types";
-import Image from "next/image";
+import { CldImage } from 'next-cloudinary';
 import DetalleProductoModal from "./DetalleProductoModal";
-
-// Solo mantenemos las imágenes, eliminamos los precios hardcodeados
-const VIDRIO_INFO: Record<number, { imagen: string }> = {
-  205: { imagen: "/vidrio-templado-celular-01.webp" },
-  212: { imagen: "/images/vidrio-111d-glue.png" },
-  216: { imagen: "/images/vidrio-feather-glass.png" },
-};
 
 interface CategoriaCardProps {
   categoria: categorias;
@@ -21,24 +14,52 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
   const [precio, setPrecio] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
-  
-  const info = VIDRIO_INFO[categoria.id] || { imagen: undefined };
+  const [imagenPrincipal, setImagenPrincipal] = useState<string>('');
+  const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
-    const fetchPrecio = async () => {
+    const fetchData = async () => {
       setLoading(true);
+      setImageError(false);
+      
       try {
-        const res = await fetch(`/api/precio?itemId=${categoria.id}`);
-        const data = await res.json();
-        setPrecio(data.precio);
+        const resPrice = await fetch(`/api/precio?itemId=${categoria.id}`);
+        const dataPrice = await resPrice.json();
+        setPrecio(dataPrice.precio);
+
+        // Buscar la foto_portada específicamente
+        const resDetail = await fetch(`/api/detalle?id=${categoria.id}`);
+        if (resDetail.ok) {
+          const dataDetail = await resDetail.json();
+          
+          console.log('Datos del producto:', dataDetail); // Para debug
+          
+          // Priorizar foto_portada, si no existe usar foto1_url como fallback
+          if (dataDetail.foto_portada && dataDetail.foto_portada.trim() !== '') {
+            setImagenPrincipal(dataDetail.foto_portada);
+            setImageError(false);
+          } else if (dataDetail.foto1_url && dataDetail.foto1_url.trim() !== '') {
+            setImagenPrincipal(dataDetail.foto1_url);
+            setImageError(false);
+          } else {
+            setImagenPrincipal('');
+            setImageError(true);
+          }
+        } else {
+          console.log('Error en la respuesta del detalle:', resDetail.status);
+          setImagenPrincipal('');
+          setImageError(true);
+        }
       } catch (error) {
-        console.error("Error al obtener el precio:", error);
+        console.error("Error al obtener datos:", error);
+        setImagenPrincipal('');
+        setImageError(true);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchPrecio();
+    fetchData();
   }, [categoria.id]);
 
   const handleVerClick = (e: React.MouseEvent) => {
@@ -50,6 +71,28 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
     setModalOpen(false);
   };
 
+  // Callback para actualizar la imagen cuando se edite en el modal
+  const handleProductUpdate = (updatedProduct: any) => {
+    console.log('Actualizando producto en card:', updatedProduct);
+    
+    // Priorizar foto_portada en la actualización
+    if (updatedProduct.foto_portada && updatedProduct.foto_portada.trim() !== '') {
+      setImagenPrincipal(updatedProduct.foto_portada);
+      setImageError(false);
+    } else if (updatedProduct.foto1_url && updatedProduct.foto1_url.trim() !== '') {
+      setImagenPrincipal(updatedProduct.foto1_url);
+      setImageError(false);
+    } else {
+      setImagenPrincipal('');
+      setImageError(true);
+    }
+  };
+
+  const handleImageError = () => {
+    console.log('Error al cargar imagen de Cloudinary:', imagenPrincipal);
+    setImageError(true);
+  };
+
   return (
     <>
       <div
@@ -59,26 +102,32 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
         role="button"
         aria-label={`Ver detalles de ${categoria.nombre}`}
       >
-        {/* Contenedor de imagen con fondo */}
         <div className="relative bg-gradient-to-b from-orange-50 to-white pt-10 px-4 flex justify-center items-center h-48 md:h-56">
-          {info.imagen ? (
-            <Image
-              src={info.imagen}
+          {imageError || !imagenPrincipal ? (
+            <img
+              src="/not-image.png"
+              alt={categoria.nombre}
+              className="object-contain max-h-40 md:max-h-48 transition-transform duration-300 hover:scale-105"
+              width={160}
+              height={160}
+              onError={() => console.log('Error cargando not-image.png')}
+            />
+          ) : (
+            <CldImage
+              src={imagenPrincipal}
               alt={categoria.nombre}
               width={160}
               height={160}
               className="object-contain max-h-40 md:max-h-48 transition-transform duration-300 hover:scale-105"
+              onError={handleImageError}
             />
-          ) : (
-            <span className="text-gray-400 w-32 h-32 flex items-center justify-center bg-gray-100 rounded">Sin foto</span>
           )}
+      
         </div>
         
-        {/* Contenido */}
         <div className="p-5 flex flex-col flex-grow">
           <h3 className="font-bold text-gray-800 text-lg mb-2 line-clamp-2 min-h-[3.5rem]">{categoria.nombre}</h3>
           
-          {/* Footer con precio y botón */}
           <div className="mt-auto pt-4 flex items-center justify-between">
             {loading ? (
               <div className="inline-block h-6 animate-pulse bg-gray-200 rounded w-16"></div>
@@ -104,11 +153,11 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
         </div>
       </div>
 
-      {/* Modal de detalle del producto */}
       <DetalleProductoModal 
         itemId={categoria.id.toString()}
         isOpen={modalOpen}
         onClose={handleCloseModal}
+        onUpdate={handleProductUpdate}
       />
     </>
   );
