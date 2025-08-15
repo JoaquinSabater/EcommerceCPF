@@ -166,6 +166,13 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
         foto4_url: images[3].toDelete ? undefined : (images[3].publicId || '') || undefined,
       };
 
+      // ✅ Debug: Ver qué se está enviando
+      console.log('Datos a enviar al servidor:', {
+        item_id: updatedProduct.item_id,
+        foto_portada: updatedProduct.foto_portada,
+        foto1_url: updatedProduct.foto1_url
+      });
+
       const response = await fetch(`/api/actualizar?id=${producto.item_id}`, {
         method: 'PUT',
         headers: {
@@ -180,7 +187,7 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
       }
 
       const result = await response.json();
-      console.log('Producto actualizado:', result);
+      console.log('Respuesta del servidor:', result);
 
       onSave(updatedProduct);
       onClose();

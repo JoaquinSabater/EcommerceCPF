@@ -2,8 +2,10 @@ import CollectionsSidebar from "@/components/Filters/CollectionsSidebar"; // Adj
 import CollectionsDropdown from "@/components/Filters/CollectionsDropdown"; // Adjust the path as needed
 import { getCategorias } from "@/data/data";
 import CategoriaCard from "@/components/Products/CategoriaCard";
+export const dynamic = 'force-dynamic';
 
 export default async function cables() {
+
   const subcategoriaId = 3;
   const categorias = await getCategorias(subcategoriaId);
 

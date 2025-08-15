@@ -23,13 +23,23 @@ export async function PUT(request: NextRequest) {
       proteccion,
       compatibilidad,
       pegamento,
+      foto_portada, // ✅ Agregar este campo
       foto1_url,
       foto2_url,
       foto3_url,
       foto4_url
     } = body;
 
-    // ✅ Usar el mismo patrón que funciona en otras APIs
+    console.log('Datos recibidos para actualizar:', {
+      productId: finalProductId,
+      foto_portada, // ✅ Log para debug
+      foto1_url,
+      foto2_url,
+      foto3_url,
+      foto4_url
+    });
+
+    // ✅ Actualizar la consulta SQL para incluir foto_portada
     const [result]: any = await db.query(
       `UPDATE item_detalle 
        SET
@@ -39,6 +49,7 @@ export async function PUT(request: NextRequest) {
          proteccion = ?,
          compatibilidad = ?,
          pegamento = ?,
+         foto_portada = ?, 
          foto1_url = ?,
          foto2_url = ?,
          foto3_url = ?,
@@ -51,6 +62,7 @@ export async function PUT(request: NextRequest) {
         proteccion || null,
         compatibilidad || null,
         pegamento || null,
+        foto_portada || null, // ✅ Agregar aquí
         foto1_url,
         foto2_url || null,
         foto3_url || null,
@@ -67,13 +79,20 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    console.log(`✅ Producto actualizado: ID ${finalProductId}`);
+    console.log(`✅ Producto actualizado: ID ${finalProductId}, foto_portada: ${foto_portada}`);
 
     return NextResponse.json({ 
       success: true, 
       message: 'Producto actualizado exitosamente',
       productId: finalProductId,
-      affectedRows: result.affectedRows
+      affectedRows: result.affectedRows,
+      updatedFields: {
+        foto_portada,
+        foto1_url,
+        foto2_url,
+        foto3_url,
+        foto4_url
+      }
     });
 
   } catch (error) {
