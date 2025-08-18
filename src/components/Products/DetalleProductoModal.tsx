@@ -26,6 +26,7 @@ interface DetalleProducto {
   foto2_url?: string;
   foto3_url?: string;
   foto4_url?: string;
+  foto_portada?: string;
 }
 
 interface ProductoFormateado {
@@ -86,30 +87,33 @@ export default function DetalleProductoModal({
     }
   };
 
-  const formatearProducto = (detalle: DetalleProducto, precio: number): ProductoFormateado => {
-    // Crear array con todas las imágenes disponibles
-    const todasLasImagenes = [
-      detalle.foto1_url,
-      detalle.foto2_url,
-      detalle.foto3_url,
-      detalle.foto4_url,
-    ].filter((img): img is string => typeof img === 'string' && img.trim() !== ''); // Filtrar imágenes vacías o null y asegurar solo strings
+const formatearProducto = (detalle: DetalleProducto, precio: number): ProductoFormateado => {
+  // ✅ Priorizar foto_portada como imagen principal
+  const imagenPrincipal = detalle.foto_portada || detalle.foto1_url || '';
+  
+  // ✅ Crear array con todas las imágenes disponibles (SIN duplicar la foto_portada)
+  const todasLasImagenes = [
+    detalle.foto1_url,
+    detalle.foto2_url,
+    detalle.foto3_url,
+    detalle.foto4_url,
+  ].filter((img): img is string => typeof img === 'string' && img.trim() !== '');
 
-    return {
-      imagen: detalle.foto1_url,
-      nombre: detalle.item_nombre,
-      descripcion: detalle.descripcion,
-      precio: precio,
-      imagenes: todasLasImagenes, 
-      caracteristicas: [
-        { label: "Material", value: detalle.material || "No especificado" },
-        { label: "Espesor", value: detalle.espesor || "No especificado" },
-        { label: "Protección", value: detalle.proteccion || "No especificado" },
-        { label: "Compatibilidad", value: detalle.compatibilidad || "No especificado" },
-        { label: "Pegamento", value: detalle.pegamento || "No especificado" },
-      ],
-    };
+  return {
+    imagen: imagenPrincipal, // ✅ Esta será la imagen principal del carousel
+    nombre: detalle.item_nombre,
+    descripcion: detalle.descripcion,
+    precio: precio,
+    imagenes: todasLasImagenes, // ✅ Array de imágenes para la galería
+    caracteristicas: [
+      { label: "Material", value: detalle.material || "No especificado" },
+      { label: "Espesor", value: detalle.espesor || "No especificado" },
+      { label: "Protección", value: detalle.proteccion || "No especificado" },
+      { label: "Compatibilidad", value: detalle.compatibilidad || "No especificado" },
+      { label: "Pegamento", value: detalle.pegamento || "No especificado" },
+    ],
   };
+};
 
   // Función para abrir el modal de edición
   const handleEditProduct = () => {

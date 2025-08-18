@@ -17,7 +17,7 @@ interface DetalleProducto {
   foto2_url?: string;
   foto3_url?: string;
   foto4_url?: string;
-  foto_portada?: string; // Nueva propiedad
+  foto_portada?: string;
 }
 
 interface EditProductModalProps {
@@ -55,7 +55,6 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
         return url;
       };
 
-      // Inicializar foto de portada
       setFotoPortada({
         publicId: extractPublicId(producto.foto_portada || ''),
         url: producto.foto_portada || '',
@@ -63,7 +62,6 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
         toDelete: false
       });
 
-      // Inicializar imágenes de galería
       const initialImages: ImageData[] = [
         { publicId: extractPublicId(producto.foto1_url), url: producto.foto1_url, isNew: false, toDelete: false },
         { publicId: extractPublicId(producto.foto2_url || ''), url: producto.foto2_url || '', isNew: false, toDelete: false },
@@ -83,7 +81,6 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
     }));
   };
 
-  // Manejo de foto de portada
   const handlePortadaUpload = (result: any) => {
     if (result.info && typeof result.info === 'object' && 'public_id' in result.info) {
       const publicId = result.info.public_id as string;
@@ -112,7 +109,6 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
     setFotoPortada(prev => ({ ...prev, toDelete: false }));
   };
 
-  // Manejo de imágenes de galería (existente)
   const handleImageUpload = (result: any, index: number) => {
     if (result.info && typeof result.info === 'object' && 'public_id' in result.info) {
       const publicId = result.info.public_id as string;
@@ -166,7 +162,6 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
         foto4_url: images[3].toDelete ? undefined : (images[3].publicId || '') || undefined,
       };
 
-      // ✅ Debug: Ver qué se está enviando
       console.log('Datos a enviar al servidor:', {
         item_id: updatedProduct.item_id,
         foto_portada: updatedProduct.foto_portada,
@@ -200,7 +195,7 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
     }
   };
 
-  // Renderizar foto de portada
+  // ✅ Renderizar foto de portada con key única
   const renderPortadaSlot = () => {
     if (fotoPortada.publicId && !fotoPortada.toDelete) {
       return (
@@ -246,6 +241,7 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
 
     return (
       <CldUploadWidget
+        key={`portada-${producto.item_id}`} // ✅ Key única para portada
         uploadPreset="cpf_upload"
         options={{ 
           maxFiles: 1,
@@ -256,7 +252,10 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
         {({ open }) => (
           <div 
             className="border-2 border-dashed border-yellow-300 rounded-lg p-4 text-center hover:border-yellow-500 hover:bg-yellow-50 transition-colors cursor-pointer"
-            onClick={() => open()}
+            onClick={() => {
+              console.log('Abriendo widget de portada');
+              if (open) open();
+            }}
           >
             <div className="flex items-center justify-center mb-2">
               <StarIcon className="w-8 h-8 text-yellow-400" />
@@ -273,6 +272,7 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
     );
   };
 
+  // ✅ Renderizar imágenes de galería con keys únicas
   const renderImageSlot = (image: ImageData, index: number) => {
     if (image.publicId && !image.toDelete) {
       return (
@@ -312,6 +312,7 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
 
     return (
       <CldUploadWidget
+        key={`galeria-${producto.item_id}-${index}`} // ✅ Key única para cada slot de galería
         uploadPreset="cpf_upload"
         options={{ 
           maxFiles: 1,
@@ -322,7 +323,10 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
         {({ open }) => (
           <div 
             className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-orange-500 hover:bg-orange-50 transition-colors cursor-pointer"
-            onClick={() => open()}
+            onClick={() => {
+              console.log(`Abriendo widget de galería ${index + 1}`);
+              if (open) open();
+            }}
           >
             <PhotoIcon className="w-8 h-8 text-gray-400 mx-auto mb-2" />
             <p className="text-sm text-gray-500 mb-2">
@@ -448,7 +452,7 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
             />
           </div>
 
-          {/* NUEVA SECCIÓN: Foto de portada */}
+          {/* Foto de portada */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-4">
               <span className="flex items-center gap-2">
@@ -462,7 +466,7 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
             </div>
           </div>
 
-          {/* Galería de imágenes */}
+          {/* ✅ Galería de imágenes con keys únicas */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-4">
               Galería de imágenes del producto (máximo 4)
@@ -470,7 +474,7 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {images.map((image, index) => (
-                <div key={index}>
+                <div key={`image-slot-${producto.item_id}-${index}`}>
                   {renderImageSlot(image, index)}
                 </div>
               ))}
