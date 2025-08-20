@@ -9,14 +9,18 @@ const dbConfig = {
   ssl: { rejectUnauthorized: false }
 };
 
+interface RouteParams {
+  params: Promise<{
+    id: string;
+  }>;
+}
+
 // PUT - Actualizar slide existente
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PUT(request: NextRequest, context: RouteParams) {
   try {
     const body = await request.json();
     const { titulo, descripcion, imagen_desktop, imagen_mobile, enlace, orden, activo } = body;
+    const params = await context.params;
     
     const connection = await mysql.createConnection(dbConfig);
     
@@ -40,11 +44,9 @@ export async function PUT(
 }
 
 // DELETE - Eliminar slide
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest, context: RouteParams) {
   try {
+    const params = await context.params;
     const connection = await mysql.createConnection(dbConfig);
     
     await connection.execute('DELETE FROM home_carousel WHERE id = ?', [params.id]);

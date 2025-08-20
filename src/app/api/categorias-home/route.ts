@@ -9,47 +9,48 @@ const dbConfig = {
   ssl: { rejectUnauthorized: false }
 };
 
-// GET - Obtener categorías activas
-export async function GET() {
+interface RouteParams {
+  params: Promise<{
+    id: string;
+  }>;
+}
+
+// PUT - Actualizar categoría
+export async function PUT(request: NextRequest, context: RouteParams) {
   try {
+    const { nombre, imagen, url, orden, activo } = await request.json();
+    const params = await context.params;
+    
     const connection = await mysql.createConnection(dbConfig);
     
-    const [rows] = await connection.execute(`
-      SELECT id, nombre, imagen, url, orden, activo
-      FROM categorias_home 
-      WHERE activo = TRUE 
-      ORDER BY orden ASC
-    `);
+    await connection.execute(`
+      UPDATE categorias_home 
+      SET nombre = ?, imagen = ?, url = ?, orden = ?, activo = ?
+      WHERE id = ?
+    `, [nombre, imagen, url, orden, activo, params.id]);
     
     await connection.end();
-    return NextResponse.json(rows);
+    
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error fetching categories:', error);
-    return NextResponse.json({ error: 'Error al obtener categorías' }, { status: 500 });
+    console.error('Error updating category:', error);
+    return NextResponse.json({ error: 'Error al actualizar categoría' }, { status: 500 });
   }
 }
 
-// POST - Crear nueva categoría
-export async function POST(request: NextRequest) {
+// DELETE - Eliminar categoría
+export async function DELETE(request: NextRequest, context: RouteParams) {
   try {
-    const { nombre, imagen, url, orden } = await request.json();
-    
-    if (!nombre || !imagen || !url) {
-      return NextResponse.json({ error: 'Nombre, imagen y URL son obligatorios' }, { status: 400 });
-    }
-    
+    const params = await context.params;
     const connection = await mysql.createConnection(dbConfig);
     
-    const [result] = await connection.execute(`
-      INSERT INTO categorias_home (nombre, imagen, url, orden)
-      VALUES (?, ?, ?, ?)
-    `, [nombre, imagen, url, orden || 0]);
+    await connection.execute('DELETE FROM categorias_home WHERE id = ?', [params.id]);
     
     await connection.end();
     
-    return NextResponse.json({ success: true, id: (result as any).insertId });
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error creating category:', error);
-    return NextResponse.json({ error: 'Error al crear categoría' }, { status: 500 });
+    console.error('Error deleting category:', error);
+    return NextResponse.json({ error: 'Error al eliminar categoría' }, { status: 500 });
   }
 }
