@@ -9,10 +9,17 @@ const dbConfig = {
   ssl: { rejectUnauthorized: false }
 };
 
+interface RouteParams {
+  params: Promise<{
+    id: string;
+  }>;
+}
+
 // PUT - Actualizar categoría
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, context: RouteParams) {
   try {
     const { nombre, imagen, url, orden, activo } = await request.json();
+    const params = await context.params;
     
     const connection = await mysql.createConnection(dbConfig);
     
@@ -32,8 +39,9 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 }
 
 // DELETE - Eliminar categoría
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, context: RouteParams) {
   try {
+    const params = await context.params;
     const connection = await mysql.createConnection(dbConfig);
     
     await connection.execute('DELETE FROM categorias_home WHERE id = ?', [params.id]);
