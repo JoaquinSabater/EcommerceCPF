@@ -9,10 +9,16 @@ const dbConfig = {
   ssl: { rejectUnauthorized: false }
 };
 
-// PUT - Actualizar card
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+interface RouteParams {
+  params: Promise<{
+    id: string;
+  }>;
+}
+
+export async function PUT(request: NextRequest, context: RouteParams) {
   try {
     const { titulo, subtitulo, imagen, enlace, orden, activo } = await request.json();
+    const params = await context.params;
     
     const connection = await mysql.createConnection(dbConfig);
     
@@ -31,9 +37,9 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-// DELETE - Eliminar card
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, context: RouteParams) {
   try {
+    const params = await context.params;
     const connection = await mysql.createConnection(dbConfig);
     
     await connection.execute('DELETE FROM cards_informativas WHERE id = ?', [params.id]);
