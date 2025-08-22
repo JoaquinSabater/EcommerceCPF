@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/data/mysql';
 import { User, LoginResponse } from '@/types/types'; // ← Importar los tipos
 
+
+
 export async function POST(request: NextRequest) {
   try {
     const { cuil } = await request.json();
