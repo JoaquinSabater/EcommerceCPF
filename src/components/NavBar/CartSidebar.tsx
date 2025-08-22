@@ -6,14 +6,16 @@ import Image from 'next/image';
 import { useCart } from '@/components/CartContext';
 import QuantityButton from '../QuantityButton';
 import { useRouter } from 'next/navigation';
-
+import { useAuth } from '@/hooks/useAuth';
 
 export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const sidebarRef = useRef<HTMLDivElement>(null);
-  const { cart, changeQuantity } = useCart();
+  const { cart, changeQuantity, clearCart } = useCart();
+  const { user } = useAuth();
   const router = useRouter();
 
   const [dolar, setDolar] = useState<number>(1);
+  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
 
   useEffect(() => {
     async function fetchDolar() {
@@ -28,16 +30,75 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
     fetchDolar();
   }, []);
 
-  console.log('Dolar value:', dolar);
-
   const totalLocal = cart.reduce(
     (sum, item) => sum + (item.cantidad * item.precio_venta),
     0
   );
 
-  const handleBuy = () => {
-    localStorage.setItem('cartItems', JSON.stringify(cart));
-    router.push('/public/carrito');
+  const handleBuy = async () => {
+    if (!user) {
+      alert('Debes iniciar sesión para realizar una compra');
+      router.push('/auth/login');
+      return;
+    }
+
+    if (cart.length === 0) {
+      alert('El carrito está vacío');
+      return;
+    }
+
+    setIsCreatingOrder(true);
+    
+    try {
+      // Convertir el carrito al formato que espera la API
+      const itemsCarrito = cart.map(item => ({
+        codigo_interno: item.codigo_interno,
+        modelo: item.modelo,
+        cantidad: item.cantidad,
+        precio: item.precio_venta,
+        item_nombre: item.item_nombre
+      }));
+
+      console.log('Enviando pedido preliminar:', {
+        clienteId: user.id,
+        vendedorId: 1, // Por ahora usamos vendedor ID 1, puedes cambiarlo
+        itemsCarrito
+      });
+
+      const response = await fetch('/api/pedidos-preliminares', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          clienteId: user.id,
+          vendedorId: 1, // Puedes obtener esto del contexto o usuario
+          itemsCarrito,
+          observaciones: `Pedido creado desde el carrito - Total: $${totalLocal.toLocaleString()}`
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Éxito - limpiar carrito y mostrar mensaje
+        clearCart();
+        onClose();
+        
+        alert(`¡Pedido creado exitosamente! Número de pedido preliminar: ${data.pedidoPreliminarId}`);
+        
+        // Opcional: redirigir a una página de confirmación o pedidos
+        router.push('/admin/pedidos');
+      } else {
+        throw new Error(data.error || 'Error al crear el pedido');
+      }
+
+    } catch (error) {
+      console.error('Error al crear pedido preliminar:', error);
+      alert('Error al crear el pedido. Por favor, inténtalo de nuevo.');
+    } finally {
+      setIsCreatingOrder(false);
+    }
   };
 
   useEffect(() => {
@@ -113,10 +174,11 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
                 </span>
               </div>
               <button
-                className="w-full bg-orange-600 text-white py-2 rounded hover:bg-orange-700 transition"
+                className="w-full bg-orange-600 text-white py-2 rounded hover:bg-orange-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
                 onClick={handleBuy}
+                disabled={isCreatingOrder || cart.length === 0}
               >
-                Comprar
+                {isCreatingOrder ? 'Creando pedido...' : 'Comprar'}
               </button>
             </div>
           </div>

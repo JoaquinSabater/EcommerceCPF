@@ -181,39 +181,6 @@ export default function PedidosPage() {
             <Package className="h-8 w-8 text-blue-600" />
           </div>
         </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">En Proceso</p>
-              <p className="text-2xl font-bold text-blue-600">
-                {pedidos.filter(p => p.estado === 'en_proceso').length}
-              </p>
-            </div>
-            <Clock className="h-8 w-8 text-blue-600" />
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Completados</p>
-              <p className="text-2xl font-bold text-green-600">
-                {pedidos.filter(p => p.estado === 'armado').length}
-              </p>
-            </div>
-            <Package className="h-8 w-8 text-green-600" />
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Pendientes</p>
-              <p className="text-2xl font-bold text-yellow-600">
-                {pedidos.filter(p => p.estado === 'solicitud').length}
-              </p>
-            </div>
-            <FileText className="h-8 w-8 text-yellow-600" />
-          </div>
-        </div>
       </div>
 
       {/* Lista de pedidos */}
