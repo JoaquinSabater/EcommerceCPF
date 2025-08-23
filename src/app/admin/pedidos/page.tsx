@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuth'; // Usar el mismo hook que AdminNavBar
+import { useAuth } from '@/hooks/useAuth';
 import { 
   ChevronDown, 
   ChevronUp, 
@@ -10,9 +10,11 @@ import {
   Calendar,
   User,
   Clock,
-  FileText
+  FileText,
+  AlertCircle
 } from 'lucide-react';
-import {Pedido,ArticuloPedido} from "@/types/types";
+import { Pedido, ArticuloPedido } from "@/types/types";
+import { PedidoPreliminar } from "@/data/data";
 
 const estadoColors = {
   'en_proceso': 'bg-blue-100 text-blue-800',
@@ -20,78 +22,128 @@ const estadoColors = {
   'parcial': 'bg-orange-100 text-orange-800',
   'armado': 'bg-green-100 text-green-800',
   'cancelado': 'bg-red-100 text-red-800',
+  'borrador': 'bg-purple-100 text-purple-800',
+  'enviado': 'bg-indigo-100 text-indigo-800',
   'default': 'bg-gray-100 text-gray-800'
+};
+
+// Tipo combinado para manejar ambos tipos de pedidos
+type PedidoCombinado = (Pedido | PedidoPreliminar) & {
+  tipo: 'normal' | 'preliminar';
+  esPreliminar?: boolean;
 };
 
 export default function PedidosPage() {
   const { user, loading: authLoading } = useAuth();
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
-  const [expandedPedido, setExpandedPedido] = useState<number | null>(null);
-  const [articulosPedido, setArticulosPedido] = useState<{[key: number]: ArticuloPedido[]}>({});
+  const [pedidosPreliminares, setPedidosPreliminares] = useState<PedidoPreliminar[]>([]);
+  const [expandedPedido, setExpandedPedido] = useState<string | null>(null);
+  const [articulosPedido, setArticulosPedido] = useState<{[key: string]: ArticuloPedido[]}>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [filtroTipo, setFiltroTipo] = useState<string>('todos');
   const [filtroEstado, setFiltroEstado] = useState<string>('todos');
-  const [loadingArticulos, setLoadingArticulos] = useState<{[key: number]: boolean}>({});
+  const [loadingArticulos, setLoadingArticulos] = useState<{[key: string]: boolean}>({});
 
   useEffect(() => {
     if (user && !authLoading) {
       fetchPedidos();
+      fetchPedidosPreliminares();
     }
   }, [user, authLoading]);
 
-    const fetchPedidos = async () => {
-        if (!user) return;
-        try {
-            const response = await fetch(`/api/admin/pedidos?clienteId=${user.id}`);
-            if (!response.ok) throw new Error('Error al cargar pedidos');
-            const data = await response.json();
-            setPedidos(data);
-        } catch (error) {
-            console.error('Error fetching pedidos:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+  const fetchPedidos = async () => {
+    if (!user) return;
+    try {
+      const response = await fetch(`/api/admin/pedidos?clienteId=${user.id}`);
+      if (!response.ok) throw new Error('Error al cargar pedidos');
+      const data = await response.json();
+      setPedidos(data);
+    } catch (error) {
+      console.error('Error fetching pedidos:', error);
+    }
+  };
 
-  const fetchArticulosPedido = async (pedidoId: number) => {
-    if (articulosPedido[pedidoId]) return;
+  const fetchPedidosPreliminares = async () => {
+    if (!user) return;
+    try {
+      const response = await fetch(`/api/admin/pedidos-preliminares?clienteId=${user.id}`);
+      if (!response.ok) throw new Error('Error al cargar pedidos preliminares');
+      const data = await response.json();
+      // Solo mostrar los que están en estado 'borrador' (activos)
+      setPedidosPreliminares(data.filter((p: PedidoPreliminar) => p.estado === 'borrador'));
+    } catch (error) {
+      console.error('Error fetching pedidos preliminares:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    setLoadingArticulos(prev => ({ ...prev, [pedidoId]: true }));
+  const fetchArticulosPedido = async (pedidoId: number, esPreliminar: boolean = false) => {
+    const key = `${esPreliminar ? 'preliminar' : 'normal'}-${pedidoId}`;
+    if (articulosPedido[key]) return;
+
+    setLoadingArticulos(prev => ({ ...prev, [key]: true }));
     
     try {
-      const response = await fetch(`/api/admin/pedidos/${pedidoId}/articulos`);
+      const endpoint = esPreliminar 
+        ? `/api/admin/pedidos-preliminares/${pedidoId}/articulos`
+        : `/api/admin/pedidos/${pedidoId}/articulos`;
+        
+      const response = await fetch(endpoint);
       if (!response.ok) throw new Error('Error al cargar artículos');
       const data = await response.json();
       
       setArticulosPedido(prev => ({
         ...prev,
-        [pedidoId]: data
+        [key]: data
       }));
     } catch (error) {
       console.error('Error fetching artículos:', error);
     } finally {
-      setLoadingArticulos(prev => ({ ...prev, [pedidoId]: false }));
+      setLoadingArticulos(prev => ({ ...prev, [key]: false }));
     }
   };
 
-  const togglePedidoExpansion = (pedidoId: number) => {
-    if (expandedPedido === pedidoId) {
+  const togglePedidoExpansion = (pedidoId: number, esPreliminar: boolean = false) => {
+    const key = `${esPreliminar ? 'preliminar' : 'normal'}-${pedidoId}`;
+    
+    if (expandedPedido === key) {
       setExpandedPedido(null);
     } else {
-      setExpandedPedido(pedidoId);
-      fetchArticulosPedido(pedidoId);
+      setExpandedPedido(key);
+      fetchArticulosPedido(pedidoId, esPreliminar);
     }
   };
 
-  const filteredPedidos = pedidos.filter(pedido => {
+  // Combinar y ordenar ambos tipos de pedidos
+  const pedidosCombinados: PedidoCombinado[] = [
+    ...pedidos.map(p => ({ ...p, tipo: 'normal' as const, esPreliminar: false })),
+    ...pedidosPreliminares.map(p => ({ 
+      ...p, 
+      tipo: 'preliminar' as const, 
+      esPreliminar: true,
+      // Mapear campos para compatibilidad
+      vendedor_id: p.vendedor_id,
+      cliente_id: p.cliente_id
+    }))
+  ].sort(
+    (a, b) =>
+      new Date(b.fecha_creacion ?? '').getTime() -
+      new Date(a.fecha_creacion ?? '').getTime()
+  );
+
+  const filteredPedidos = pedidosCombinados.filter(pedido => {
     const matchesSearch = 
-      pedido.id.toString().includes(searchTerm) ||
-      pedido.armador_nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      pedido.controlador_nombre?.toLowerCase().includes(searchTerm.toLowerCase());
+      pedido.id?.toString().includes(searchTerm) ||
+      (pedido.vendedor_nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
     
     const matchesEstado = filtroEstado === 'todos' || pedido.estado === filtroEstado;
+    const matchesTipo = filtroTipo === 'todos' || 
+                       (filtroTipo === 'preliminar' && pedido.esPreliminar) ||
+                       (filtroTipo === 'normal' && !pedido.esPreliminar);
     
-    return matchesSearch && matchesEstado;
+    return matchesSearch && matchesEstado && matchesTipo;
   });
 
   const formatDate = (dateString: string) => {
@@ -104,19 +156,15 @@ export default function PedidosPage() {
     });
   };
 
-  const formatTime = (timeString?: string) => {
-    if (!timeString) return 'No iniciado';
-    return new Date(`1970-01-01T${timeString}`).toLocaleTimeString('es-AR', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  const getEstadoBadge = (estado: string) => {
+  const getEstadoBadge = (estado: string, esPreliminar: boolean = false) => {
     const colorClass = estadoColors[estado as keyof typeof estadoColors] || estadoColors.default;
+    const label = esPreliminar ? 
+      (estado === 'borrador' ? 'PRELIMINAR' : estado.replace('_', ' ').toUpperCase()) :
+      estado.replace('_', ' ').toUpperCase();
+      
     return (
       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${colorClass}`}>
-        {estado.replace('_', ' ').toUpperCase()}
+        {label}
       </span>
     );
   };
@@ -150,18 +198,28 @@ export default function PedidosPage() {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <input
             type="text"
-            placeholder="Buscar por ID de pedido, armador o controlador..."
+            placeholder="Buscar por ID de pedido o vendedor..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
         <select
+          value={filtroTipo}
+          onChange={(e) => setFiltroTipo(e.target.value)}
+          className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="todos">Todos los tipos</option>
+          <option value="preliminar">Pedidos Preliminares</option>
+          <option value="normal">Pedidos Normales</option>
+        </select>
+        <select
           value={filtroEstado}
           onChange={(e) => setFiltroEstado(e.target.value)}
           className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="todos">Todos los estados</option>
+          <option value="borrador">Preliminar</option>
           <option value="solicitud">Solicitud</option>
           <option value="en_proceso">En Proceso</option>
           <option value="parcial">Parcial</option>
@@ -181,6 +239,15 @@ export default function PedidosPage() {
             <Package className="h-8 w-8 text-blue-600" />
           </div>
         </div>
+        <div className="bg-white rounded-lg shadow p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Pedidos Preliminares</p>
+              <p className="text-2xl font-bold text-purple-600">{pedidosPreliminares.length}</p>
+            </div>
+            <AlertCircle className="h-8 w-8 text-purple-600" />
+          </div>
+        </div>
       </div>
 
       {/* Lista de pedidos */}
@@ -192,24 +259,34 @@ export default function PedidosPage() {
           </div>
         ) : (
           filteredPedidos.map((pedido) => (
-            <div key={pedido.id} className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow">
+            <div key={`${pedido.esPreliminar ? 'preliminar' : 'normal'}-${pedido.id}`} 
+                 className={`bg-white rounded-lg shadow hover:shadow-lg transition-shadow ${
+                   pedido.esPreliminar ? 'border-l-4 border-purple-500' : ''
+                 }`}>
               <div className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-4 mb-2">
-                      <h3 className="text-lg font-semibold">Pedido #{pedido.id}</h3>
-                      {getEstadoBadge(pedido.estado)}
+                      <h3 className="text-lg font-semibold">
+                        {pedido.esPreliminar ? 'Pedido Preliminar' : 'Pedido'} #{pedido.id}
+                      </h3>
+                      {getEstadoBadge(pedido.estado ?? 'default', pedido.esPreliminar)}
+                      {pedido.esPreliminar && (
+                        <span className="text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded">
+                          Pendiente de confirmación
+                        </span>
+                      )}
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4" />
-                        <span>{formatDate(pedido.fecha_creacion)}</span>
+                        <span>{pedido.fecha_creacion ? formatDate(pedido.fecha_creacion) : 'Sin fecha'}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4" />
                         <span>Vendedor: {pedido.vendedor_nombre || `ID: ${pedido.vendedor_id}`}</span>
                       </div>
-                      {pedido.remito_id && (
+                      {!pedido.esPreliminar && 'remito_id' in pedido && pedido.remito_id && (
                         <div className="flex items-center gap-2">
                           <FileText className="h-4 w-4" />
                           <span>Remito: {pedido.remito_id}</span>
@@ -218,10 +295,10 @@ export default function PedidosPage() {
                     </div>
                   </div>
                   <button
-                    onClick={() => togglePedidoExpansion(pedido.id)}
+                    onClick={() => togglePedidoExpansion(pedido.id!, pedido.esPreliminar)}
                     className="p-2 text-gray-400 hover:text-gray-600 focus:outline-none"
                   >
-                    {expandedPedido === pedido.id ? (
+                    {expandedPedido === `${pedido.esPreliminar ? 'preliminar' : 'normal'}-${pedido.id}` ? (
                       <ChevronUp className="h-4 w-4" />
                     ) : (
                       <ChevronDown className="h-4 w-4" />
@@ -230,36 +307,39 @@ export default function PedidosPage() {
                 </div>
               </div>
 
-              {expandedPedido === pedido.id && (
+              {expandedPedido === `${pedido.esPreliminar ? 'preliminar' : 'normal'}-${pedido.id}` && (
                 <div className="border-t px-6 pb-6 pt-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
-                    <div>
-                      <h4 className="font-semibold mb-3">Información Adicional</h4>
-                      <div className="space-y-2 text-sm">
-                        {pedido.consolidado_id && (
-                          <p><span className="font-medium">Consolidado ID:</span> {pedido.consolidado_id}</p>
-                        )}
-                        {pedido.categoria_principal_id && (
-                          <p><span className="font-medium">Categoría Principal:</span> {pedido.categoria_principal_id}</p>
-                        )}
-                        {pedido.observaciones_generales && (
-                          <div>
-                            <p className="font-medium">Observaciones:</p>
-                            <p className="text-gray-600 bg-gray-50 p-2 rounded">{pedido.observaciones_generales}</p>
-                          </div>
-                        )}
+                  {/* Información adicional - solo para pedidos normales */}
+                  {!pedido.esPreliminar && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                      <div>
+                        <h4 className="font-semibold mb-3">Información Adicional</h4>
+                        <div className="space-y-2 text-sm">
+                          {'consolidado_id' in pedido && pedido.consolidado_id && (
+                            <p><span className="font-medium">Consolidado ID:</span> {pedido.consolidado_id}</p>
+                          )}
+                          {'categoria_principal_id' in pedido && pedido.categoria_principal_id && (
+                            <p><span className="font-medium">Categoría Principal:</span> {pedido.categoria_principal_id}</p>
+                          )}
+                          {pedido.observaciones_generales && (
+                            <div>
+                              <p className="font-medium">Observaciones:</p>
+                              <p className="text-gray-600 bg-gray-50 p-2 rounded">{pedido.observaciones_generales}</p>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
 
                   <div>
                     <h4 className="font-semibold mb-3">Artículos del Pedido</h4>
-                    {loadingArticulos[pedido.id] ? (
+                    {loadingArticulos[`${pedido.esPreliminar ? 'preliminar' : 'normal'}-${pedido.id}`] ? (
                       <div className="flex items-center justify-center py-4">
                         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
                         <span className="ml-2 text-sm text-gray-600">Cargando artículos...</span>
                       </div>
-                    ) : articulosPedido[pedido.id] ? (
+                    ) : articulosPedido[`${pedido.esPreliminar ? 'preliminar' : 'normal'}-${pedido.id}`] ? (
                       <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                           <thead>
@@ -267,14 +347,20 @@ export default function PedidosPage() {
                               <th className="text-left py-3 px-4">Item</th>
                               <th className="text-left py-3 px-4">Modelo</th>
                               <th className="text-right py-3 px-4">Cantidad</th>
+                              {pedido.esPreliminar && (
+                                <th className="text-right py-3 px-4">Precio Unit.</th>
+                              )}
                             </tr>
                           </thead>
                           <tbody>
-                            {articulosPedido[pedido.id].map((articulo, index) => (
+                            {articulosPedido[`${pedido.esPreliminar ? 'preliminar' : 'normal'}-${pedido.id}`].map((articulo, index) => (
                               <tr key={index} className="border-b hover:bg-gray-50">
                                 <td className="py-3 px-4">{articulo.item_nombre}</td>
                                 <td className="py-3 px-4">{articulo.modelo}</td>
                                 <td className="py-3 px-4 text-right font-medium">{articulo.cantidad}</td>
+                                {pedido.esPreliminar && 'precio_unitario' in articulo && (
+                                  <td className="py-3 px-4 text-right">${articulo.precio_unitario?.toLocaleString()}</td>
+                                )}
                               </tr>
                             ))}
                           </tbody>
