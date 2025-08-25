@@ -53,6 +53,10 @@ export default function MobileMenu({ menu }: { menu: MenuItem[] }) {
             </div>
           </div>
 
+          <div className="mt-6 px-2">
+            <Search />
+          </div>
+
           {/* Navigation */}
           <nav className="flex flex-col space-y-4 px-2">
             {menu.map((item) => (
@@ -95,11 +99,6 @@ export default function MobileMenu({ menu }: { menu: MenuItem[] }) {
                 )}
               </div>
             ))}
-            
-            {/* Search debajo de la navegación */}
-            <div className="mt-6 px-2">
-              <Search />
-            </div>
           </nav>
         </div>
       )}

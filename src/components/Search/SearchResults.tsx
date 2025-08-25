@@ -60,65 +60,75 @@ export default function SearchResults({
       {results.map((result, index) => (
         <div
           key={`${result.codigo_interno}-${index}`}
-          className="flex items-center gap-3 p-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+          className="p-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 transition-colors"
         >
-          {/* Imagen del producto */}
-          <div className="w-12 h-12 flex-shrink-0">
-            {result.foto1_url ? (
-              <CldImage
-                src={result.foto1_url}
-                alt={result.item}
-                width={48}
-                height={48}
-                className="w-full h-full object-cover rounded-lg cursor-pointer"
-                onClick={(e) => handleItemClick(result, e)}
-              />
-            ) : (
-              <img
-                src="/not-image.png"
-                alt="Sin imagen"
-                className="w-full h-full object-cover rounded-lg cursor-pointer"
-                onClick={(e) => handleItemClick(result, e)}
-              />
-            )}
-          </div>
-
-          {/* Información del producto */}
-          <div className="flex-1 min-w-0">
-            <button
-              onClick={(e) => handleItemClick(result, e)}
-              className="text-left w-full hover:bg-transparent"
-              type="button"
-            >
-              <h3 className="font-medium text-gray-900 truncate hover:text-orange-600 transition-colors">
-                {result.item}
-              </h3>
-              <p className="text-sm text-gray-500">
-                Modelo: {result.modelo}
-              </p>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="text-sm font-semibold text-orange-600">
-                  ${result.precio_venta.toLocaleString()}
-                </span>
-                <span className="text-xs text-green-600">
-                  Stock: {result.stock_real}
-                </span>
+          {/* Layout responsive: stack en móvil, horizontal en desktop */}
+          <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+            
+            {/* Contenido principal: imagen + información */}
+            <div className="flex items-start gap-3 flex-1 min-w-0">
+              {/* Imagen del producto */}
+              <div className="w-12 h-12 flex-shrink-0">
+                {result.foto1_url ? (
+                  <CldImage
+                    src={result.foto1_url}
+                    alt={result.item}
+                    width={48}
+                    height={48}
+                    className="w-full h-full object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={(e) => handleItemClick(result, e)}
+                  />
+                ) : (
+                  <img
+                    src="/not-image.png"
+                    alt="Sin imagen"
+                    className="w-full h-full object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={(e) => handleItemClick(result, e)}
+                  />
+                )}
               </div>
-            </button>
-          </div>
 
-          {/* SearchQuantityButton */}
-          <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-            <SearchQuantityButton
-              itemId={result.item_id}
-              codigoInterno={result.codigo_interno}
-              itemName={result.item}
-              modelo={result.modelo}
-              maxStock={result.stock_real}
-              precio={result.precio_venta}
-              onAddToCart={onAddToCart}
-              className="scale-90"
-            />
+              {/* Información del producto */}
+              <div className="flex-1 min-w-0">
+                <button
+                  onClick={(e) => handleItemClick(result, e)}
+                  className="text-left w-full hover:bg-transparent group"
+                  type="button"
+                >
+                  <h3 className="font-medium text-gray-900 truncate group-hover:text-orange-600 transition-colors">
+                    {result.item}
+                  </h3>
+                  <p className="text-sm text-gray-500 truncate">
+                    Modelo: {result.modelo}
+                  </p>
+                  <div className="flex flex-wrap items-center gap-2 mt-1">
+                    <span className="text-sm font-semibold text-orange-600">
+                      ${result.precio_venta.toLocaleString()}
+                    </span>
+                    <span className="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
+                      Stock: {result.stock_real}
+                    </span>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* SearchQuantityButton - En su propia columna */}
+            <div 
+              className="flex justify-center sm:justify-end items-start" 
+              onClick={(e) => e.stopPropagation()}
+            >
+              <SearchQuantityButton
+                itemId={result.item_id}
+                codigoInterno={result.codigo_interno}
+                itemName={result.item}
+                modelo={result.modelo}
+                maxStock={result.stock_real}
+                precio={result.precio_venta}
+                onAddToCart={onAddToCart}
+                className="w-full sm:w-auto"
+              />
+            </div>
           </div>
         </div>
       ))}

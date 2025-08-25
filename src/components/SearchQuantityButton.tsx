@@ -99,8 +99,9 @@ export default function SearchQuantityButton({
   };
 
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
-      <div className="flex-shrink-0">
+    <div className={`flex flex-col gap-2 min-w-[100px] ${className}`}>
+      {/* Quantity Button */}
+      <div className="flex justify-center">
         <QuantityButton
           value={quantity}
           onAdd={handleAdd}
@@ -112,19 +113,27 @@ export default function SearchQuantityButton({
         />
       </div>
 
+      {/* Botón Agregar - aparece cuando quantity > 0 */}
       {quantity > 0 && (
-        <button
-          onClick={handleAddToCart}
-          disabled={isAdding || maxStock <= 0}
-          className="flex items-center gap-1 bg-orange-500 hover:bg-orange-600 text-white px-2 py-1 rounded text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {isAdding ? (
-            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
-          ) : (
-            <ShoppingCartIcon className="w-3 h-3" />
-          )}
-          {isAdding ? 'Agregando...' : 'Agregar'}
-        </button>
+        <div className="flex justify-center">
+          <button
+            onClick={handleAddToCart}
+            disabled={isAdding || maxStock <= 0}
+            className="flex items-center justify-center gap-1.5 bg-orange-500 hover:bg-orange-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md min-w-[80px]"
+          >
+            {isAdding ? (
+              <>
+                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                <span>Agregando...</span>
+              </>
+            ) : (
+              <>
+                <ShoppingCartIcon className="w-3.5 h-3.5" />
+                <span>Agregar</span>
+              </>
+            )}
+          </button>
+        </div>
       )}
     </div>
   );
