@@ -1,23 +1,13 @@
-"use client"
-
-import AdminNavBar from '@/components/AdminNavBar/AdminNavBar';
+// filepath: c:\Users\joaqu\Desktop\EcommerceCPF\src\app\admin\layout.tsx
+import AdminNavBar from "@/components/AdminNavBar/AdminNavBar";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-screen overflow-hidden">
-      {/* Sidebar fijo - siempre visible */}
-      <div className="hidden md:block">
-        <AdminNavBar />
-      </div>
-      
-      {/* Navbar mobile solo en mobile */}
-      <div className="block md:hidden w-full">
-        <AdminNavBar />
-      </div>
-      
-      {/* Contenido principal con scroll independiente */}
-      <main className="flex-1 overflow-y-auto bg-neutral-50">
-        <div className="p-8">
+    <div className="flex min-h-screen bg-gray-50">
+      <AdminNavBar />
+      {/* Main content con padding-top para móvil */}
+      <main className="flex-1 md:ml-64 pt-16 md:pt-0">
+        <div className="p-4 md:p-6 lg:p-8">
           {children}
         </div>
       </main>

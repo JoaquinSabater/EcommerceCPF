@@ -18,12 +18,13 @@ export default function AdminNavBar() {
 
   return (
     <>
-      {/* Botón menú mobile solo visible en mobile */}
-      <div className="block md:hidden p-2">
+      {/* Solo mostrar AdminMobileMenu en móvil */}
+      <div className="md:hidden">
         <AdminMobileMenu />
       </div>
+      
       {/* Sidebar solo visible en desktop */}
-      <aside className="hidden md:flex h-screen w-64 bg-white flex-col justify-between">
+      <aside className="hidden md:flex fixed left-0 top-0 h-screen w-64 bg-white flex-col justify-between shadow-lg z-40">
         <div>
           {/* Header con logo y usuario */}
           <div className="px-6 py-6 border-b border-gray-200">

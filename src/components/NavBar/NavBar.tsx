@@ -11,10 +11,10 @@ import { ChevronRightIcon, UserCircleIcon } from '@heroicons/react/24/solid';
 import Search from '../Search/Search';
 import { SearchSkeleton } from '../Search/Search';
 import { useAuth } from '@/hooks/useAuth';
-import { User } from '@/types/types'; // ← Si necesitas usar el tipo directamente
+import { User } from '@/types/types';
 
 export default function NavBar() {
-  const { user, logout }: { user: User | null, logout: () => void } = useAuth(); // ← Tipado explícito
+  const { user, logout }: { user: User | null, logout: () => void } = useAuth();
   const [cartOpen, setCartOpen] = useState(false);
   const { cart } = useCart();
   const pathname = usePathname();
@@ -50,7 +50,7 @@ export default function NavBar() {
   // Si estamos en /carrito, solo mostrar logo y botón "Seguir comprando" centrado y estilizado
   if (pathname === '/public/carrito') {
     return (
-      <nav className="flex items-center justify-between p-4 lg:px-6 bg-white relative">
+      <nav className="flex items-center justify-between p-4 lg:px-6 bg-white relative z-[9999] shadow-sm">
         {/* Logo a la izquierda */}
         <div>
           <Link href="/" className="flex items-center">
@@ -77,7 +77,7 @@ export default function NavBar() {
   }
 
   return (
-    <nav className="flex items-center justify-between p-4 lg:px-6 bg-white relative">
+    <nav className="sticky top-0 flex items-center justify-between p-4 lg:px-6 bg-white z-[9999] shadow-sm border-b border-gray-100">
       {/* Mobile Menu */}
       <div className="block md:hidden">
         <Suspense fallback={null}>
@@ -106,7 +106,7 @@ export default function NavBar() {
                 {item.title}
               </Link>
               {item.submenu && (
-                <div className="absolute left-1/2 top-full hidden w-max -translate-x-1/2 group-hover:flex flex-col rounded-md border border-neutral-200 bg-white py-1 text-sm shadow-md z-50">
+                <div className="absolute left-1/2 top-full hidden w-max -translate-x-1/2 group-hover:flex flex-col rounded-md border border-neutral-200 bg-white py-1 text-sm shadow-lg z-[10000]">
                   {item.submenu.map((subItem) => (
                     <Link
                       key={subItem.title}
@@ -156,5 +156,4 @@ export default function NavBar() {
       <CartSidebar isOpen={cartOpen} onClose={() => setCartOpen(false)} />
     </nav>
   );
-
 }
