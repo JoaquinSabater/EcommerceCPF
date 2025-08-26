@@ -1,11 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination, Autoplay } from 'swiper/modules';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
-import CategoriaCard from '@/components/Products/CategoriaCard';
+import ProductoDestacadoCard from './ProductoDestacadoCard';
 import { categorias } from '@/types/types';
 
 // Import Swiper styles
@@ -17,7 +16,6 @@ export default function ProductosDestacados() {
   const [productosDestacados, setProductosDestacados] = useState<categorias[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
 
   useEffect(() => {
     const fetchProductosDestacados = async () => {
@@ -41,12 +39,6 @@ export default function ProductosDestacados() {
 
     fetchProductosDestacados();
   }, []);
-
-  // Función para manejar el click en una card y navegar al detalle
-  const handleCardClick = (producto: categorias) => {
-    console.log('Navegando al detalle del producto:', producto.id);
-    router.push(`/detalle-producto/${producto.id}`);
-  };
 
   if (loading) {
     return (
@@ -160,9 +152,9 @@ export default function ProductosDestacados() {
         >
           {productosDestacados.map((producto) => (
             <SwiperSlide key={producto.id}>
-              <CategoriaCard 
+              <ProductoDestacadoCard 
                 categoria={producto} 
-                onClick={() => handleCardClick(producto)}
+                onClick={() => {}} // ✅ Función vacía, no necesitamos navegación
               />
             </SwiperSlide>
           ))}

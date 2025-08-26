@@ -1,0 +1,175 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { categorias } from "@/types/types";
+import { CldImage } from 'next-cloudinary';
+import { createPortal } from 'react-dom'; // ✅ Importar createPortal
+import DetalleProductoModal from "@/components/Products/DetalleProductoModal";
+
+interface ProductoDestacadoCardProps {
+  categoria: categorias;
+  onClick: () => void;
+}
+
+export default function ProductoDestacadoCard({ categoria, onClick }: ProductoDestacadoCardProps) {
+  const [precio, setPrecio] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [imagenPrincipal, setImagenPrincipal] = useState<string>('');
+  const [imageError, setImageError] = useState(false);
+  const [mounted, setMounted] = useState(false); // ✅ Para evitar hidration issues
+
+  // ✅ Para evitar hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      setImageError(false);
+      
+      try {
+        const resPrice = await fetch(`/api/precio?itemId=${categoria.id}`);
+        const dataPrice = await resPrice.json();
+        setPrecio(dataPrice.precio);
+
+        // Buscar la foto_portada específicamente
+        const resDetail = await fetch(`/api/detalle?id=${categoria.id}`);
+        if (resDetail.ok) {
+          const dataDetail = await resDetail.json();
+          
+          console.log('Datos del producto destacado:', dataDetail);
+          
+          // Priorizar foto_portada, si no existe usar foto1_url como fallback
+          if (dataDetail.foto_portada && dataDetail.foto_portada.trim() !== '') {
+            setImagenPrincipal(dataDetail.foto_portada);
+            setImageError(false);
+          } else if (dataDetail.foto1_url && dataDetail.foto1_url.trim() !== '') {
+            setImagenPrincipal(dataDetail.foto1_url);
+            setImageError(false);
+          } else {
+            setImagenPrincipal('');
+            setImageError(true);
+          }
+        } else {
+          console.log('Error en la respuesta del detalle:', resDetail.status);
+          setImagenPrincipal('');
+          setImageError(true);
+        }
+      } catch (error) {
+        console.error("Error al obtener datos del producto destacado:", error);
+        setImagenPrincipal('');
+        setImageError(true);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [categoria.id]);
+
+  const handleVerClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+  };
+
+  // Callback para actualizar la imagen cuando se edite en el modal
+  const handleProductUpdate = (updatedProduct: any) => {
+    console.log('Actualizando producto destacado en card:', updatedProduct);
+    
+    // Priorizar foto_portada en la actualización
+    if (updatedProduct.foto_portada && updatedProduct.foto_portada.trim() !== '') {
+      setImagenPrincipal(updatedProduct.foto_portada);
+      setImageError(false);
+    } else if (updatedProduct.foto1_url && updatedProduct.foto1_url.trim() !== '') {
+      setImagenPrincipal(updatedProduct.foto1_url);
+      setImageError(false);
+    } else {
+      setImagenPrincipal('');
+      setImageError(true);
+    }
+  };
+
+  const handleImageError = () => {
+    console.log('Error al cargar imagen de Cloudinary:', imagenPrincipal);
+    setImageError(true);
+  };
+
+  return (
+    <>
+      <div
+        className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden flex flex-col h-full"
+        tabIndex={0}
+        role="button"
+        aria-label={`Ver detalles de ${categoria.nombre}`}
+      >
+        <div className="relative bg-gradient-to-b from-orange-50 to-white pt-10 px-4 flex justify-center items-center h-48 md:h-56">
+          {imageError || !imagenPrincipal ? (
+            <img
+              src="/not-image.png"
+              alt={categoria.nombre}
+              className="object-contain max-h-40 md:max-h-48 transition-transform duration-300 hover:scale-105"
+              width={160}
+              height={160}
+              onError={() => console.log('Error cargando not-image.png')}
+            />
+          ) : (
+            <CldImage
+              src={imagenPrincipal}
+              alt={categoria.nombre}
+              width={160}
+              height={160}
+              className="object-contain max-h-40 md:max-h-48 transition-transform duration-300 hover:scale-105"
+              onError={handleImageError}
+            />
+          )}
+        </div>
+        
+        <div className="p-5 flex flex-col flex-grow">
+          <h3 className="font-bold text-gray-800 text-lg mb-2 line-clamp-2 min-h-[3.5rem]">{categoria.nombre}</h3>
+          
+          <div className="mt-auto pt-4 flex items-center justify-between">
+            {loading ? (
+              <div className="inline-block h-6 animate-pulse bg-gray-200 rounded w-16"></div>
+            ) : precio ? (
+              <div className="flex flex-col">
+                <span className="text-2xl font-bold text-orange-600">${precio.toLocaleString()}</span>
+                <span className="text-xs text-gray-500">Precio actualizado</span>
+              </div>
+            ) : (
+              <div className="w-16"></div>
+            )}
+            
+            <button
+              className="bg-orange-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-orange-600 transition-colors flex items-center gap-1 shadow-sm hover:shadow"
+              onClick={handleVerClick}
+            >
+              ver +
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ✅ Renderizar el modal usando createPortal para que aparezca fuera del Swiper */}
+      {mounted && modalOpen && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center">
+          <DetalleProductoModal 
+            itemId={categoria.id.toString()}
+            isOpen={modalOpen}
+            onClose={handleCloseModal}
+            onUpdate={handleProductUpdate}
+          />
+        </div>,
+        document.body
+      )}
+    </>
+  );
+}
