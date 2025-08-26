@@ -18,6 +18,7 @@ interface DetalleProducto {
   foto3_url?: string;
   foto4_url?: string;
   foto_portada?: string;
+  destacar?: boolean; // ✅ Agregar este campo
 }
 
 interface EditProductModalProps {
@@ -74,11 +75,21 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
   }, [isOpen, producto]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    const { name, value, type } = e.target;
+    
+    // ✅ Manejar checkbox para destacar
+    if (type === 'checkbox') {
+      const checked = (e.target as HTMLInputElement).checked;
+      setFormData(prev => ({
+        ...prev,
+        [name]: checked
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   const handlePortadaUpload = (result: any) => {
@@ -164,6 +175,7 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
 
       console.log('Datos a enviar al servidor:', {
         item_id: updatedProduct.item_id,
+        destacar: updatedProduct.destacar, // ✅ Log para debug
         foto_portada: updatedProduct.foto_portada,
         foto1_url: updatedProduct.foto1_url
       });
@@ -186,7 +198,7 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
 
       onSave(updatedProduct);
       onClose();
-      alert('Producto actualizado exitosamente');
+      alert(`Producto actualizado exitosamente${updatedProduct.destacar ? ' y marcado como destacado' : ''}`);
     } catch (error) {
       console.error('Error saving product:', error);
       alert(`Error al guardar el producto: ${error instanceof Error ? error.message : 'Error desconocido'}`);
@@ -195,7 +207,6 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
     }
   };
 
-  // ✅ Renderizar foto de portada con key única
   const renderPortadaSlot = () => {
     if (fotoPortada.publicId && !fotoPortada.toDelete) {
       return (
@@ -241,7 +252,7 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
 
     return (
       <CldUploadWidget
-        key={`portada-${producto.item_id}`} // ✅ Key única para portada
+        key={`portada-${producto.item_id}`}
         uploadPreset="cpf_upload"
         options={{ 
           maxFiles: 1,
@@ -272,7 +283,6 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
     );
   };
 
-  // ✅ Renderizar imágenes de galería con keys únicas
   const renderImageSlot = (image: ImageData, index: number) => {
     if (image.publicId && !image.toDelete) {
       return (
@@ -312,7 +322,7 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
 
     return (
       <CldUploadWidget
-        key={`galeria-${producto.item_id}-${index}`} // ✅ Key única para cada slot de galería
+        key={`galeria-${producto.item_id}-${index}`}
         uploadPreset="cpf_upload"
         options={{ 
           maxFiles: 1,
@@ -344,8 +354,8 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black bg-opacity-50" onClick={onClose} />
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black bg-opacity-75" onClick={onClose} />
       
       <div className="relative bg-white rounded-lg shadow-2xl max-w-5xl mx-auto max-h-[95vh] overflow-y-auto w-full">
         <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center z-10">
@@ -356,6 +366,29 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
         </div>
 
         <div className="p-6 space-y-6">
+          {/* ✅ Checkbox para destacar producto */}
+          <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-4">
+            <div className="flex items-center space-x-3">
+              <input
+                type="checkbox"
+                id="destacar"
+                name="destacar"
+                checked={formData.destacar || false}
+                onChange={handleInputChange}
+                className="h-5 w-5 text-yellow-600 focus:ring-yellow-500 border-yellow-300 rounded"
+              />
+              <label htmlFor="destacar" className="flex items-center cursor-pointer">
+                <StarIcon className="w-5 h-5 text-yellow-500 mr-2" />
+                <span className="text-sm font-medium text-gray-900">
+                  Marcar como producto destacado
+                </span>
+              </label>
+            </div>
+            <p className="text-xs text-gray-600 mt-2 ml-8">
+              Los productos destacados aparecen en el carrusel de la página principal
+            </p>
+          </div>
+
           {/* Formulario de campos */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -466,7 +499,7 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
             </div>
           </div>
 
-          {/* ✅ Galería de imágenes con keys únicas */}
+          {/* Galería de imágenes */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-4">
               Galería de imágenes del producto (máximo 4)

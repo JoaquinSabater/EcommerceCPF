@@ -23,23 +23,25 @@ export async function PUT(request: NextRequest) {
       proteccion,
       compatibilidad,
       pegamento,
-      foto_portada, // ✅ Agregar este campo
+      foto_portada,
       foto1_url,
       foto2_url,
       foto3_url,
-      foto4_url
+      foto4_url,
+      destacar // ✅ Agregar este campo
     } = body;
 
     console.log('Datos recibidos para actualizar:', {
       productId: finalProductId,
-      foto_portada, // ✅ Log para debug
+      destacar, // ✅ Log para debug
+      foto_portada,
       foto1_url,
       foto2_url,
       foto3_url,
       foto4_url
     });
 
-    // ✅ Actualizar la consulta SQL para incluir foto_portada
+    // ✅ Actualizar la consulta SQL para incluir destacar
     const [result]: any = await db.query(
       `UPDATE item_detalle 
        SET
@@ -53,7 +55,8 @@ export async function PUT(request: NextRequest) {
          foto1_url = ?,
          foto2_url = ?,
          foto3_url = ?,
-         foto4_url = ?
+         foto4_url = ?,
+         destacar = ?
        WHERE item_id = ?`,
       [
         descripcion || null,
@@ -62,11 +65,12 @@ export async function PUT(request: NextRequest) {
         proteccion || null,
         compatibilidad || null,
         pegamento || null,
-        foto_portada || null, // ✅ Agregar aquí
+        foto_portada || null,
         foto1_url,
         foto2_url || null,
         foto3_url || null,
         foto4_url || null,
+        destacar ? 1 : 0, // ✅ Convertir boolean a tinyint
         finalProductId
       ]
     );
@@ -79,7 +83,7 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    console.log(`✅ Producto actualizado: ID ${finalProductId}, foto_portada: ${foto_portada}`);
+    console.log(`✅ Producto actualizado: ID ${finalProductId}, destacar: ${destacar}, foto_portada: ${foto_portada}`);
 
     return NextResponse.json({ 
       success: true, 
@@ -87,6 +91,7 @@ export async function PUT(request: NextRequest) {
       productId: finalProductId,
       affectedRows: result.affectedRows,
       updatedFields: {
+        destacar,
         foto_portada,
         foto1_url,
         foto2_url,
