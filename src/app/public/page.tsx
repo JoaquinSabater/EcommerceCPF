@@ -10,6 +10,7 @@ import CategoriasGrid from '@/components/home/CategoriasGrid/CategoriasGrid';
 import CategoriasManager from '@/components/home/CategoriasGrid/CategoriasManager';
 import InfoCardSpecial from '@/components/home/InfoCardSpecial/InfoCardSpecial';
 import InfoCardSpecialManager from '@/components/home/InfoCardSpecial/InfoCardSpecialManager';
+import ProductosDestacados from '@/components/home/ProductosDestacados';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function Home() {
@@ -51,6 +52,11 @@ export default function Home() {
         </section>
       )}
 
+      {/* Nueva sección de Productos Destacados */}
+      <section className="bg-white">
+        <ProductosDestacados />
+      </section>
+
       <section className="container mx-auto px-4 py-8">
         <div className="relative">
           {isAdmin && (
@@ -81,7 +87,7 @@ export default function Home() {
         </section>
       )}
 
-            <section className="container mx-auto px-4 py-8">
+      <section className="container mx-auto px-4 py-8">
         <div className="relative">
           {isAdmin && (
             <button
