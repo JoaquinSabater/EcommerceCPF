@@ -18,7 +18,7 @@ interface DetalleProducto {
   foto3_url?: string;
   foto4_url?: string;
   foto_portada?: string;
-  destacar?: boolean; // ✅ Agregar este campo
+  destacar?: boolean;
 }
 
 interface EditProductModalProps {
@@ -35,6 +35,14 @@ interface ImageData {
   toDelete: boolean;
 }
 
+// ✅ Función helper para sanitizar valores null/undefined
+const sanitizeValue = (value: any): string => {
+  if (value === null || value === undefined) {
+    return '';
+  }
+  return String(value);
+};
+
 export default function EditProductModal({ producto, isOpen, onClose, onSave }: EditProductModalProps) {
   const [formData, setFormData] = useState<DetalleProducto>(producto);
   const [images, setImages] = useState<ImageData[]>([]);
@@ -43,7 +51,24 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
 
   useEffect(() => {
     if (isOpen && producto) {
-      setFormData(producto);
+      // ✅ Sanitizar todos los valores del producto
+      const sanitizedProducto: DetalleProducto = {
+        ...producto,
+        descripcion: sanitizeValue(producto.descripcion),
+        material: sanitizeValue(producto.material),
+        espesor: sanitizeValue(producto.espesor),
+        proteccion: sanitizeValue(producto.proteccion),
+        compatibilidad: sanitizeValue(producto.compatibilidad),
+        pegamento: sanitizeValue(producto.pegamento),
+        foto1_url: sanitizeValue(producto.foto1_url),
+        foto2_url: sanitizeValue(producto.foto2_url),
+        foto3_url: sanitizeValue(producto.foto3_url),
+        foto4_url: sanitizeValue(producto.foto4_url),
+        foto_portada: sanitizeValue(producto.foto_portada),
+        destacar: Boolean(producto.destacar) // ✅ Asegurar que sea boolean
+      };
+      
+      setFormData(sanitizedProducto);
       
       const extractPublicId = (url: string) => {
         if (!url) return '';
@@ -57,17 +82,17 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
       };
 
       setFotoPortada({
-        publicId: extractPublicId(producto.foto_portada || ''),
-        url: producto.foto_portada || '',
+        publicId: extractPublicId(sanitizedProducto.foto_portada || ''),
+        url: sanitizedProducto.foto_portada || '',
         isNew: false,
         toDelete: false
       });
 
       const initialImages: ImageData[] = [
-        { publicId: extractPublicId(producto.foto1_url), url: producto.foto1_url, isNew: false, toDelete: false },
-        { publicId: extractPublicId(producto.foto2_url || ''), url: producto.foto2_url || '', isNew: false, toDelete: false },
-        { publicId: extractPublicId(producto.foto3_url || ''), url: producto.foto3_url || '', isNew: false, toDelete: false },
-        { publicId: extractPublicId(producto.foto4_url || ''), url: producto.foto4_url || '', isNew: false, toDelete: false },
+        { publicId: extractPublicId(sanitizedProducto.foto1_url), url: sanitizedProducto.foto1_url, isNew: false, toDelete: false },
+        { publicId: extractPublicId(sanitizedProducto.foto2_url || ''), url: sanitizedProducto.foto2_url || '', isNew: false, toDelete: false },
+        { publicId: extractPublicId(sanitizedProducto.foto3_url || ''), url: sanitizedProducto.foto3_url || '', isNew: false, toDelete: false },
+        { publicId: extractPublicId(sanitizedProducto.foto4_url || ''), url: sanitizedProducto.foto4_url || '', isNew: false, toDelete: false },
       ];
       
       setImages(initialImages);
@@ -77,7 +102,6 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     
-    // ✅ Manejar checkbox para destacar
     if (type === 'checkbox') {
       const checked = (e.target as HTMLInputElement).checked;
       setFormData(prev => ({
@@ -87,7 +111,7 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
     } else {
       setFormData(prev => ({
         ...prev,
-        [name]: value
+        [name]: sanitizeValue(value) 
       }));
     }
   };
@@ -175,7 +199,7 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
 
       console.log('Datos a enviar al servidor:', {
         item_id: updatedProduct.item_id,
-        destacar: updatedProduct.destacar, // ✅ Log para debug
+        destacar: updatedProduct.destacar,
         foto_portada: updatedProduct.foto_portada,
         foto1_url: updatedProduct.foto1_url
       });
@@ -366,7 +390,7 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
         </div>
 
         <div className="p-6 space-y-6">
-          {/* ✅ Checkbox para destacar producto */}
+          {/* Checkbox para destacar producto */}
           <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-4">
             <div className="flex items-center space-x-3">
               <input
@@ -399,7 +423,7 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
               <input
                 type="text"
                 name="item_nombre"
-                value={formData.item_nombre}
+                value={sanitizeValue(formData.item_nombre)} // ✅ Sanitizar aquí también
                 readOnly={true}
                 className="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-gray-600 cursor-not-allowed"
                 title="Este campo no se puede modificar"
@@ -413,7 +437,7 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
               <input
                 type="text"
                 name="material"
-                value={formData.material}
+                value={sanitizeValue(formData.material)} // ✅ Sanitizar
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
               />
@@ -426,7 +450,7 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
               <input
                 type="text"
                 name="espesor"
-                value={formData.espesor}
+                value={sanitizeValue(formData.espesor)} // ✅ Sanitizar
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
               />
@@ -439,7 +463,7 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
               <input
                 type="text"
                 name="proteccion"
-                value={formData.proteccion}
+                value={sanitizeValue(formData.proteccion)} // ✅ Sanitizar
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
               />
@@ -452,7 +476,7 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
               <input
                 type="text"
                 name="compatibilidad"
-                value={formData.compatibilidad}
+                value={sanitizeValue(formData.compatibilidad)} // ✅ Sanitizar
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
               />
@@ -465,7 +489,7 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
               <input
                 type="text"
                 name="pegamento"
-                value={formData.pegamento}
+                value={sanitizeValue(formData.pegamento)} // ✅ Sanitizar
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
               />
@@ -478,7 +502,7 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
             </label>
             <textarea
               name="descripcion"
-              value={formData.descripcion}
+              value={sanitizeValue(formData.descripcion)} // ✅ Sanitizar
               onChange={handleInputChange}
               rows={4}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
