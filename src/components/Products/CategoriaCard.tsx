@@ -102,24 +102,24 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
         role="button"
         aria-label={`Ver detalles de ${categoria.nombre}`}
       >
-        {/* ✅ Contenedor de imagen mejorado - sin degradado */}
-        <div className="relative bg-white p-6 flex justify-center items-center h-56 md:h-64 border-b border-gray-100">
+        {/* ✅ Imagen aún más grande con padding mínimo */}
+        <div className="relative bg-white p-2 flex justify-center items-center h-72 md:h-80 border-b border-gray-100">
           {imageError || !imagenPrincipal ? (
             <img
               src="/not-image.png"
               alt={categoria.nombre}
-              className="object-contain w-full h-full max-w-48 max-h-48 transition-transform duration-300 hover:scale-105"
-              width={200}
-              height={200}
+              className="object-contain w-full h-full transition-transform duration-300 hover:scale-105"
+              width={400}
+              height={400}
               onError={() => console.log('Error cargando not-image.png')}
             />
           ) : (
             <CldImage
               src={imagenPrincipal}
               alt={categoria.nombre}
-              width={200}
-              height={200}
-              className="object-contain w-full h-full max-w-48 max-h-48 transition-transform duration-300 hover:scale-105"
+              width={600}
+              height={600}
+              className="object-contain w-full h-full transition-transform duration-300 hover:scale-105"
               onError={handleImageError}
               crop="fit"
               quality="auto"
@@ -128,15 +128,16 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
           )}
         </div>
         
-        <div className="p-5 flex flex-col flex-grow">
-          <h3 className="font-bold text-gray-800 text-lg mb-2 line-clamp-2 min-h-[3.5rem]">{categoria.nombre}</h3>
+        {/* ✅ Contenido compacto */}
+        <div className="p-4 flex flex-col flex-grow">
+          <h3 className="font-bold text-gray-800 text-base mb-2 line-clamp-2 min-h-[2.5rem]">{categoria.nombre}</h3>
           
-          <div className="mt-auto pt-4 flex items-center justify-between">
+          <div className="mt-auto flex items-center justify-between">
             {loading ? (
               <div className="inline-block h-6 animate-pulse bg-gray-200 rounded w-16"></div>
             ) : precio ? (
               <div className="flex flex-col">
-                <span className="text-2xl font-bold text-orange-600">${precio.toLocaleString()}</span>
+                <span className="text-xl font-bold text-orange-600">${precio.toLocaleString()}</span>
                 <span className="text-xs text-gray-500">Precio actualizado</span>
               </div>
             ) : (
