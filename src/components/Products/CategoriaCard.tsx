@@ -102,27 +102,30 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
         role="button"
         aria-label={`Ver detalles de ${categoria.nombre}`}
       >
-        <div className="relative bg-gradient-to-b from-orange-50 to-white pt-10 px-4 flex justify-center items-center h-48 md:h-56">
+        {/* ✅ Contenedor de imagen mejorado - sin degradado */}
+        <div className="relative bg-white p-6 flex justify-center items-center h-56 md:h-64 border-b border-gray-100">
           {imageError || !imagenPrincipal ? (
             <img
               src="/not-image.png"
               alt={categoria.nombre}
-              className="object-contain max-h-40 md:max-h-48 transition-transform duration-300 hover:scale-105"
-              width={160}
-              height={160}
+              className="object-contain w-full h-full max-w-48 max-h-48 transition-transform duration-300 hover:scale-105"
+              width={200}
+              height={200}
               onError={() => console.log('Error cargando not-image.png')}
             />
           ) : (
             <CldImage
               src={imagenPrincipal}
               alt={categoria.nombre}
-              width={160}
-              height={160}
-              className="object-contain max-h-40 md:max-h-48 transition-transform duration-300 hover:scale-105"
+              width={200}
+              height={200}
+              className="object-contain w-full h-full max-w-48 max-h-48 transition-transform duration-300 hover:scale-105"
               onError={handleImageError}
+              crop="fit"
+              quality="auto"
+              format="auto"
             />
           )}
-      
         </div>
         
         <div className="p-5 flex flex-col flex-grow">
