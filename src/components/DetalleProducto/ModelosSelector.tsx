@@ -29,6 +29,14 @@ export default function ModelosSelector({ subcategoriaId }: { subcategoriaId: nu
   const { addToCart } = useCart();
   const { isAdmin } = useAuth();
 
+  // ✅ Función helper para mostrar marca + modelo
+  const formatModeloDisplay = (articulo: Articulo) => {
+    if (articulo.marca_nombre) {
+      return `${articulo.marca_nombre} ${articulo.modelo}`;
+    }
+    return articulo.modelo;
+  };
+
   useEffect(() => {
     // Cargar modelos de la subcategoría (consulta existente)
     fetch(`/api/articulosPorSubcategoria?subcategoriaId=${subcategoriaId}`)
@@ -47,8 +55,10 @@ export default function ModelosSelector({ subcategoriaId }: { subcategoriaId: nu
     (m) => !seleccionados.some((s) => s.articulo.modelo === m.modelo)
   );
 
+  // ✅ Buscar tanto en modelo como en marca
   const modelosFiltrados = modelosDisponibles.filter(modelo =>
-    modelo.modelo.toLowerCase().includes(searchTerm.toLowerCase())
+    modelo.modelo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (modelo.marca_nombre && modelo.marca_nombre.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const handleAddModelo = () => {
@@ -207,7 +217,7 @@ export default function ModelosSelector({ subcategoriaId }: { subcategoriaId: nu
                     disabled={tempRecomendados.includes(modelo.modelo)}
                     className="px-2 py-1 text-xs bg-gray-100 border border-gray-300 text-gray-700 rounded hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    + {modelo.modelo}
+                    + {formatModeloDisplay(modelo)}
                   </button>
                 ))}
               </div>
@@ -231,14 +241,14 @@ export default function ModelosSelector({ subcategoriaId }: { subcategoriaId: nu
       </div>
 
       {/* Buscador */}
-      <div className="mb-4">
+      <div className="mb-4 relative">
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
           </div>
           <input
             type="text"
-            placeholder="Buscar modelo..."
+            placeholder="Buscar por modelo o marca..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             onFocus={() => setIsSearchFocused(true)}
@@ -254,34 +264,46 @@ export default function ModelosSelector({ subcategoriaId }: { subcategoriaId: nu
           )}
         </div>
 
-        {/* Resultados de búsqueda */}
+        {/* ✅ Resultados de búsqueda - corregido posicionamiento */}
         {isSearchFocused && searchTerm && (
-          <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto">
+          <div className="absolute z-20 bottom-full left-0 right-0 mb-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
             {modelosFiltrados.length > 0 ? (
-              <div className="py-1">
-                {modelosFiltrados.slice(0, 10).map((modelo) => (
-                  <button
-                    key={modelo.modelo}
-                    onClick={() => handleSearchSelect(modelo)}
-                    className="w-full text-left px-4 py-2 hover:bg-orange-50 hover:text-orange-900 transition-colors"
-                  >
-                    <span className="block truncate">{modelo.modelo}</span>
-                  </button>
-                ))}
-                {modelosFiltrados.length > 10 && (
-                  <div className="px-4 py-2 text-sm text-gray-500 border-t">
-                    Y {modelosFiltrados.length - 10} modelos más...
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-1 py-1">
+                {chunkModelos(modelosFiltrados.slice(0, 20)).map((chunk, chunkIndex) => (
+                  <div key={chunkIndex} className="flex flex-col">
+                    {chunk.map((modelo) => (
+                      <button
+                        key={modelo.modelo}
+                        onClick={() => handleSearchSelect(modelo)}
+                        className="cursor-pointer select-none relative py-2 px-4 hover:bg-orange-100 hover:text-orange-900 transition-colors text-left"
+                      >
+                        <div className="flex flex-col">
+                          <span className="font-medium text-gray-900">
+                            {formatModeloDisplay(modelo)}
+                          </span>
+                          <span className="text-sm text-gray-500">
+                            {modelo.modelo}
+                          </span>
+                        </div>
+                      </button>
+                    ))}
                   </div>
-                )}
+                ))}
               </div>
             ) : (
               <div className="px-4 py-2 text-gray-500 text-sm italic">
                 No se encontraron modelos
               </div>
             )}
+            {modelosFiltrados.length > 20 && (
+              <div className="px-4 py-2 text-sm text-gray-500 border-t">
+                Y {modelosFiltrados.length - 20} modelos más...
+              </div>
+            )}
           </div>
         )}
       </div>
+
 
       {/* Selector de modelo y cantidad */}
       <div className="flex flex-col md:flex-row gap-3 mb-4">
@@ -289,7 +311,7 @@ export default function ModelosSelector({ subcategoriaId }: { subcategoriaId: nu
           <div className="relative flex-1">
             <Listbox.Button className="w-full flex items-center justify-between border border-gray-300 px-4 py-2 rounded bg-white text-left hover:border-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-200">
               <span className="block truncate">
-                {modeloActual ? modeloActual.modelo : "Elegí un modelo"}
+                {modeloActual ? formatModeloDisplay(modeloActual) : "Elegí un modelo"}
               </span>
               <span className="pointer-events-none">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
@@ -311,7 +333,14 @@ export default function ModelosSelector({ subcategoriaId }: { subcategoriaId: nu
                             ${active ? 'bg-orange-100 text-orange-900' : 'text-gray-900'}
                           `}
                         >
-                          {m.modelo}
+                          <div className="flex flex-col">
+                            <span className="font-medium">
+                              {formatModeloDisplay(m)}
+                            </span>
+                            <span className="text-sm text-gray-500">
+                              {m.modelo}
+                            </span>
+                          </div>
                         </Listbox.Option>
                       ))}
                     </div>
@@ -356,10 +385,16 @@ export default function ModelosSelector({ subcategoriaId }: { subcategoriaId: nu
           <div className={`flex flex-col gap-2 ${seleccionados.length > 3 ? "max-h-48 overflow-y-auto pr-1" : ""}`}>
             {seleccionados.map((s) => (
               <div key={s.articulo.modelo} className="flex items-center gap-3 border border-gray-200 rounded px-3 py-2 bg-gray-50 hover:bg-gray-100">
-                <span className="font-medium text-gray-800">{s.articulo.modelo}</span>
-                <span className="text-gray-600 text-sm">Cantidad: {s.cantidad}</span>
+                <div className="flex-1">
+                  <span className="font-medium text-gray-800">
+                    {formatModeloDisplay(s.articulo)}
+                  </span>
+                  <span className="text-gray-600 text-sm ml-2">
+                    Cantidad: {s.cantidad}
+                  </span>
+                </div>
                 <button
-                  className="ml-auto text-red-500 hover:text-red-700 hover:underline text-sm font-medium"
+                  className="text-red-500 hover:text-red-700 hover:underline text-sm font-medium"
                   onClick={() => handleRemoveSeleccionado(s.articulo.modelo)}
                 >
                   Quitar
@@ -379,7 +414,6 @@ export default function ModelosSelector({ subcategoriaId }: { subcategoriaId: nu
         {seleccionados.length > 0 ? `Añadir ${seleccionados.length} modelo(s) al carrito` : 'Añadir al carrito'}
       </button>
 
-      {/* Overlay para cerrar búsqueda al hacer clic fuera */}
       {isSearchFocused && searchTerm && (
         <div 
           className="fixed inset-0 z-10" 

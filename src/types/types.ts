@@ -4,17 +4,19 @@ export type Item = {
   father: string;
 };
 
-export type Articulo = {
+export interface Articulo {
   codigo_interno: string;
   item_id: number;
   marca_id: number;
   modelo: string;
-  code: string | null;
+  code: string;
   precio_venta: number;
   ubicacion: string;
   stock_actual: number;
-  item_nombre: string;
-};
+  item_nombre?: string;
+  marca_nombre?: string; // ✅ Nueva propiedad
+  cantidad?: number;
+}
 
 export type categorias = {
   id: number;

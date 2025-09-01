@@ -6,9 +6,11 @@ export async function getArticulosPorSubcategoria(subcategoriaId: number): Promi
   const [rows]: any = await db.query(
     `
     SELECT a.codigo_interno, a.item_id, a.marca_id, a.modelo, a.code, a.precio_venta, a.ubicacion, a.stock_actual,
-          i.nombre AS item_nombre
+          i.nombre AS item_nombre,
+          m.nombre AS marca_nombre
     FROM articulos a
     JOIN items i ON a.item_id = i.id
+    LEFT JOIN marcas m ON a.marca_id = m.id
     WHERE a.item_id = ? AND a.ubicacion <> 'SIN STOCK'
     `,
     [subcategoriaId]
