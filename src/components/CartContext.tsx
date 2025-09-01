@@ -16,7 +16,7 @@ type CartContextType = {
   removeFromCart: (codigo_interno: string) => void;
   changeQuantity: (codigo_interno: string, delta: number) => void;
   setItemQuantity: (codigo_interno: string, cantidad: number, articulo?: Articulo) => void;
-  clearCart: () => void; // Nueva función
+  clearCart: () => void;
 };
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -51,7 +51,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         {
           codigo_interno: articulo.codigo_interno,
           modelo: articulo.modelo,
-          item_nombre: articulo.item_nombre, 
+          item_nombre: articulo.item_nombre || nombre || 'Sin nombre', // ✅ Fallback para evitar undefined
           cantidad: cantidad,
           precio_venta: Number(articulo.precio_venta) || 0,
         },
@@ -102,7 +102,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           {
             codigo_interno: articulo.codigo_interno,
             modelo: articulo.modelo,
-            item_nombre: articulo.item_nombre,
+            item_nombre: articulo.item_nombre || 'Sin nombre', // ✅ Fallback aquí también
             cantidad,
             precio_venta: articulo.precio_venta,
           },
