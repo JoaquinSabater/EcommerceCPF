@@ -1,3 +1,4 @@
+// filepath: c:\Users\joaqu\Desktop\EcommerceCPF\src\components\DetalleProducto\DetalleDesktop.tsx
 "use client";
 
 import { CldImage } from 'next-cloudinary';
@@ -8,7 +9,7 @@ interface ProductoFormateado {
   imagen: string;
   nombre: string;
   descripcion: string;
-  precio: number;
+  precio: number; // ✅ Ya viene en pesos desde el modal padre
   caracteristicas: any[];
   imagenes?: string[];
 }
@@ -18,10 +19,9 @@ interface DetalleDesktopProps {
 }
 
 export default function DetalleDesktop({ producto }: DetalleDesktopProps) {
-  // Crear array de imágenes válidas
   const todasLasImagenes = [
-    producto.imagen, // foto_portada o imagen principal
-    ...(producto.imagenes || []) // fotos de galería
+    producto.imagen,
+    ...(producto.imagenes || [])
   ].filter(img => img && img.trim() !== '' && img !== 'not-image');
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -45,13 +45,15 @@ export default function DetalleDesktop({ producto }: DetalleDesktopProps) {
   return (
     <div className="rounded-lg bg-white shadow-sm">
       <div className="flex w-full items-start p-6">
-        {/* Información del producto - Lado izquierdo */}
         <div className="flex-1 flex flex-col justify-start pr-8">
           <div className="mb-2 text-xs text-gray-500">Vidrio templado</div>
           <div className="font-bold text-3xl mb-2">{producto.nombre}</div>
           <div className="text-gray-700 mb-4 text-lg">{producto.descripcion}</div>
           <div className="flex items-center gap-2 mb-4">
-            <div className="text-2xl font-semibold text-orange-600">${producto.precio.toLocaleString()}</div>
+            {/* ✅ Mostrar precio en pesos */}
+            <div className="text-2xl font-semibold text-orange-600">
+              ${producto.precio.toLocaleString()} <span className="text-lg font-normal">ARS</span>
+            </div>
             {producto.precio > 0 && (
               <div className="text-sm bg-orange-100 text-orange-800 px-2 py-0.5 rounded-full">
                 Precio actualizado
@@ -73,10 +75,8 @@ export default function DetalleDesktop({ producto }: DetalleDesktopProps) {
           </div>
         </div>
 
-        {/* Carousel de imágenes - Lado derecho */}
         <div className="flex-1">
           <div className="relative">
-            {/* ✅ Sin fondo gris - imagen flotante */}
             <div className="flex items-center justify-center rounded-lg overflow-hidden">
               {todasLasImagenes.length > 0 ? (
                 <div className="relative w-full h-[500px] flex items-center justify-center">
@@ -88,7 +88,6 @@ export default function DetalleDesktop({ producto }: DetalleDesktopProps) {
                     className="object-contain max-h-full w-auto rounded-lg"
                   />
                   
-                  {/* Botones de navegación - Casi transparentes */}
                   {todasLasImagenes.length > 1 && (
                     <>
                       <button
@@ -107,7 +106,6 @@ export default function DetalleDesktop({ producto }: DetalleDesktopProps) {
                     </>
                   )}
                   
-                  {/* ✅ Contador naranja sin fondo negro */}
                   {todasLasImagenes.length > 1 && (
                     <div className="absolute top-3 right-3 text-orange-600 text-sm font-bold">
                       {currentImageIndex + 1} / {todasLasImagenes.length}
@@ -115,7 +113,6 @@ export default function DetalleDesktop({ producto }: DetalleDesktopProps) {
                   )}
                 </div>
               ) : (
-                // Imagen placeholder
                 <div className="w-full h-[500px] flex items-center justify-center">
                   <img
                     src="/not-image.png"
@@ -126,7 +123,6 @@ export default function DetalleDesktop({ producto }: DetalleDesktopProps) {
               )}
             </div>
             
-            {/* Puntos indicadores */}
             {todasLasImagenes.length > 1 && (
               <div className="flex justify-center gap-2 mt-4">
                 {todasLasImagenes.map((_, index) => (

@@ -64,9 +64,16 @@ export async function getCategorias(subcategoriaId: number): Promise<categorias[
 }
 
 export async function getDolar(): Promise<number> {
-  const dolar = process.env.DOLAR;
-  return dolar ? parseFloat(dolar) : 1;
+  const [rows]: any = await db.query(
+    `SELECT valor 
+     FROM cotizaciones 
+     ORDER BY fecha_creacion DESC 
+     LIMIT 1`
+  );
+
+  return parseInt(rows[0].valor);
 }
+
 
 // Interfaces para pedidos preliminares
 export interface PedidoPreliminar {

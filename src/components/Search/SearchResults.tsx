@@ -10,9 +10,12 @@ interface SearchResult {
   item: string;
   codigo_interno: string;
   modelo: string;
+  marca_nombre?: string; // ✅ Nueva propiedad
   precio_venta: number;
   stock_real: number;
   foto1_url?: string;
+  foto_portada?: string;
+  marca_modelo_completo?: string; // ✅ Nueva propiedad
 }
 
 interface SearchResultsProps {
@@ -28,6 +31,19 @@ export default function SearchResults({
   onItemClick, 
   onAddToCart 
 }: SearchResultsProps) {
+
+  // ✅ Función para formatear el display del modelo
+  const formatModeloDisplay = (result: SearchResult) => {
+    if (result.marca_nombre) {
+      return `${result.marca_nombre} ${result.modelo}`;
+    }
+    return result.modelo;
+  };
+
+  // ✅ Función para obtener la imagen prioritaria
+  const getImageSrc = (result: SearchResult) => {
+    return result.foto_portada || result.foto1_url;
+  };
 
   const handleItemClick = (result: SearchResult, event?: React.MouseEvent) => {
     // Prevenir que el evento se propague
@@ -69,9 +85,9 @@ export default function SearchResults({
             <div className="flex items-start gap-3 flex-1 min-w-0">
               {/* Imagen del producto */}
               <div className="w-12 h-12 flex-shrink-0">
-                {result.foto1_url ? (
+                {getImageSrc(result) ? (
                   <CldImage
-                    src={result.foto1_url}
+                    src={getImageSrc(result)!}
                     alt={result.item}
                     width={48}
                     height={48}
@@ -98,16 +114,31 @@ export default function SearchResults({
                   <h3 className="font-medium text-gray-900 truncate group-hover:text-orange-600 transition-colors">
                     {result.item}
                   </h3>
-                  <p className="text-sm text-gray-500 truncate">
-                    Modelo: {result.modelo}
-                  </p>
-                  <div className="flex flex-wrap items-center gap-2 mt-1">
+                  
+                  {/* ✅ Mostrar marca + modelo de forma prominente */}
+                  <div className="flex flex-col mt-1">
+                    <p className="text-sm font-semibold text-gray-700">
+                      {formatModeloDisplay(result)}
+                    </p>
+                    {result.marca_nombre && (
+                      <p className="text-xs text-gray-500">
+                        Modelo: {result.modelo}
+                      </p>
+                    )}
+                  </div>
+                  
+                  <div className="flex flex-wrap items-center gap-2 mt-2">
                     <span className="text-sm font-semibold text-orange-600">
                       ${result.precio_venta.toLocaleString()}
                     </span>
                     <span className="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
                       Stock: {result.stock_real}
                     </span>
+                    {result.marca_nombre && (
+                      <span className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                        {result.marca_nombre}
+                      </span>
+                    )}
                   </div>
                 </button>
               </div>
@@ -122,7 +153,7 @@ export default function SearchResults({
                 itemId={result.item_id}
                 codigoInterno={result.codigo_interno}
                 itemName={result.item}
-                modelo={result.modelo}
+                modelo={formatModeloDisplay(result)} // ✅ Pasar marca + modelo
                 maxStock={result.stock_real}
                 precio={result.precio_venta}
                 onAddToCart={onAddToCart}

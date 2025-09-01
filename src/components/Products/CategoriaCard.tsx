@@ -11,7 +11,7 @@ interface CategoriaCardProps {
 }
 
 export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps) {
-  const [precio, setPrecio] = useState<number | null>(null);
+  const [precioEnPesos, setPrecioEnPesos] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [imagenPrincipal, setImagenPrincipal] = useState<string>('');
@@ -23,18 +23,18 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
       setImageError(false);
       
       try {
+        // ✅ La API ya devuelve el precio en pesos
         const resPrice = await fetch(`/api/precio?itemId=${categoria.id}`);
         const dataPrice = await resPrice.json();
-        setPrecio(dataPrice.precio);
+        setPrecioEnPesos(dataPrice.precio); // Ya viene convertido a pesos
 
         // Buscar la foto_portada específicamente
         const resDetail = await fetch(`/api/detalle?id=${categoria.id}`);
         if (resDetail.ok) {
           const dataDetail = await resDetail.json();
           
-          console.log('Datos del producto:', dataDetail); // Para debug
+          console.log('Datos del producto:', dataDetail);
           
-          // Priorizar foto_portada, si no existe usar foto1_url como fallback
           if (dataDetail.foto_portada && dataDetail.foto_portada.trim() !== '') {
             setImagenPrincipal(dataDetail.foto_portada);
             setImageError(false);
@@ -71,11 +71,9 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
     setModalOpen(false);
   };
 
-  // Callback para actualizar la imagen cuando se edite en el modal
   const handleProductUpdate = (updatedProduct: any) => {
     console.log('Actualizando producto en card:', updatedProduct);
     
-    // Priorizar foto_portada en la actualización
     if (updatedProduct.foto_portada && updatedProduct.foto_portada.trim() !== '') {
       setImagenPrincipal(updatedProduct.foto_portada);
       setImageError(false);
@@ -102,7 +100,6 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
         role="button"
         aria-label={`Ver detalles de ${categoria.nombre}`}
       >
-        {/* ✅ Imagen aún más grande con padding mínimo */}
         <div className="relative bg-white p-2 flex justify-center items-center h-72 md:h-80 border-b border-gray-100">
           {imageError || !imagenPrincipal ? (
             <img
@@ -128,16 +125,18 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
           )}
         </div>
         
-        {/* ✅ Contenido compacto */}
         <div className="p-4 flex flex-col flex-grow">
           <h3 className="font-bold text-gray-800 text-base mb-2 line-clamp-2 min-h-[2.5rem]">{categoria.nombre}</h3>
           
           <div className="mt-auto flex items-center justify-between">
             {loading ? (
               <div className="inline-block h-6 animate-pulse bg-gray-200 rounded w-16"></div>
-            ) : precio ? (
+            ) : precioEnPesos ? (
               <div className="flex flex-col">
-                <span className="text-xl font-bold text-orange-600">${precio.toLocaleString()}</span>
+                {/* ✅ Mostrar precio en pesos con indicador de moneda */}
+                <span className="text-xl font-bold text-orange-600">
+                  ${precioEnPesos.toLocaleString()} <span className="text-sm font-normal">ARS</span>
+                </span>
                 <span className="text-xs text-gray-500">Precio actualizado</span>
               </div>
             ) : (

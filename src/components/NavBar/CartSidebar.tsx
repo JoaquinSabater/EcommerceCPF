@@ -30,8 +30,9 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
     fetchDolar();
   }, []);
 
-  const totalLocal = cart.reduce(
-    (sum, item) => sum + (item.cantidad * item.precio_venta),
+  // ✅ Calcular total en pesos (precio_venta en USD * dolar)
+  const totalEnPesos = cart.reduce(
+    (sum, item) => sum + (item.cantidad * item.precio_venta * dolar),
     0
   );
 
@@ -50,18 +51,18 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
     setIsCreatingOrder(true);
     
     try {
-      // Convertir el carrito al formato que espera la API
+      // Convertir el carrito al formato que espera la API (mantener precios en USD)
       const itemsCarrito = cart.map(item => ({
         codigo_interno: item.codigo_interno,
         modelo: item.modelo,
         cantidad: item.cantidad,
-        precio: item.precio_venta,
+        precio: item.precio_venta, // ✅ Mantener en USD para la BD
         item_nombre: item.item_nombre
       }));
 
       console.log('Enviando pedido preliminar:', {
         clienteId: user.id,
-        vendedorId: 1, // Por ahora usamos vendedor ID 1, puedes cambiarlo
+        vendedorId: 1,
         itemsCarrito
       });
 
@@ -72,22 +73,19 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
         },
         body: JSON.stringify({
           clienteId: user.id,
-          vendedorId: 1, // Puedes obtener esto del contexto o usuario
+          vendedorId: 1,
           itemsCarrito,
-          observaciones: `Pedido creado desde el carrito - Total: $${totalLocal.toLocaleString()}`
+          observaciones: `Pedido creado desde el carrito - Total: $${Math.round(totalEnPesos).toLocaleString()} ARS (USD $${cart.reduce((sum, item) => sum + (item.cantidad * item.precio_venta), 0).toFixed(2)})`
         }),
       });
 
       const data = await response.json();
 
       if (response.ok && data.success) {
-        // Éxito - limpiar carrito y mostrar mensaje
         clearCart();
         onClose();
         
         alert(`¡Pedido creado exitosamente! Número de pedido preliminar: ${data.pedidoPreliminarId}`);
-        
-        // Opcional: redirigir a una página de confirmación o pedidos
         router.push('/admin/pedidos');
       } else {
         throw new Error(data.error || 'Error al crear el pedido');
@@ -153,6 +151,10 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
                   <div>
                     <div className="font-medium">{item.modelo}</div>
                     <div className="text-xs text-gray-500">{item.item_nombre}</div>
+                    {/* ✅ Mostrar precio individual en pesos */}
+                    <div className="text-sm text-orange-600 font-semibold">
+                      ${Math.round(item.precio_venta * dolar).toLocaleString()} c/u
+                    </div>
                   </div>
                     <QuantityButton
                       value={item.cantidad}
@@ -169,9 +171,15 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
             <div className="border-t border-neutral-200 pt-4 px-4 pb-4 bg-white">
               <div className="flex justify-between items-center mb-4">
                 <span className="font-semibold">Total</span>
-                <span className="text-lg font-bold">
-                    ${totalLocal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                </span>
+                {/* ✅ Mostrar total en pesos */}
+                <div className="text-right">
+                  <span className="text-lg font-bold text-black">
+                    ${Math.round(totalEnPesos).toLocaleString()} ARS
+                  </span>
+                  <div className="text-xs text-gray-500">
+                    USD ${cart.reduce((sum, item) => sum + (item.cantidad * item.precio_venta), 0).toFixed(2)}
+                  </div>
+                </div>
               </div>
               <button
                 className="w-full bg-orange-600 text-white py-2 rounded hover:bg-orange-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"

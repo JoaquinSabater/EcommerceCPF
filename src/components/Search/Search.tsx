@@ -11,9 +11,12 @@ interface SearchResult {
   item: string;
   codigo_interno: string;
   modelo: string;
+  marca_nombre?: string; // ✅ Nueva propiedad
   precio_venta: number;
   stock_real: number;
   foto1_url?: string;
+  foto_portada?: string;
+  marca_modelo_completo?: string; // ✅ Nueva propiedad
 }
 
 export default function Search() {
@@ -119,7 +122,7 @@ export default function Search() {
         <form onSubmit={handleSubmit} className="relative">
           <input
             type="text"
-            placeholder="Buscar por modelo (ej: A15, S24)..."
+            placeholder="Buscar por marca, modelo o producto..." // ✅ Placeholder actualizado
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full rounded-lg border border-neutral-200 bg-white px-4 py-2 pr-20 text-sm text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-orange-600"
