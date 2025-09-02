@@ -15,24 +15,27 @@ interface ProductoFormateado {
   precio: number;
   caracteristicas: Caracteristica[];
   imagenes?: string[];
+  sugerencia?: string; // ✅ Nueva prop
 }
 
 interface DetalleMobileProps {
   producto: ProductoFormateado;
+  onSugerenciaChange?: (sugerencia: string) => void; // ✅ Callback
 }
 
-export default function DetalleMobile({ producto }: DetalleMobileProps) {
-  // Crear array de imágenes válidas
+export default function DetalleMobile({ producto, onSugerenciaChange }: DetalleMobileProps) {
   const todasLasImagenes = [
-    producto.imagen, // foto_portada o imagen principal
-    ...(producto.imagenes || []) // fotos de galería
+    producto.imagen,
+    ...(producto.imagenes || [])
   ].filter(img => img && img.trim() !== '' && img !== 'not-image');
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [startX, setStartX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [sugerencia, setSugerencia] = useState(producto.sugerencia || ''); // ✅ Estado local
   const imageRef = useRef<HTMLDivElement>(null);
 
+  // ... (mantener todas las funciones de navegación de imágenes existentes)
   const nextImage = () => {
     setCurrentImageIndex((prev) => 
       prev === todasLasImagenes.length - 1 ? 0 : prev + 1
@@ -49,7 +52,6 @@ export default function DetalleMobile({ producto }: DetalleMobileProps) {
     setCurrentImageIndex(index);
   };
 
-  // Manejo de eventos táctiles para swipe
   const handleTouchStart = (e: React.TouchEvent) => {
     if (todasLasImagenes.length <= 1) return;
     setStartX(e.touches[0].clientX);
@@ -58,7 +60,7 @@ export default function DetalleMobile({ producto }: DetalleMobileProps) {
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!isDragging || todasLasImagenes.length <= 1) return;
-    e.preventDefault(); // Prevenir scroll mientras se hace swipe
+    e.preventDefault();
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
@@ -66,14 +68,12 @@ export default function DetalleMobile({ producto }: DetalleMobileProps) {
     
     const endX = e.changedTouches[0].clientX;
     const diffX = startX - endX;
-    const threshold = 50; // Distancia mínima para considerar swipe
+    const threshold = 50;
 
     if (Math.abs(diffX) > threshold) {
       if (diffX > 0) {
-        // Swipe hacia la izquierda - imagen siguiente
         nextImage();
       } else {
-        // Swipe hacia la derecha - imagen anterior
         prevImage();
       }
     }
@@ -82,7 +82,6 @@ export default function DetalleMobile({ producto }: DetalleMobileProps) {
     setStartX(0);
   };
 
-  // Manejo de eventos de mouse para desktop (opcional)
   const handleMouseDown = (e: React.MouseEvent) => {
     if (todasLasImagenes.length <= 1) return;
     setStartX(e.clientX);
@@ -113,11 +112,18 @@ export default function DetalleMobile({ producto }: DetalleMobileProps) {
     setStartX(0);
   };
 
+  // ✅ Manejar cambios en la sugerencia
+  const handleSugerenciaChange = (value: string) => {
+    setSugerencia(value);
+    if (onSugerenciaChange) {
+      onSugerenciaChange(value);
+    }
+  };
+
   return (
     <div className="p-4 rounded-lg bg-white shadow-sm">
       {/* Carousel de imágenes */}
       <div className="relative mb-4">
-        {/* ✅ Sin fondo gris - imagen flotante */}
         <div className="flex items-center justify-center rounded-lg overflow-hidden">
           {todasLasImagenes.length > 0 ? (
             <div 
@@ -143,15 +149,12 @@ export default function DetalleMobile({ producto }: DetalleMobileProps) {
                 draggable={false}
               />
               
-              {/* ✅ Elementos flotantes en una línea */}
               {todasLasImagenes.length > 1 && (
                 <div className="absolute top-2 left-0 right-0 flex items-center justify-between px-2">
-                  {/* Contador naranja sin fondo */}
                   <div className="text-orange-600 text-sm font-bold">
                     {currentImageIndex + 1} / {todasLasImagenes.length}
                   </div>
                   
-                  {/* Texto de instrucción para swipe - Solo móvil */}
                   <div className="text-orange-600 text-xs font-medium md:hidden">
                     Desliza para ver más fotos
                   </div>
@@ -159,7 +162,6 @@ export default function DetalleMobile({ producto }: DetalleMobileProps) {
               )}
             </div>
           ) : (
-            // Imagen placeholder si no hay imágenes
             <div className="w-full h-[400px] flex items-center justify-center">
               <img
                 src="/not-image.png"
@@ -170,7 +172,6 @@ export default function DetalleMobile({ producto }: DetalleMobileProps) {
           )}
         </div>
         
-        {/* Puntos indicadores */}
         {todasLasImagenes.length > 1 && (
           <div className="flex justify-center gap-2 mt-3">
             {todasLasImagenes.map((_, index) => (
@@ -193,7 +194,6 @@ export default function DetalleMobile({ producto }: DetalleMobileProps) {
       <div className="font-bold text-xl mb-1">{producto.nombre}</div>
       <div className="text-gray-700 mb-2">{producto.descripcion}</div>
       <div className="flex items-center gap-2 mb-4 flex-wrap">
-        {/* ✅ Mostrar precio en pesos */}
         <div className="text-2xl font-semibold text-orange-600">
           ${producto.precio.toLocaleString()} <span className="text-lg font-normal">ARS</span>
         </div>
@@ -203,6 +203,24 @@ export default function DetalleMobile({ producto }: DetalleMobileProps) {
           </div>
         )}
       </div>
+
+      {/* ✅ Campo de sugerencias para móvil */}
+      <div className="mb-4">
+        <label className="block text-sm font-bold text-orange-600 mb-2">
+          SUGERENCIAS ESPECIALES
+        </label>
+        <textarea
+          value={sugerencia}
+          onChange={(e) => handleSugerenciaChange(e.target.value)}
+          placeholder="Escribe aquí cualquier sugerencia especial..."
+          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 resize-none text-sm"
+          rows={3}
+        />
+        <div className="text-xs text-gray-500 mt-1">
+          Opcional: Agrega detalles específicos sobre este producto
+        </div>
+      </div>
+
       <div className="mb-2 font-bold text-orange-600">CARACTERÍSTICAS</div>
       <table className="w-full text-sm mb-4">
         <tbody>

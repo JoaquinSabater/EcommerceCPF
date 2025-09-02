@@ -14,10 +14,11 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log('Creando pedido preliminar con:', {
+    console.log('Creando pedido preliminar con sugerencias:', {
       clienteId,
       vendedorId,
-      itemsCount: itemsCarrito.length
+      itemsCount: itemsCarrito.length,
+      itemsWithSugerencias: itemsCarrito.filter((item: any) => item.sugerencia).length
     });
 
     const pedidoPreliminarId = await crearPedidoPreliminar(
@@ -30,7 +31,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ 
       success: true, 
       pedidoPreliminarId,
-      message: 'Pedido preliminar creado exitosamente' 
+      message: 'Pedido preliminar creado exitosamente con sugerencias' 
     });
 
   } catch (error) {

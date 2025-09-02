@@ -1,4 +1,3 @@
-// filepath: c:\Users\joaqu\Desktop\EcommerceCPF\src\components\DetalleProducto\DetalleDesktop.tsx
 "use client";
 
 import { CldImage } from 'next-cloudinary';
@@ -9,22 +8,25 @@ interface ProductoFormateado {
   imagen: string;
   nombre: string;
   descripcion: string;
-  precio: number; // ✅ Ya viene en pesos desde el modal padre
+  precio: number;
   caracteristicas: any[];
   imagenes?: string[];
+  sugerencia?: string; // ✅ Nueva prop para la sugerencia
 }
 
 interface DetalleDesktopProps {
   producto: ProductoFormateado;
+  onSugerenciaChange?: (sugerencia: string) => void; // ✅ Callback para manejar cambios
 }
 
-export default function DetalleDesktop({ producto }: DetalleDesktopProps) {
+export default function DetalleDesktop({ producto, onSugerenciaChange }: DetalleDesktopProps) {
   const todasLasImagenes = [
     producto.imagen,
     ...(producto.imagenes || [])
   ].filter(img => img && img.trim() !== '' && img !== 'not-image');
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [sugerencia, setSugerencia] = useState(producto.sugerencia || ''); // ✅ Estado local para la sugerencia
 
   const nextImage = () => {
     setCurrentImageIndex((prev) => 
@@ -42,6 +44,14 @@ export default function DetalleDesktop({ producto }: DetalleDesktopProps) {
     setCurrentImageIndex(index);
   };
 
+  // ✅ Manejar cambios en la sugerencia
+  const handleSugerenciaChange = (value: string) => {
+    setSugerencia(value);
+    if (onSugerenciaChange) {
+      onSugerenciaChange(value);
+    }
+  };
+
   return (
     <div className="rounded-lg bg-white shadow-sm">
       <div className="flex w-full items-start p-6">
@@ -50,7 +60,6 @@ export default function DetalleDesktop({ producto }: DetalleDesktopProps) {
           <div className="font-bold text-3xl mb-2">{producto.nombre}</div>
           <div className="text-gray-700 mb-4 text-lg">{producto.descripcion}</div>
           <div className="flex items-center gap-2 mb-4">
-            {/* ✅ Mostrar precio en pesos */}
             <div className="text-2xl font-semibold text-orange-600">
               ${producto.precio.toLocaleString()} <span className="text-lg font-normal">ARS</span>
             </div>
@@ -60,6 +69,24 @@ export default function DetalleDesktop({ producto }: DetalleDesktopProps) {
               </div>
             )}
           </div>
+
+          {/* ✅ Campo de sugerencias */}
+          <div className="mb-4">
+            <label className="block text-sm font-bold text-orange-600 mb-2">
+              SUGERENCIAS ESPECIALES
+            </label>
+            <textarea
+              value={sugerencia}
+              onChange={(e) => handleSugerenciaChange(e.target.value)}
+              placeholder="Escribe aquí cualquier sugerencia especial para este producto (color, tamaño, personalización, etc.)"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 resize-none text-sm"
+              rows={3}
+            />
+            <div className="text-xs text-gray-500 mt-1">
+              Opcional: Puedes agregar detalles específicos sobre cómo quieres este producto
+            </div>
+          </div>
+
           <div className="mb-2 font-bold text-orange-600 text-xl">CARACTERÍSTICAS</div>
           <div className="flex-1 flex flex-col justify-between">
             <table className="w-full text-base">

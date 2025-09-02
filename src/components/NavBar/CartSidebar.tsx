@@ -30,7 +30,6 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
     fetchDolar();
   }, []);
 
-  // ✅ Calcular total en pesos (precio_venta en USD * dolar)
   const totalEnPesos = cart.reduce(
     (sum, item) => sum + (item.cantidad * item.precio_venta * dolar),
     0
@@ -51,16 +50,17 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
     setIsCreatingOrder(true);
     
     try {
-      // Convertir el carrito al formato que espera la API (mantener precios en USD)
+      // ✅ Incluir sugerencias en el carrito
       const itemsCarrito = cart.map(item => ({
         codigo_interno: item.codigo_interno,
         modelo: item.modelo,
         cantidad: item.cantidad,
-        precio: item.precio_venta, // ✅ Mantener en USD para la BD
-        item_nombre: item.item_nombre
+        precio: item.precio_venta,
+        item_nombre: item.item_nombre,
+        sugerencia: item.sugerencia || '' // ✅ Agregar sugerencia
       }));
 
-      console.log('Enviando pedido preliminar:', {
+      console.log('Enviando pedido preliminar con sugerencias:', {
         clienteId: user.id,
         vendedorId: 1,
         itemsCarrito
@@ -147,15 +147,21 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
           <div className="flex flex-col h-[calc(100%-64px)]">
             <ul className="space-y-4 flex-1 overflow-y-auto p-4">
               {cart.map((item) => (
-                <li key={item.codigo_interno} className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium">{item.modelo}</div>
-                    <div className="text-xs text-gray-500">{item.item_nombre}</div>
-                    {/* ✅ Mostrar precio individual en pesos */}
-                    <div className="text-sm text-orange-600 font-semibold">
-                      ${Math.round(item.precio_venta * dolar).toLocaleString()} c/u
+                <li key={item.codigo_interno} className="border-b pb-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1">
+                      <div className="font-medium">{item.modelo}</div>
+                      <div className="text-xs text-gray-500">{item.item_nombre}</div>
+                      <div className="text-sm text-orange-600 font-semibold">
+                        ${Math.round(item.precio_venta * dolar).toLocaleString()} c/u
+                      </div>
+                      {/* ✅ Mostrar sugerencia si existe */}
+                      {item.sugerencia && (
+                        <div className="text-xs text-gray-600 mt-1 p-2 bg-gray-50 rounded">
+                          <span className="font-medium">Sugerencia:</span> {item.sugerencia}
+                        </div>
+                      )}
                     </div>
-                  </div>
                     <QuantityButton
                       value={item.cantidad}
                       onAdd={() => changeQuantity(item.codigo_interno, 1)}
@@ -165,13 +171,13 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
                       hideModelo={true}
                       size="normal"
                     />
+                  </div>
                 </li>
               ))}
             </ul>
             <div className="border-t border-neutral-200 pt-4 px-4 pb-4 bg-white">
               <div className="flex justify-between items-center mb-4">
                 <span className="font-semibold">Total</span>
-                {/* ✅ Mostrar total en pesos */}
                 <div className="text-right">
                   <span className="text-lg font-bold text-black">
                     ${Math.round(totalEnPesos).toLocaleString()} ARS

@@ -36,13 +36,14 @@ interface ProductoFormateado {
   descripcion: string;
   precio: number;
   caracteristicas: Caracteristica[];
+  sugerencia?: string; // ✅ Agregar sugerencia
 }
 
 interface DetalleProductoModalProps {
   itemId: string;
   isOpen: boolean;
   onClose: () => void;
-  onUpdate?: (updatedProduct: any) => void; // Nueva prop para callback
+  onUpdate?: (updatedProduct: any) => void;
 }
 
 export default function DetalleProductoModal({ 
@@ -57,6 +58,7 @@ export default function DetalleProductoModal({
   const [error, setError] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [sugerenciaActual, setSugerenciaActual] = useState(''); // ✅ Estado para manejar la sugerencia
   const { isAdmin } = useAuth(); 
 
   const fetchProductoDetalle = async (id: string) => {
@@ -87,33 +89,40 @@ export default function DetalleProductoModal({
     }
   };
 
-const formatearProducto = (detalle: DetalleProducto, precio: number): ProductoFormateado => {
-  // ✅ Priorizar foto_portada como imagen principal
-  const imagenPrincipal = detalle.foto_portada || detalle.foto1_url || '';
-  
-  // ✅ Crear array con todas las imágenes disponibles (SIN duplicar la foto_portada)
-  const todasLasImagenes = [
-    detalle.foto1_url,
-    detalle.foto2_url,
-    detalle.foto3_url,
-    detalle.foto4_url,
-  ].filter((img): img is string => typeof img === 'string' && img.trim() !== '');
+  const formatearProducto = (detalle: DetalleProducto, precio: number): ProductoFormateado => {
+    // ✅ Priorizar foto_portada como imagen principal
+    const imagenPrincipal = detalle.foto_portada || detalle.foto1_url || '';
+    
+    // ✅ Crear array con todas las imágenes disponibles (SIN duplicar la foto_portada)
+    const todasLasImagenes = [
+      detalle.foto1_url,
+      detalle.foto2_url,
+      detalle.foto3_url,
+      detalle.foto4_url,
+    ].filter((img): img is string => typeof img === 'string' && img.trim() !== '');
 
-  return {
-    imagen: imagenPrincipal, // ✅ Esta será la imagen principal del carousel
-    nombre: detalle.item_nombre,
-    descripcion: detalle.descripcion,
-    precio: precio,
-    imagenes: todasLasImagenes, // ✅ Array de imágenes para la galería
-    caracteristicas: [
-      { label: "Material", value: detalle.material || "No especificado" },
-      { label: "Espesor", value: detalle.espesor || "No especificado" },
-      { label: "Protección", value: detalle.proteccion || "No especificado" },
-      { label: "Compatibilidad", value: detalle.compatibilidad || "No especificado" },
-      { label: "Pegamento", value: detalle.pegamento || "No especificado" },
-    ],
+    return {
+      imagen: imagenPrincipal,
+      nombre: detalle.item_nombre,
+      descripcion: detalle.descripcion,
+      precio: precio,
+      imagenes: todasLasImagenes,
+      sugerencia: sugerenciaActual, // ✅ Incluir la sugerencia actual
+      caracteristicas: [
+        { label: "Material", value: detalle.material || "No especificado" },
+        { label: "Espesor", value: detalle.espesor || "No especificado" },
+        { label: "Protección", value: detalle.proteccion || "No especificado" },
+        { label: "Compatibilidad", value: detalle.compatibilidad || "No especificado" },
+        { label: "Pegamento", value: detalle.pegamento || "No especificado" },
+      ],
+    };
   };
-};
+
+  // ✅ Callback para recibir cambios de sugerencia desde los componentes hijos
+  const handleSugerenciaChange = (nuevaSugerencia: string) => {
+    console.log('🟡 Sugerencia actualizada en DetalleProductoModal:', nuevaSugerencia);
+    setSugerenciaActual(nuevaSugerencia);
+  };
 
   // Función para abrir el modal de edición
   const handleEditProduct = () => {
@@ -132,27 +141,17 @@ const formatearProducto = (detalle: DetalleProducto, precio: number): ProductoFo
     setIsUpdating(true);
     
     try {
-      // Actualizar el estado local con los nuevos datos
       setDetalleProducto(updatedProduct);
-      
-      // Cerrar el modal de edición
       setShowEditModal(false);
       
-      // Notificar al componente padre (CategoriaCard) sobre la actualización
       if (onUpdate) {
         onUpdate(updatedProduct);
       }
       
-      // Mostrar mensaje de éxito
       console.log('✅ Producto actualizado exitosamente:', updatedProduct.item_nombre);
-      
-      // Opcional: Mostrar una notificación toast aquí
-      // showSuccessNotification('Producto actualizado exitosamente');
       
     } catch (error) {
       console.error('Error al procesar la actualización:', error);
-      // Opcional: Mostrar notificación de error
-      // showErrorNotification('Error al actualizar el producto');
     } finally {
       setIsUpdating(false);
     }
@@ -164,6 +163,9 @@ const formatearProducto = (detalle: DetalleProducto, precio: number): ProductoFo
       const loadData = async () => {
         setLoading(true);
         setError(null);
+        // ✅ Resetear sugerencia cuando se abre un nuevo producto
+        setSugerenciaActual('');
+        
         try {
           const [detalleData, precioData] = await Promise.all([
             fetchProductoDetalle(itemId),
@@ -187,7 +189,6 @@ const formatearProducto = (detalle: DetalleProducto, precio: number): ProductoFo
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        // Si el modal de edición está abierto, cerrarlo primero
         if (showEditModal) {
           setShowEditModal(false);
         } else {
@@ -209,10 +210,8 @@ const formatearProducto = (detalle: DetalleProducto, precio: number): ProductoFo
 
   // Función para cerrar el modal principal
   const handleCloseMainModal = () => {
-    // Si hay una actualización en progreso, no permitir cerrar
     if (isUpdating) return;
     
-    // Si el modal de edición está abierto, cerrarlo primero
     if (showEditModal) {
       setShowEditModal(false);
       return;
@@ -246,6 +245,13 @@ const formatearProducto = (detalle: DetalleProducto, precio: number): ProductoFo
                   </span>
                 )}
               </h2>
+              
+              {/* ✅ Mostrar sugerencia actual si existe (debug) */}
+              {sugerenciaActual && (
+                <span className="text-xs text-gray-500 bg-yellow-100 px-2 py-1 rounded">
+                  Con sugerencia: {sugerenciaActual.substring(0, 30)}...
+                </span>
+              )}
               
               {/* Botón de editar - Solo visible para admin */}
               {isAdmin && detalleProducto && (
@@ -294,14 +300,26 @@ const formatearProducto = (detalle: DetalleProducto, precio: number): ProductoFo
               <div className="min-h-[60vh]">
                 {/* Mobile */}
                 <div className="md:hidden space-y-6">
-                  <DetalleMobile producto={formatearProducto(detalleProducto, precio)} />
-                  <ModelosSelector subcategoriaId={parseInt(itemId)} />
+                  <DetalleMobile 
+                    producto={formatearProducto(detalleProducto, precio)} 
+                    onSugerenciaChange={handleSugerenciaChange} // ✅ Pasar callback
+                  />
+                  <ModelosSelector 
+                    subcategoriaId={parseInt(itemId)} 
+                    sugerenciaActual={sugerenciaActual} // ✅ Pasar sugerencia al selector de modelos
+                  />
                 </div>
                 
                 {/* Desktop */}
                 <div className="hidden md:flex flex-col space-y-8">
-                  <DetalleDesktop producto={formatearProducto(detalleProducto, precio)} />
-                  <ModelosSelector subcategoriaId={parseInt(itemId)} />
+                  <DetalleDesktop 
+                    producto={formatearProducto(detalleProducto, precio)}
+                    onSugerenciaChange={handleSugerenciaChange} // ✅ Pasar callback
+                  />
+                  <ModelosSelector 
+                    subcategoriaId={parseInt(itemId)}
+                    sugerenciaActual={sugerenciaActual} // ✅ Pasar sugerencia al selector de modelos
+                  />
                 </div>
               </div>
             ) : null}

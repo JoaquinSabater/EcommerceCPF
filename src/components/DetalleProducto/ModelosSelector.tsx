@@ -13,7 +13,13 @@ type ModeloSeleccionado = {
   cantidad: number;
 };
 
-export default function ModelosSelector({ subcategoriaId }: { subcategoriaId: number }) {
+// ✅ Agregar sugerenciaActual como prop
+interface ModelosSelectorProps {
+  subcategoriaId: number;
+  sugerenciaActual?: string;
+}
+
+export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' }: ModelosSelectorProps) {
   const [modelos, setModelos] = useState<Articulo[]>([]);
   const [seleccionados, setSeleccionados] = useState<ModeloSeleccionado[]>([]);
   const [modeloActual, setModeloActual] = useState<Articulo | null>(null);
@@ -30,6 +36,11 @@ export default function ModelosSelector({ subcategoriaId }: { subcategoriaId: nu
 
   const { addToCart } = useCart();
   const { isAdmin } = useAuth();
+
+  // ✅ Debug para ver si llega la sugerencia
+  useEffect(() => {
+    console.log('🟡 ModelosSelector recibió sugerenciaActual:', `"${sugerenciaActual}"`);
+  }, [sugerenciaActual]);
 
   // ✅ Función helper para mostrar marca + modelo
   const formatModeloDisplay = (articulo: Articulo) => {
@@ -104,7 +115,12 @@ export default function ModelosSelector({ subcategoriaId }: { subcategoriaId: nu
     setSeleccionados(seleccionados.filter((s) => s.articulo.modelo !== modelo));
   };
 
+  // ✅ Función modificada para agregar al carrito CON sugerencia
   const handleAddToCart = () => {
+    console.log('🟢 === AGREGANDO AL CARRITO DESDE MODELOSSELECTOR ===');
+    console.log('Sugerencia a aplicar:', `"${sugerenciaActual}"`);
+    console.log('Modelos seleccionados:', seleccionados.length);
+
     seleccionados.forEach(({ articulo, cantidad }) => {
       if (!articulo.precio_venta || isNaN(Number(articulo.precio_venta))) {
         console.warn(`Artículo sin precio válido: ${articulo.modelo}`);
@@ -117,7 +133,10 @@ export default function ModelosSelector({ subcategoriaId }: { subcategoriaId: nu
         precio_venta: Number(articulo.precio_venta)
       };
       
-      addToCart(articuloConCantidad, articulo.modelo, cantidad);
+      console.log(`🟡 Agregando ${articulo.modelo} con sugerencia: "${sugerenciaActual}"`);
+      
+      // ✅ Pasar la sugerencia al agregar al carrito
+      addToCart(articuloConCantidad, articulo.modelo, cantidad, sugerenciaActual);
     });
     
     // ✅ Calcular total en pesos
@@ -125,7 +144,11 @@ export default function ModelosSelector({ subcategoriaId }: { subcategoriaId: nu
       sum + (Number(articulo.precio_venta || 0) * cantidad), 0);
     const totalPesos = totalUsd * dolar;
       
-    alert(`Se agregaron ${seleccionados.length} modelo(s) al carrito. Total: $${Math.round(totalPesos).toLocaleString()} ARS`);
+    const mensajeConSugerencia = sugerenciaActual 
+      ? `Se agregaron ${seleccionados.length} modelo(s) al carrito con sugerencias especiales. Total: $${Math.round(totalPesos).toLocaleString()} ARS`
+      : `Se agregaron ${seleccionados.length} modelo(s) al carrito. Total: $${Math.round(totalPesos).toLocaleString()} ARS`;
+      
+    alert(mensajeConSugerencia);
     setSeleccionados([]);
   };
 
@@ -230,7 +253,15 @@ export default function ModelosSelector({ subcategoriaId }: { subcategoriaId: nu
 
   return (
     <div className="w-full mt-4 rounded-lg bg-white shadow-sm p-4">
-      <h3 className="text-lg font-bold mb-3 text-gray-800">Selección de modelos</h3>
+      <h3 className="text-lg font-bold mb-3 text-gray-800">
+        Selección de modelos
+        {/* ✅ Mostrar indicador si hay sugerencia */}
+        {sugerenciaActual && (
+          <span className="ml-2 text-sm bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
+            Con sugerencias especiales ✨
+          </span>
+        )}
+      </h3>
       
       {/* Sección de últimos modelos recomendados (máximo 5) */}
       <div className="mb-6">
@@ -563,13 +594,16 @@ export default function ModelosSelector({ subcategoriaId }: { subcategoriaId: nu
         </div>
       )}
 
-      {/* Botón añadir al carrito */}
+      {/* Botón añadir al carrito - MODIFICADO para mostrar si hay sugerencia */}
       <button
         className="mt-2 bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded font-bold w-full disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         disabled={seleccionados.length === 0}
         onClick={handleAddToCart}
       >
-        {seleccionados.length > 0 ? `Añadir ${seleccionados.length} modelo(s) al carrito` : 'Añadir al carrito'}
+        {seleccionados.length > 0 
+          ? `Añadir ${seleccionados.length} modelo(s) al carrito${sugerenciaActual ? ' con sugerencias ✨' : ''}` 
+          : 'Añadir al carrito'
+        }
       </button>
 
       {isSearchFocused && searchTerm && (

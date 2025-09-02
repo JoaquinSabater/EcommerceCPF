@@ -8,14 +8,16 @@ type CartItem = {
   item_nombre: string;
   cantidad: number;
   precio_venta: number; 
+  sugerencia?: string; // ✅ Nueva propiedad para sugerencias
 };
 
 type CartContextType = {
   cart: CartItem[];
-  addToCart: (articulo: Articulo, nombre: string, cantidad?: number) => void;
+  addToCart: (articulo: Articulo, nombre: string, cantidad?: number, sugerencia?: string) => void; // ✅ Agregar sugerencia
   removeFromCart: (codigo_interno: string) => void;
   changeQuantity: (codigo_interno: string, delta: number) => void;
   setItemQuantity: (codigo_interno: string, cantidad: number, articulo?: Articulo) => void;
+  updateSugerencia: (codigo_interno: string, sugerencia: string) => void; // ✅ Nueva función
   clearCart: () => void;
 };
 
@@ -30,32 +32,48 @@ export function useCart() {
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
 
-  const addToCart = (articulo: Articulo, nombre: string, cantidad: number = 1) => {
-    console.log("addToCart recibió:", articulo, "cantidad:", cantidad);
+  const addToCart = (articulo: Articulo, nombre: string, cantidad: number = 1, sugerencia: string = '') => {
+    console.log("🟢 === DEBUG ADDTOCART COMPLETO ===");
+    console.log("Artículo código:", articulo?.codigo_interno);
+    console.log("Nombre:", nombre);
+    console.log("Cantidad:", cantidad);
+    console.log("Sugerencia recibida:", `"${sugerencia}"`);
+    console.log("¿Sugerencia tiene contenido?", !!sugerencia && sugerencia.trim() !== '');
+    console.log("Longitud sugerencia:", sugerencia?.length || 0);
     
     setCart((prev) => {
       const found = prev.find((i) => i.codigo_interno === articulo.codigo_interno);
       if (found) {
-        return prev.map((i) =>
+        console.log("🟡 Item ya existe en carrito, actualizando...");
+        const updatedCart = prev.map((i) =>
           i.codigo_interno === articulo.codigo_interno
             ? { 
                 ...i, 
                 cantidad: i.cantidad + cantidad,
-                precio_venta: articulo.precio_venta || i.precio_venta
+                precio_venta: articulo.precio_venta || i.precio_venta,
+                sugerencia: sugerencia || i.sugerencia // ✅ Usar nueva sugerencia o mantener existente
               }
             : i
         );
+        console.log("🟢 Carrito actualizado:", updatedCart);
+        return updatedCart;
       }
-      return [
-        ...prev,
-        {
-          codigo_interno: articulo.codigo_interno,
-          modelo: articulo.modelo,
-          item_nombre: articulo.item_nombre || nombre || 'Sin nombre', // ✅ Fallback para evitar undefined
-          cantidad: cantidad,
-          precio_venta: Number(articulo.precio_venta) || 0,
-        },
-      ];
+      
+      console.log("🟡 Item nuevo, agregando al carrito...");
+      const nuevoItem = {
+        codigo_interno: articulo.codigo_interno,
+        modelo: articulo.modelo,
+        item_nombre: articulo.item_nombre || nombre || 'Sin nombre',
+        cantidad: cantidad,
+        precio_venta: Number(articulo.precio_venta) || 0,
+        sugerencia: sugerencia, // ✅ Agregar sugerencia
+      };
+      
+      console.log("🟢 Nuevo item creado:", nuevoItem);
+      const nuevoCarrito = [...prev, nuevoItem];
+      console.log("🟢 Carrito completo después de agregar:", nuevoCarrito);
+      
+      return nuevoCarrito;
     });
   };
 
@@ -102,9 +120,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
           {
             codigo_interno: articulo.codigo_interno,
             modelo: articulo.modelo,
-            item_nombre: articulo.item_nombre || 'Sin nombre', // ✅ Fallback aquí también
+            item_nombre: articulo.item_nombre || 'Sin nombre',
             cantidad,
             precio_venta: articulo.precio_venta,
+            sugerencia: '', // ✅ Sugerencia vacía por defecto
           },
         ];
       }
@@ -112,7 +131,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  // ✅ Nueva función para actualizar sugerencias
+  const updateSugerencia = (codigo_interno: string, sugerencia: string) => {
+    console.log("🟡 Actualizando sugerencia para:", codigo_interno, "Nueva sugerencia:", sugerencia);
+    setCart((prev) =>
+      prev.map((i) =>
+        i.codigo_interno === codigo_interno
+          ? { ...i, sugerencia }
+          : i
+      )
+    );
+  };
+
   const clearCart = () => {
+    console.log("🟡 Limpiando carrito completo");
     setCart([]);
   };
 
@@ -123,6 +155,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       removeFromCart, 
       changeQuantity, 
       setItemQuantity, 
+      updateSugerencia, // ✅ Exportar nueva función
       clearCart 
     }}>
       {children}
