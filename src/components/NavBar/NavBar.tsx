@@ -24,6 +24,7 @@ export default function NavBar() {
     { title: 'baterias', path: '/public/baterias' },
     { title: 'cables', path: '/public/cables' },
     { title: 'vidrios', path: '/public/vidrios' },
+    { title: 'modulos', path: '/public/pantallas' },
     {
       title: 'Fundas',
       path: '/public/fundas',
