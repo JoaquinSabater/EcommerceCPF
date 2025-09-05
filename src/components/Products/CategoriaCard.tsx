@@ -127,22 +127,7 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
         
         <div className="p-4 flex flex-col flex-grow">
           <h3 className="font-bold text-gray-800 text-base mb-2 line-clamp-2 min-h-[2.5rem]">{categoria.nombre}</h3>
-          
           <div className="mt-auto flex items-center justify-between">
-            {loading ? (
-              <div className="inline-block h-6 animate-pulse bg-gray-200 rounded w-16"></div>
-            ) : precioEnPesos ? (
-              <div className="flex flex-col">
-                {/* ✅ Mostrar precio en pesos con indicador de moneda */}
-                <span className="text-xl font-bold text-orange-600">
-                  ${precioEnPesos.toLocaleString()} <span className="text-sm font-normal">ARS</span>
-                </span>
-                <span className="text-xs text-gray-500">Precio actualizado</span>
-              </div>
-            ) : (
-              <div className="w-16"></div>
-            )}
-            
             <button
               className="bg-orange-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-orange-600 transition-colors flex items-center gap-1 shadow-sm hover:shadow"
               onClick={handleVerClick}

@@ -3,21 +3,37 @@ import { Articulo,categorias,ArticuloPedido,Pedido} from "@/types/types";
 import { RowDataPacket } from "mysql2";
 
 export async function getArticulosPorSubcategoria(subcategoriaId: number): Promise<Articulo[]> {
-  const [rows]: any = await db.query(
-    `
-    SELECT a.codigo_interno, a.item_id, a.marca_id, a.modelo, a.code, a.precio_venta, a.ubicacion, a.stock_actual,
-          i.nombre AS item_nombre,
-          m.nombre AS marca_nombre
-    FROM articulos a
-    JOIN items i ON a.item_id = i.id
-    LEFT JOIN marcas m ON a.marca_id = m.id
-    WHERE a.item_id = ? AND a.ubicacion <> 'SIN STOCK'
-    `,
-    [subcategoriaId]
-  );
-  return rows as Articulo[];
+  let connection;
+  try {
+    connection = await db.getConnection();
+    
+    const [rows] = await connection.query(
+      `SELECT a.codigo_interno, a.item_id, a.marca_id, a.modelo, a.code, 
+              COALESCE(a.precio_venta, 0) as precio_venta, a.ubicacion, a.stock_actual,
+            i.nombre AS item_nombre,
+            m.nombre AS marca_nombre
+      FROM articulos a
+      JOIN items i ON a.item_id = i.id
+      LEFT JOIN marcas m ON a.marca_id = m.id
+      WHERE a.item_id = ? AND a.ubicacion <> 'SIN STOCK'
+      ORDER BY a.precio_venta ASC, a.modelo ASC`,
+      [subcategoriaId]
+    );
+    
+    return rows as Articulo[];
+  } catch (error) {
+    console.error('Error en getArticulosPorSubcategoria:', error);
+    throw error;
+  } finally {
+    if (connection) {
+      try {
+        connection.release();
+      } catch (releaseError) {
+        console.error('🔴 Error al liberar conexión en getArticulosPorSubcategoria:', releaseError);
+      }
+    }
+  }
 }
-
 export async function getPedidosByCliente(clienteId: number): Promise<Pedido[]> {
   let connection;
   try {

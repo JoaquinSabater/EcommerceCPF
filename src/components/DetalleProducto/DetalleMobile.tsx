@@ -112,7 +112,6 @@ export default function DetalleMobile({ producto, onSugerenciaChange }: DetalleM
     setStartX(0);
   };
 
-  // ✅ Manejar cambios en la sugerencia
   const handleSugerenciaChange = (value: string) => {
     setSugerencia(value);
     if (onSugerenciaChange) {
@@ -122,7 +121,6 @@ export default function DetalleMobile({ producto, onSugerenciaChange }: DetalleM
 
   return (
     <div className="p-4 rounded-lg bg-white shadow-sm">
-      {/* Carousel de imágenes */}
       <div className="relative mb-4">
         <div className="flex items-center justify-center rounded-lg overflow-hidden">
           {todasLasImagenes.length > 0 ? (
@@ -189,22 +187,10 @@ export default function DetalleMobile({ producto, onSugerenciaChange }: DetalleM
         )}
       </div>
 
-      {/* Información del producto */}
       <div className="mb-2 text-xs text-gray-500">Vidrio templado</div>
       <div className="font-bold text-xl mb-1">{producto.nombre}</div>
       <div className="text-gray-700 mb-2">{producto.descripcion}</div>
-      <div className="flex items-center gap-2 mb-4 flex-wrap">
-        <div className="text-2xl font-semibold text-orange-600">
-          ${producto.precio.toLocaleString()} <span className="text-lg font-normal">ARS</span>
-        </div>
-        {producto.precio > 0 && (
-          <div className="text-sm bg-orange-100 text-orange-800 px-2 py-0.5 rounded-full">
-            Precio actualizado
-          </div>
-        )}
-      </div>
 
-      {/* ✅ Campo de sugerencias para móvil */}
       <div className="mb-4">
         <label className="block text-sm font-bold text-orange-600 mb-2">
           SUGERENCIAS ESPECIALES

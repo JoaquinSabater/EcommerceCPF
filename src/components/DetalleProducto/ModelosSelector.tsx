@@ -13,7 +13,6 @@ type ModeloSeleccionado = {
   cantidad: number;
 };
 
-// ✅ Agregar sugerenciaActual como prop
 interface ModelosSelectorProps {
   subcategoriaId: number;
   sugerenciaActual?: string;
@@ -28,7 +27,6 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
   const [isSearchFocused, setIsSearchFocused] = useState<boolean>(false);
   const [dolar, setDolar] = useState<number>(1);
   
-  // Estados para recomendaciones (máximo 5)
   const [modelosRecomendados, setModelosRecomendados] = useState<string[]>([]);
   const [isEditingRecomendados, setIsEditingRecomendados] = useState<boolean>(false);
   const [tempRecomendados, setTempRecomendados] = useState<string[]>([]);
@@ -37,17 +35,25 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
   const { addToCart } = useCart();
   const { isAdmin } = useAuth();
 
-  // ✅ Debug para ver si llega la sugerencia
   useEffect(() => {
     console.log('🟡 ModelosSelector recibió sugerenciaActual:', `"${sugerenciaActual}"`);
   }, [sugerenciaActual]);
 
-  // ✅ Función helper para mostrar marca + modelo
+  // ✅ Función helper para mostrar marca + modelo + precio
   const formatModeloDisplay = (articulo: Articulo) => {
-    if (articulo.marca_nombre) {
-      return `${articulo.marca_nombre} ${articulo.modelo}`;
-    }
-    return articulo.modelo;
+    const marcaModelo = articulo.marca_nombre 
+      ? `${articulo.marca_nombre} ${articulo.modelo}` 
+      : articulo.modelo;
+    
+    const precioUsd = Number(articulo.precio_venta || 0);
+    const precioArs = Math.round(precioUsd * dolar);
+    
+    return {
+      texto: `${marcaModelo} - $${precioUsd} USD ($${precioArs.toLocaleString()} ARS)`,
+      marcaModelo: marcaModelo,
+      precioUsd: precioUsd,
+      precioArs: precioArs
+    };
   };
 
   // ✅ Obtener cotización del dólar
@@ -72,7 +78,7 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
         setModelos(data.articulos || []);
       });
 
-    // ✅ Cargar recomendaciones desde la BD usando subcategoriaId como itemId
+    // Cargar recomendaciones desde la BD usando subcategoriaId como itemId
     fetch(`/api/recomendaciones?itemId=${subcategoriaId}`)
       .then(res => res.json())
       .then(data => {
@@ -139,7 +145,7 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
       addToCart(articuloConCantidad, articulo.modelo, cantidad, sugerenciaActual);
     });
     
-    // ✅ Calcular total en pesos
+    // ✅ Calcular total en pesos con precios individuales
     const totalUsd = seleccionados.reduce((sum, { articulo, cantidad }) => 
       sum + (Number(articulo.precio_venta || 0) * cantidad), 0);
     const totalPesos = totalUsd * dolar;
@@ -167,7 +173,7 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
     }
   };
 
-  // Funciones de admin para recomendaciones
+  // ... (mantener todas las funciones de admin existentes sin cambios)
   const handleStartEdit = () => {
     setIsEditingRecomendados(true);
     setTempRecomendados([...modelosRecomendados]);
@@ -180,7 +186,6 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
     setModeloSeleccionadoAdmin(null);
   };
 
-  // ✅ Función para guardar hasta 5 recomendaciones en la BD
   const handleSaveRecomendados = async () => {
     try {
       const response = await fetch('/api/recomendaciones', {
@@ -189,8 +194,8 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          itemId: subcategoriaId, // ✅ Usar subcategoriaId como itemId
-          recomendaciones: tempRecomendados.slice(0, 5) // ✅ Limitar a 5
+          itemId: subcategoriaId,
+          recomendaciones: tempRecomendados.slice(0, 5)
         }),
       });
 
@@ -215,7 +220,6 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
     }
   };
 
-  // ✅ Función para agregar modelo seleccionado del Listbox (máximo 5)
   const handleAddModeloFromListbox = () => {
     if (modeloSeleccionadoAdmin && tempRecomendados.length < 5) {
       const modeloNombre = modeloSeleccionadoAdmin.modelo;
@@ -255,7 +259,6 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
     <div className="w-full mt-4 rounded-lg bg-white shadow-sm p-4">
       <h3 className="text-lg font-bold mb-3 text-gray-800">
         Selección de modelos
-        {/* ✅ Mostrar indicador si hay sugerencia */}
         {sugerenciaActual && (
           <span className="ml-2 text-sm bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
             Con sugerencias especiales ✨
@@ -282,32 +285,45 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
         
         <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
           <div className="flex flex-wrap gap-2">
-            {(isEditingRecomendados ? tempRecomendados : modelosRecomendados).map((modeloNombre, index) => (
-              <div key={index} className="relative">
-                <button
-                  onClick={() => handleRecomendadoSelect(modeloNombre)}
-                  disabled={isEditingRecomendados}
-                  className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
-                    isEditingRecomendados 
-                      ? 'bg-gray-100 text-gray-600 cursor-default' 
-                      : 'bg-pink-50 text-pink-700 hover:bg-pink-100 border border-pink-200'
-                  }`}
-                >
-                  {modeloNombre}
-                </button>
-                {isEditingRecomendados && (
+            {(isEditingRecomendados ? tempRecomendados : modelosRecomendados).map((modeloNombre, index) => {
+              const modeloCompleto = modelos.find(m => m.modelo === modeloNombre);
+              const displayInfo = modeloCompleto ? formatModeloDisplay(modeloCompleto) : null;
+              
+              return (
+                <div key={index} className="relative">
                   <button
-                    onClick={() => handleRemoveFromRecomendados(modeloNombre)}
-                    className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                    onClick={() => handleRecomendadoSelect(modeloNombre)}
+                    disabled={isEditingRecomendados}
+                    className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+                      isEditingRecomendados 
+                        ? 'bg-gray-100 text-gray-600 cursor-default' 
+                        : 'bg-pink-50 text-pink-700 hover:bg-pink-100 border border-pink-200'
+                    }`}
+                    title={displayInfo ? `$${displayInfo.precioUsd} USD - $${displayInfo.precioArs.toLocaleString()} ARS` : ''}
                   >
-                    ×
+                    <div className="flex flex-col items-start">
+                      <span className="font-medium">{modeloNombre}</span>
+                      {displayInfo && !isEditingRecomendados && (
+                        <span className="text-xs text-pink-600">
+                          ${displayInfo.precioUsd} USD
+                        </span>
+                      )}
+                    </div>
                   </button>
-                )}
-              </div>
-            ))}
+                  {isEditingRecomendados && (
+                    <button
+                      onClick={() => handleRemoveFromRecomendados(modeloNombre)}
+                      className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
-          {/* Panel de edición para admin */}
+          {/* Panel de edición para admin (mantener igual) */}
           {isEditingRecomendados && (
             <div className="mt-4 pt-4 border-t border-gray-200">
               <div className="flex items-center justify-between mb-3">
@@ -321,14 +337,13 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
                 )}
               </div>
               
-              {/* ✅ Listbox para seleccionar modelos (solo si no se alcanzó el máximo) */}
               {tempRecomendados.length < 5 && (
                 <div className="mb-4">
                   <Listbox value={modeloSeleccionadoAdmin} onChange={setModeloSeleccionadoAdmin}>
                     <div className="relative">
                       <Listbox.Button className="w-full flex items-center justify-between border border-gray-300 px-4 py-2 rounded bg-white text-left hover:border-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-200">
                         <span className="block truncate">
-                          {modeloSeleccionadoAdmin ? formatModeloDisplay(modeloSeleccionadoAdmin) : "Seleccionar modelo para agregar"}
+                          {modeloSeleccionadoAdmin ? formatModeloDisplay(modeloSeleccionadoAdmin).texto : "Seleccionar modelo para agregar"}
                         </span>
                         <span className="pointer-events-none">
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
@@ -338,23 +353,24 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
                       </Listbox.Button>
                       <Listbox.Options className="absolute z-30 top-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg w-full max-h-60 overflow-auto focus:outline-none">
                         {modelos.length > 0 ? (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
-                            {chunkModelos(modelos).map((chunk, chunkIndex) => (
-                              <div key={chunkIndex} className="flex flex-col">
-                                {chunk.map((m) => (
-                                  <Listbox.Option 
-                                    key={m.modelo} 
-                                    value={m} 
-                                    className={({ active }) => `
-                                      cursor-pointer select-none relative py-2 px-4
-                                      ${active ? 'bg-orange-100 text-orange-900' : 'text-gray-900'}
-                                      ${tempRecomendados.includes(m.modelo) ? 'opacity-50' : ''}
-                                    `}
-                                    disabled={tempRecomendados.includes(m.modelo)}
-                                  >
+                          <div className="grid grid-cols-1 gap-1">
+                            {modelos.map((m) => {
+                              const displayInfo = formatModeloDisplay(m);
+                              return (
+                                <Listbox.Option 
+                                  key={m.codigo_interno} 
+                                  value={m} 
+                                  className={({ active }) => `
+                                    cursor-pointer select-none relative py-2 px-4
+                                    ${active ? 'bg-orange-100 text-orange-900' : 'text-gray-900'}
+                                    ${tempRecomendados.includes(m.modelo) ? 'opacity-50' : ''}
+                                  `}
+                                  disabled={tempRecomendados.includes(m.modelo)}
+                                >
+                                  <div className="flex justify-between items-center">
                                     <div className="flex flex-col">
                                       <span className="font-medium">
-                                        {formatModeloDisplay(m)}
+                                        {displayInfo.marcaModelo}
                                       </span>
                                       <span className="text-sm text-gray-500">
                                         {m.modelo}
@@ -363,10 +379,18 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
                                         <span className="text-xs text-green-600">Ya agregado</span>
                                       )}
                                     </div>
-                                  </Listbox.Option>
-                                ))}
-                              </div>
-                            ))}
+                                    <div className="text-right">
+                                      <div className="text-sm font-medium text-green-600">
+                                        ${displayInfo.precioUsd} USD
+                                      </div>
+                                      <div className="text-xs text-gray-500">
+                                        ${displayInfo.precioArs.toLocaleString()} ARS
+                                      </div>
+                                    </div>
+                                  </div>
+                                </Listbox.Option>
+                              );
+                            })}
                           </div>
                         ) : (
                           <div className="px-4 py-2 text-gray-500 text-sm italic">
@@ -377,7 +401,6 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
                     </div>
                   </Listbox>
                   
-                  {/* Botón para agregar el modelo seleccionado */}
                   {modeloSeleccionadoAdmin && (
                     <button
                       onClick={handleAddModeloFromListbox}
@@ -395,19 +418,22 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
                 </div>
               )}
 
-              {/* Botones de rápida selección (solo si no se alcanzó el máximo) */}
               {tempRecomendados.length < 5 && (
                 <div className="flex flex-wrap gap-2 mb-4">
-                  {modelos.slice(0, 10).map((modelo) => (
-                    <button
-                      key={modelo.modelo}
-                      onClick={() => handleAddToRecomendados(modelo.modelo)}
-                      disabled={tempRecomendados.includes(modelo.modelo) || tempRecomendados.length >= 5}
-                      className="px-2 py-1 text-xs bg-gray-100 border border-gray-300 text-gray-700 rounded hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      + {formatModeloDisplay(modelo)}
-                    </button>
-                  ))}
+                  {modelos.slice(0, 10).map((modelo) => {
+                    const displayInfo = formatModeloDisplay(modelo);
+                    return (
+                      <button
+                        key={modelo.codigo_interno}
+                        onClick={() => handleAddToRecomendados(modelo.modelo)}
+                        disabled={tempRecomendados.includes(modelo.modelo) || tempRecomendados.length >= 5}
+                        className="px-2 py-1 text-xs bg-gray-100 border border-gray-300 text-gray-700 rounded hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={`$${displayInfo.precioUsd} USD - $${displayInfo.precioArs.toLocaleString()} ARS`}
+                      >
+                        + {displayInfo.marcaModelo} (${displayInfo.precioUsd})
+                      </button>
+                    );
+                  })}
                 </div>
               )}
               
@@ -458,27 +484,36 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
         {isSearchFocused && searchTerm && (
           <div className="absolute z-20 bottom-full left-0 right-0 mb-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
             {modelosFiltrados.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-1 py-1">
-                {chunkModelos(modelosFiltrados.slice(0, 20)).map((chunk, chunkIndex) => (
-                  <div key={chunkIndex} className="flex flex-col">
-                    {chunk.map((modelo) => (
-                      <button
-                        key={modelo.modelo}
-                        onClick={() => handleSearchSelect(modelo)}
-                        className="cursor-pointer select-none relative py-2 px-4 hover:bg-orange-100 hover:text-orange-900 transition-colors text-left"
-                      >
+              <div className="grid grid-cols-1 gap-1 py-1">
+                {modelosFiltrados.slice(0, 20).map((modelo) => {
+                  const displayInfo = formatModeloDisplay(modelo);
+                  return (
+                    <button
+                      key={modelo.codigo_interno}
+                      onClick={() => handleSearchSelect(modelo)}
+                      className="cursor-pointer select-none relative py-2 px-4 hover:bg-orange-100 hover:text-orange-900 transition-colors text-left"
+                    >
+                      <div className="flex justify-between items-center">
                         <div className="flex flex-col">
                           <span className="font-medium text-gray-900">
-                            {formatModeloDisplay(modelo)}
+                            {displayInfo.marcaModelo}
                           </span>
                           <span className="text-sm text-gray-500">
                             {modelo.modelo}
                           </span>
                         </div>
-                      </button>
-                    ))}
-                  </div>
-                ))}
+                        <div className="text-right">
+                          <div className="text-sm font-medium text-green-600">
+                            ${displayInfo.precioUsd} USD
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            ${displayInfo.precioArs.toLocaleString()} ARS
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             ) : (
               <div className="px-4 py-2 text-gray-500 text-sm italic">
@@ -500,7 +535,7 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
           <div className="relative flex-1">
             <Listbox.Button className="w-full flex items-center justify-between border border-gray-300 px-4 py-2 rounded bg-white text-left hover:border-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-200">
               <span className="block truncate">
-                {modeloActual ? formatModeloDisplay(modeloActual) : "Elegí un modelo"}
+                {modeloActual ? formatModeloDisplay(modeloActual).texto : "Elegí un modelo"}
               </span>
               <span className="pointer-events-none">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
@@ -510,28 +545,41 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
             </Listbox.Button>
             <Listbox.Options className="absolute z-10 bottom-full mb-1 bg-white border border-gray-200 rounded-md shadow-lg w-full max-h-60 overflow-auto focus:outline-none">
               {modelosFiltrados.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
+                <div className="grid grid-cols-1 gap-1">
                   {modelosChunks.map((chunk, chunkIndex) => (
                     <div key={chunkIndex} className="flex flex-col">
-                      {chunk.map((m) => (
-                        <Listbox.Option 
-                          key={m.modelo} 
-                          value={m} 
-                          className={({ active }) => `
-                            cursor-pointer select-none relative py-2 px-4
-                            ${active ? 'bg-orange-100 text-orange-900' : 'text-gray-900'}
-                          `}
-                        >
-                          <div className="flex flex-col">
-                            <span className="font-medium">
-                              {formatModeloDisplay(m)}
-                            </span>
-                            <span className="text-sm text-gray-500">
-                              {m.modelo}
-                            </span>
-                          </div>
-                        </Listbox.Option>
-                      ))}
+                      {chunk.map((m) => {
+                        const displayInfo = formatModeloDisplay(m);
+                        return (
+                          <Listbox.Option 
+                            key={m.codigo_interno} 
+                            value={m} 
+                            className={({ active }) => `
+                              cursor-pointer select-none relative py-2 px-4
+                              ${active ? 'bg-orange-100 text-orange-900' : 'text-gray-900'}
+                            `}
+                          >
+                            <div className="flex justify-between items-center">
+                              <div className="flex flex-col">
+                                <span className="font-medium">
+                                  {displayInfo.marcaModelo}
+                                </span>
+                                <span className="text-sm text-gray-500">
+                                  {m.modelo}
+                                </span>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-sm font-medium text-green-600">
+                                  ${displayInfo.precioUsd} USD
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  ${displayInfo.precioArs.toLocaleString()} ARS
+                                </div>
+                              </div>
+                            </div>
+                          </Listbox.Option>
+                        );
+                      })}
                     </div>
                   ))}
                 </div>
@@ -567,34 +615,67 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
         )}
       </div>
 
-      {/* Lista de modelos seleccionados */}
+      {/* Lista de modelos seleccionados con precios */}
       {seleccionados.length > 0 && (
         <div className="mb-4">
           <h4 className="font-medium text-gray-700 mb-2">Modelos seleccionados:</h4>
           <div className={`flex flex-col gap-2 ${seleccionados.length > 3 ? "max-h-48 overflow-y-auto pr-1" : ""}`}>
-            {seleccionados.map((s) => (
-              <div key={s.articulo.modelo} className="flex items-center gap-3 border border-gray-200 rounded px-3 py-2 bg-gray-50 hover:bg-gray-100">
-                <div className="flex-1">
-                  <span className="font-medium text-gray-800">
-                    {formatModeloDisplay(s.articulo)}
-                  </span>
-                  <span className="text-gray-600 text-sm ml-2">
-                    Cantidad: {s.cantidad}
-                  </span>
+            {seleccionados.map((s) => {
+              const displayInfo = formatModeloDisplay(s.articulo);
+              const subtotalUsd = Number(s.articulo.precio_venta || 0) * s.cantidad;
+              const subtotalArs = subtotalUsd * dolar;
+              
+              return (
+                <div key={s.articulo.codigo_interno} className="flex items-center gap-3 border border-gray-200 rounded px-3 py-2 bg-gray-50 hover:bg-gray-100">
+                  <div className="flex-1">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <span className="font-medium text-gray-800">
+                          {displayInfo.marcaModelo}
+                        </span>
+                        <div className="text-sm text-gray-600">
+                          Cantidad: {s.cantidad} x ${displayInfo.precioUsd} USD
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-medium text-green-600">
+                          ${subtotalUsd.toFixed(2)} USD
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          ${Math.round(subtotalArs).toLocaleString()} ARS
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    className="text-red-500 hover:text-red-700 hover:underline text-sm font-medium"
+                    onClick={() => handleRemoveSeleccionado(s.articulo.modelo)}
+                  >
+                    Quitar
+                  </button>
                 </div>
-                <button
-                  className="text-red-500 hover:text-red-700 hover:underline text-sm font-medium"
-                  onClick={() => handleRemoveSeleccionado(s.articulo.modelo)}
-                >
-                  Quitar
-                </button>
+              );
+            })}
+          </div>
+          
+          {/* Total de seleccionados */}
+          <div className="mt-2 pt-2 border-t border-gray-200">
+            <div className="flex justify-between items-center">
+              <span className="font-medium text-gray-700">Total:</span>
+              <div className="text-right">
+                <div className="font-bold text-green-600">
+                  ${seleccionados.reduce((sum, s) => sum + (Number(s.articulo.precio_venta || 0) * s.cantidad), 0).toFixed(2)} USD
+                </div>
+                <div className="text-sm text-gray-500">
+                  ${Math.round(seleccionados.reduce((sum, s) => sum + (Number(s.articulo.precio_venta || 0) * s.cantidad), 0) * dolar).toLocaleString()} ARS
+                </div>
               </div>
-            ))}
+            </div>
           </div>
         </div>
       )}
 
-      {/* Botón añadir al carrito - MODIFICADO para mostrar si hay sugerencia */}
+      {/* Botón añadir al carrito */}
       <button
         className="mt-2 bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded font-bold w-full disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         disabled={seleccionados.length === 0}

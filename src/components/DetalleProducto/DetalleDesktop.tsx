@@ -59,17 +59,6 @@ export default function DetalleDesktop({ producto, onSugerenciaChange }: Detalle
           <div className="mb-2 text-xs text-gray-500">Vidrio templado</div>
           <div className="font-bold text-3xl mb-2">{producto.nombre}</div>
           <div className="text-gray-700 mb-4 text-lg">{producto.descripcion}</div>
-          <div className="flex items-center gap-2 mb-4">
-            <div className="text-2xl font-semibold text-orange-600">
-              ${producto.precio.toLocaleString()} <span className="text-lg font-normal">ARS</span>
-            </div>
-            {producto.precio > 0 && (
-              <div className="text-sm bg-orange-100 text-orange-800 px-2 py-0.5 rounded-full">
-                Precio actualizado
-              </div>
-            )}
-          </div>
-
           {/* ✅ Campo de sugerencias */}
           <div className="mb-4">
             <label className="block text-sm font-bold text-orange-600 mb-2">
