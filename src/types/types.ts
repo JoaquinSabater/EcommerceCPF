@@ -4,6 +4,7 @@ export type Item = {
   father: string;
 };
 
+
 export interface Articulo {
   codigo_interno: string;
   item_id: number;
@@ -33,6 +34,34 @@ export interface User {
   domicilio: string;
   cuil: string;
   isAdmin?: boolean;
+  hasPassword?: boolean; // ✅ Solo este campo nuevo
+}
+
+export interface LoginResponse {
+  success: boolean;
+  user?: User;
+  message?: string;
+  requiresPasswordSetup?: boolean;
+}
+
+export interface LoginRequest {
+  cuil: string;
+  password?: string;
+}
+
+export interface SetPasswordRequest {
+  cuil: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  newPassword: string;
 }
 
 export interface Pedido {
@@ -60,9 +89,4 @@ export interface ArticuloPedido {
   item_nombre: string;
   modelo: string;
   cantidad: number;
-}
-
-export interface LoginResponse {
-  success: boolean;
-  user: User;
 }

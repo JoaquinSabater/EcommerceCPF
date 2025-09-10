@@ -2,13 +2,18 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { LoginResponse } from '@/types/types'; // ← Importar tipo
+import { LoginResponse } from '@/types/types';
+import Link from 'next/link';
+import { ArrowLeftIcon, EyeIcon, EyeSlashIcon, LockClosedIcon } from '@heroicons/react/24/outline';
+
 
 export default function LoginPage() {
   const router = useRouter();
   const [cuil, setCuil] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,17 +26,30 @@ export default function LoginPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ cuil }),
+        body: JSON.stringify({ cuil, password }),
       });
 
-      const data: LoginResponse = await response.json(); // ← Tipado de la respuesta
+      const data: LoginResponse = await response.json();
 
       if (response.ok && data.success) {
-        console.log('Usuario logueado:', data.user.nombre);
+        console.log('Usuario logueado:', data.user?.nombre);
         localStorage.setItem('user', JSON.stringify(data.user));
+        
+        // Si necesita configurar contraseña, mostrar aviso
+        if (data.requiresPasswordSetup) {
+          const wantsToSetPassword = confirm(
+            'Por seguridad, ¿te gustaría configurar una contraseña ahora? (Puedes hacerlo después desde tu perfil)'
+          );
+          
+          if (wantsToSetPassword) {
+            router.push('/auth/set-password');
+            return;
+          }
+        }
+        
         router.push("/public");
       } else {
-        setError('CUIL no encontrado');
+        setError(data.message || 'Error al iniciar sesión');
       }
     } catch (error) {
       setError('Error al iniciar sesión');
@@ -45,9 +63,11 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <form
         onSubmit={handleSubmit}
-        className="bg-white p-8 rounded shadow-md flex flex-col gap-4 w-full max-w-xs"
+        className="bg-white p-8 rounded shadow-md flex flex-col gap-4 w-full max-w-sm"
       >
         <h1 className="text-2xl font-bold mb-4 text-center">Iniciar sesión</h1>
+        
+        {/* Campo CUIL */}
         <input
           type="text"
           placeholder="CUIL (ej: 20-12345678-9)"
@@ -56,9 +76,37 @@ export default function LoginPage() {
           className="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
           required
         />
+
+        {/* Campo Contraseña */}
+        <div className="relative">
+          <input
+            type={showPassword ? "text" : "password"}
+            placeholder="Contraseña (opcional)"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            className="w-full border rounded px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-orange-500"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700"
+          >
+            {showPassword ? (
+                  <EyeSlashIcon className="h-5 w-5" />
+                ) : (
+                  <EyeIcon className="h-5 w-5" />
+                )}
+          </button>
+        </div>
+
+        <div className="text-xs text-gray-600 text-center">
+          💡 Clientes existentes pueden ingresar solo con CUIL
+        </div>
+
         {error && (
           <div className="text-red-600 text-sm text-center">{error}</div>
         )}
+
         <button
           type="submit"
           disabled={loading}
@@ -66,6 +114,22 @@ export default function LoginPage() {
         >
           {loading ? 'Verificando...' : 'Entrar'}
         </button>
+
+        {/* Enlaces */}
+        <div className="flex flex-col gap-2 text-sm text-center">
+          <Link 
+            href="/auth/forgot-password" 
+            className="text-orange-600 hover:text-orange-700 hover:underline"
+          >
+            ¿Olvidaste tu contraseña?
+          </Link>
+          <Link 
+            href="/auth/set-password" 
+            className="text-blue-600 hover:text-blue-700 hover:underline"
+          >
+            Configurar contraseña
+          </Link>
+        </div>
       </form>
     </div>
   );
