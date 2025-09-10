@@ -1,23 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
+import bcrypt from 'bcryptjs';
 import { db } from '@/data/mysql';
-import { ResetPasswordRequest } from '@/types/types';
-import { hashPassword } from '@/lib/bcrypt';
 import { isTokenExpired } from '@/lib/tokens';
 
 export async function POST(request: NextRequest) {
   let connection;
   
   try {
-    const { token, newPassword }: ResetPasswordRequest = await request.json();
+    const { token, password } = await request.json();
 
-    if (!token || !newPassword) {
+    if (!token || !password) {
       return NextResponse.json(
-        { success: false, message: 'Token y nueva contraseña son requeridos' },
+        { success: false, message: 'Token y contraseña son requeridos' },
         { status: 400 }
       );
     }
 
-    if (newPassword.length < 6) {
+    if (password.length < 6) {
       return NextResponse.json(
         { success: false, message: 'La contraseña debe tener al menos 6 caracteres' },
         { status: 400 }
@@ -25,57 +24,59 @@ export async function POST(request: NextRequest) {
     }
 
     connection = await db.getConnection();
-    await connection.query('SET SESSION wait_timeout=300');
-    await connection.query('SET SESSION interactive_timeout=300');
 
-    // Buscar cliente por token
-    const [authRows] = await connection.query(
-      `SELECT ca.cliente_id, ca.reset_token_expires, c.nombre, c.apellido 
-       FROM clientes_auth ca
+    // Buscar token en la base de datos
+    const [tokenRows] = await connection.query(
+      `SELECT ca.cliente_id, ca.reset_token_expires, c.email, c.nombre 
+       FROM clientes_auth ca 
        JOIN clientes c ON ca.cliente_id = c.id 
        WHERE ca.reset_token = ?`,
       [token]
     );
 
-    if ((authRows as any).length === 0) {
+    if ((tokenRows as any).length === 0) {
       return NextResponse.json(
         { success: false, message: 'Token inválido o expirado' },
         { status: 400 }
       );
     }
 
-    const authData = (authRows as any)[0];
+    const tokenData = (tokenRows as any)[0];
 
-    // Verificar que el token no haya expirado
-    if (isTokenExpired(new Date(authData.reset_token_expires))) {
+    // Verificar si el token ha expirado
+    if (isTokenExpired(new Date(tokenData.reset_token_expires))) {
       return NextResponse.json(
-        { success: false, message: 'El token ha expirado. Solicita uno nuevo.' },
+        { success: false, message: 'El token ha expirado. Solicita un nuevo enlace.' },
         { status: 400 }
       );
     }
 
-    // Hash de la nueva contraseña
-    const hashedPassword = await hashPassword(newPassword);
+    // Hashear la nueva contraseña
+    const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Actualizar contraseña y limpiar token
+    // Actualizar la contraseña del cliente
     await connection.query(
-      `UPDATE clientes_auth 
-       SET password_hash = ?, reset_token = NULL, reset_token_expires = NULL 
-       WHERE cliente_id = ?`,
-      [hashedPassword, authData.cliente_id]
+      'UPDATE clientes SET password = ? WHERE id = ?',
+      [hashedPassword, tokenData.cliente_id]
     );
 
-    console.log(`✅ Contraseña restablecida para: ${authData.nombre} ${authData.apellido} (ID: ${authData.cliente_id})`);
+    // Eliminar el token usado
+    await connection.query(
+      'UPDATE clientes_auth SET reset_token = NULL, reset_token_expires = NULL WHERE cliente_id = ?',
+      [tokenData.cliente_id]
+    );
+
+    console.log(`✅ Contraseña restablecida para: ${tokenData.email}`);
 
     return NextResponse.json({
       success: true,
-      message: 'Contraseña restablecida exitosamente'
+      message: 'Contraseña restablecida exitosamente. Ya puedes iniciar sesión.'
     });
 
   } catch (error) {
     console.error('❌ Error en reset-password:', error);
     return NextResponse.json(
-      { success: false, message: 'Error al procesar la solicitud. Intenta nuevamente.' },
+      { success: false, message: 'Error al restablecer la contraseña. Intenta nuevamente.' },
       { status: 500 }
     );
   } finally {
