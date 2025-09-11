@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { LoginResponse } from '@/types/types';
 import Link from 'next/link';
-import { ArrowLeftIcon, EyeIcon, EyeSlashIcon, LockClosedIcon } from '@heroicons/react/24/outline';
+import { EyeIcon, EyeSlashIcon} from '@heroicons/react/24/outline';
 
 
 export default function LoginPage() {
@@ -35,7 +35,6 @@ export default function LoginPage() {
         console.log('Usuario logueado:', data.user?.nombre);
         localStorage.setItem('user', JSON.stringify(data.user));
         
-        // Si necesita configurar contraseña, mostrar aviso
         if (data.requiresPasswordSetup) {
           const wantsToSetPassword = confirm(
             'Por seguridad, ¿te gustaría configurar una contraseña ahora? (Puedes hacerlo después desde tu perfil)'
@@ -70,7 +69,7 @@ export default function LoginPage() {
         {/* Campo CUIL */}
         <input
           type="text"
-          placeholder="CUIL (ej: 20-12345678-9)"
+          placeholder="CUIL (ej: 20123456789)"
           value={cuil}
           onChange={e => setCuil(e.target.value)}
           className="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"

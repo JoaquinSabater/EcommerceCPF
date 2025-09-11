@@ -155,7 +155,7 @@ export default function SetPasswordPage() {
               value={cuil}
               onChange={(e) => setCuil(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-              placeholder="20-12345678-9"
+              placeholder="20123456789"
               required
             />
           </div>
