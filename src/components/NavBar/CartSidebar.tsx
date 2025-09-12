@@ -7,11 +7,13 @@ import { useCart } from '@/components/CartContext';
 import QuantityButton from '../QuantityButton';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useProspectoMode } from '@/hooks/useProspectoMode';
 
 export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const sidebarRef = useRef<HTMLDivElement>(null);
   const { cart, changeQuantity, clearCart } = useCart();
   const { user } = useAuth();
+  const { isProspectoMode, prospectoData } = useProspectoMode();
   const router = useRouter();
 
   const [dolar, setDolar] = useState<number>(1);
@@ -36,6 +38,11 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
   );
 
   const handleBuy = async () => {
+    if (isProspectoMode) {
+      alert(`Hola ${prospectoData?.nombre}! Para realizar la compra necesitas registrarte como cliente. ¿Te contactamos?`);
+      return;
+    }
+
     if (!user) {
       alert('Debes iniciar sesión para realizar una compra');
       router.push('/auth/login');
@@ -50,14 +57,13 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
     setIsCreatingOrder(true);
     
     try {
-      // ✅ Incluir sugerencias en el carrito
       const itemsCarrito = cart.map(item => ({
         codigo_interno: item.codigo_interno,
         modelo: item.modelo,
         cantidad: item.cantidad,
         precio: item.precio_venta,
         item_nombre: item.item_nombre,
-        sugerencia: item.sugerencia || '' // ✅ Agregar sugerencia
+        sugerencia: item.sugerencia || ''
       }));
 
       console.log('Enviando pedido preliminar con sugerencias:', {
@@ -155,7 +161,6 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
                       <div className="text-sm text-orange-600 font-semibold">
                         ${Math.round(item.precio_venta * dolar).toLocaleString()} c/u
                       </div>
-                      {/* ✅ Mostrar sugerencia si existe */}
                       {item.sugerencia && (
                         <div className="text-xs text-gray-600 mt-1 p-2 bg-gray-50 rounded">
                           <span className="font-medium">Sugerencia:</span> {item.sugerencia}
@@ -187,13 +192,31 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
                   </div>
                 </div>
               </div>
+
               <button
-                className="w-full bg-orange-600 text-white py-2 rounded hover:bg-orange-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+                className={`w-full py-2 rounded transition font-medium ${
+                  isProspectoMode 
+                    ? 'bg-orange-400 text-white cursor-not-allowed' 
+                    : 'bg-orange-600 text-white hover:bg-orange-700'
+                } disabled:bg-gray-400 disabled:cursor-not-allowed`}
                 onClick={handleBuy}
                 disabled={isCreatingOrder || cart.length === 0}
               >
-                {isCreatingOrder ? 'Creando pedido...' : 'Comprar'}
+                {isCreatingOrder ? 'Creando pedido...' : 
+                 isProspectoMode ? '🔒 Regístrate para comprar' : 'Comprar'}
               </button>
+
+              {/* ✅ MENSAJE PARA PROSPECTOS CON COLORES NARANJAS */}
+              {isProspectoMode && (
+                <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded text-sm">
+                  <p className="text-orange-800 font-medium mb-1">
+                    👋 ¡Hola {prospectoData?.nombre}!
+                  </p>
+                  <p className="text-orange-700 text-xs">
+                    Estás en modo de prueba. Para realizar esta compra necesitas registrarte como cliente, contactate con el captador para conseguir una cuenta
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         )}

@@ -1,4 +1,3 @@
-// src/lib/tokens.ts
 import crypto from 'crypto';
 
 export function generateResetToken(): string {
@@ -11,4 +10,13 @@ export function generateTokenExpiry(): Date {
 
 export function isTokenExpired(expiryDate: Date): boolean {
   return new Date() > expiryDate;
+}
+
+// ✅ CAMBIAR A 4 DÍAS
+export function generateProspectoToken(): string {
+  return crypto.randomBytes(48).toString('hex');
+}
+
+export function generateProspectoTokenExpiry(): Date {
+  return new Date(Date.now() + 4 * 24 * 60 * 60 * 1000); // ✅ 4 DÍAS
 }
