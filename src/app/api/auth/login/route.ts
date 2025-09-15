@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/data/mysql';
-import { User, LoginResponse } from '@/types/types';
+import { User} from '@/types/types';
 import { verifyPassword } from '@/lib/bcrypt';
 
 export async function POST(request: NextRequest) {

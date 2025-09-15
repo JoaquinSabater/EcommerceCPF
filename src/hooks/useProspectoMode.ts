@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 
 interface ProspectoData {
   id: number;
@@ -14,9 +15,17 @@ interface ProspectoData {
 export function useProspectoMode() {
   const [isProspectoMode, setIsProspectoMode] = useState(false);
   const [prospectoData, setProspectoData] = useState<ProspectoData | null>(null);
+  const { user } = useAuth(); // ✅ AGREGAR HOOK DE AUTH
 
   useEffect(() => {
-    // Verificar si está en modo prospecto
+    // ✅ SI HAY UN USUARIO AUTENTICADO, NO ACTIVAR MODO PROSPECTO
+    if (user) {
+      setIsProspectoMode(false);
+      setProspectoData(null);
+      return;
+    }
+
+    // Solo verificar modo prospecto si NO hay usuario autenticado
     const prospectoModeActive = localStorage.getItem('prospecto_mode') === 'true';
     const prospectoDataStored = localStorage.getItem('prospecto_data');
     
@@ -27,7 +36,7 @@ export function useProspectoMode() {
       setIsProspectoMode(false);
       setProspectoData(null);
     }
-  }, []);
+  }, [user]); // ✅ AGREGAR DEPENDENCIA DE USER
 
   const clearProspectoSession = () => {
     localStorage.removeItem('prospecto_mode');

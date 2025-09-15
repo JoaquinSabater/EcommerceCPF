@@ -33,11 +33,10 @@ function ProspectoOrderContent() {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        // ✅ LIMPIAR CUALQUIER SESIÓN EXISTENTE
-        localStorage.removeItem('user');
-        localStorage.removeItem('isAuthenticated');
+        // ✅ LIMPIAR COMPLETAMENTE CUALQUIER SESIÓN EXISTENTE
+        localStorage.clear(); // Limpiar todo el localStorage
         
-        // ✅ CONFIGURAR MODO PROSPECTO (permitir uso múltiple)
+        // ✅ CONFIGURAR MODO PROSPECTO LIMPIO
         localStorage.setItem('prospecto_mode', 'true');
         localStorage.setItem('prospecto_token', token);
         localStorage.setItem('prospecto_data', JSON.stringify(data.prospecto));
