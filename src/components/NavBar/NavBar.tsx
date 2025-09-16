@@ -83,7 +83,6 @@ export default function NavBar() {
 
   return (
     <>
-      {/* ✅ BANNER DE MODO PROSPECTO CON COLOR NARANJA */}
         {isProspectoMode && (
           <div className="bg-orange-600 text-white px-4 py-2 text-sm">
             <div className="flex items-center justify-between max-w-7xl mx-auto">

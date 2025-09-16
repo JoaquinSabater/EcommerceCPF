@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { User } from '@/types/types'; // Importar el tipo desde types.ts
+import { User } from '@/types/types';
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
@@ -14,7 +14,6 @@ export function useAuth() {
         const parsedUser: User = JSON.parse(storedUser);
         setUser(parsedUser);
         
-        // ✅ LIMPIAR MODO PROSPECTO SI HAY USUARIO AUTENTICADO
         clearProspectoMode();
         
       } catch (error) {
@@ -25,7 +24,6 @@ export function useAuth() {
     setLoading(false);
   }, []);
 
-  // ✅ NUEVA FUNCIÓN PARA LIMPIAR MODO PROSPECTO
   const clearProspectoMode = () => {
     localStorage.removeItem('prospecto_mode');
     localStorage.removeItem('prospecto_data');
@@ -36,23 +34,20 @@ export function useAuth() {
   const logout = () => {
     localStorage.removeItem('user');
     setUser(null);
-    window.location.href = '/auth/login';
+    window.location.href = '/';
   };
 
   const updateUser = (userData: User) => {
     setUser(userData);
     localStorage.setItem('user', JSON.stringify(userData));
     
-    // ✅ LIMPIAR MODO PROSPECTO AL ACTUALIZAR USUARIO
     clearProspectoMode();
   };
 
-  // ✅ NUEVA FUNCIÓN PARA LOGIN (si no la tienes en otro lado)
   const login = (userData: User) => {
     setUser(userData);
     localStorage.setItem('user', JSON.stringify(userData));
     
-    // ✅ LIMPIAR MODO PROSPECTO AL HACER LOGIN
     clearProspectoMode();
     
     console.log('✅ Usuario autenticado, modo prospecto limpiado');
@@ -63,7 +58,7 @@ export function useAuth() {
     loading,
     logout,
     updateUser,
-    login, // ✅ AGREGAR FUNCIÓN LOGIN
+    login,
     isAuthenticated: !!user,
     isAdmin: user?.isAdmin || false
   };

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { categorias } from "@/types/types";
 import { CldImage } from 'next-cloudinary';
 import DetalleProductoModal from "./DetalleProductoModal";
+import CategoriaCardSkeleton from "@/components/Skeletons/CategoriaCardSkeleton";
 
 interface CategoriaCardProps {
   categoria: categorias;
@@ -12,7 +13,7 @@ interface CategoriaCardProps {
 
 export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps) {
   const [precioEnPesos, setPrecioEnPesos] = useState<number | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [imagenPrincipal, setImagenPrincipal] = useState<string>('');
   const [imageError, setImageError] = useState(false);
@@ -23,17 +24,21 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
       setImageError(false);
       
       try {
-        // ✅ La API ya devuelve el precio en pesos
-        const resPrice = await fetch(`/api/precio?itemId=${categoria.id}`);
-        const dataPrice = await resPrice.json();
-        setPrecioEnPesos(dataPrice.precio); // Ya viene convertido a pesos
+        // Cargar precio y detalles en paralelo
+        const [resPrice, resDetail] = await Promise.all([
+          fetch(`/api/precio?itemId=${categoria.id}`),
+          fetch(`/api/detalle?id=${categoria.id}`)
+        ]);
 
-        // Buscar la foto_portada específicamente
-        const resDetail = await fetch(`/api/detalle?id=${categoria.id}`);
+        // Procesar precio
+        if (resPrice.ok) {
+          const dataPrice = await resPrice.json();
+          setPrecioEnPesos(dataPrice.precio);
+        }
+
+        // Procesar imagen
         if (resDetail.ok) {
           const dataDetail = await resDetail.json();
-          
-          console.log('Datos del producto:', dataDetail);
           
           if (dataDetail.foto_portada && dataDetail.foto_portada.trim() !== '') {
             setImagenPrincipal(dataDetail.foto_portada);
@@ -46,7 +51,6 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
             setImageError(true);
           }
         } else {
-          console.log('Error en la respuesta del detalle:', resDetail.status);
           setImagenPrincipal('');
           setImageError(true);
         }
@@ -54,9 +58,10 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
         console.error("Error al obtener datos:", error);
         setImagenPrincipal('');
         setImageError(true);
-      } finally {
-        setLoading(false);
       }
+      
+      // ✅ TERMINAR LOADING DESPUÉS DE PROCESAR DATOS
+      setLoading(false);
     };
 
     fetchData();
@@ -86,10 +91,10 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
     }
   };
 
-  const handleImageError = () => {
-    console.log('Error al cargar imagen de Cloudinary:', imagenPrincipal);
-    setImageError(true);
-  };
+  // ✅ MOSTRAR SKELETON MIENTRAS CARGA
+  if (loading) {
+    return <CategoriaCardSkeleton />;
+  }
 
   return (
     <>
@@ -108,7 +113,6 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
               className="object-contain w-full h-full transition-transform duration-300 hover:scale-105"
               width={400}
               height={400}
-              onError={() => console.log('Error cargando not-image.png')}
             />
           ) : (
             <CldImage
@@ -117,7 +121,6 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
               width={600}
               height={600}
               className="object-contain w-full h-full transition-transform duration-300 hover:scale-105"
-              onError={handleImageError}
               crop="fit"
               quality="auto"
               format="auto"
