@@ -27,13 +27,13 @@ export default function Footer() {
 
           {/* Copyright below logo */}
           <div className="text-sm text-gray-600">
-            © {currentYear} <span className="text-black font-semibold">CPF</span>
+            © 2025 <span className="text-black font-semibold">CPF</span>
           </div>
 
           {/* Social Icons */}
           <div className="flex items-center space-x-6">
             <a 
-              href="#" 
+              href="https://www.facebook.com/Cellphonefree.com.ar/" 
               className="text-gray-600 hover:text-black transition-colors"
               aria-label="Facebook"
             >
@@ -43,7 +43,7 @@ export default function Footer() {
             </a>
             
             <a 
-              href="#" 
+              href="https://www.instagram.com/cellphonefree.com.ar/" 
               className="text-gray-600 hover:text-black transition-colors"
               aria-label="Instagram"
             >
@@ -53,7 +53,7 @@ export default function Footer() {
             </a>
 
             <a 
-              href="#" 
+              href="https://www.tiktok.com/@cellphonefree.com.ar" 
               className="text-gray-600 hover:text-black transition-colors"
               aria-label="TikTok"
             >
@@ -63,7 +63,7 @@ export default function Footer() {
             </a>
 
             <a 
-              href="#" 
+              href="https://ar.pinterest.com/cellphonefree" 
               className="text-gray-600 hover:text-black transition-colors"
               aria-label="Pinterest"
             >
