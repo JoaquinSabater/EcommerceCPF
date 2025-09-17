@@ -4,8 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { LoginResponse } from '@/types/types';
 import Link from 'next/link';
-import { EyeIcon, EyeSlashIcon} from '@heroicons/react/24/outline';
-
+import { EyeIcon, EyeSlashIcon, ExclamationTriangleIcon} from '@heroicons/react/24/outline';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -14,11 +13,13 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [clienteDeshabilitado, setClienteDeshabilitado] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setClienteDeshabilitado(false); // Reset estado
 
     try {
       const response = await fetch('/api/auth/login', {
@@ -32,8 +33,9 @@ export default function LoginPage() {
       const data: LoginResponse = await response.json();
 
       if (response.ok && data.success) {
-        console.log('Usuario logueado:', data.user?.nombre);
-        localStorage.setItem('user', JSON.stringify(data.user));
+        console.log('Usuario logueado:', data.cliente?.nombre);
+        localStorage.setItem('user', JSON.stringify(data.cliente));
+        localStorage.setItem('token', data.token || '');
         
         if (data.requiresPasswordSetup) {
           const wantsToSetPassword = confirm(
@@ -49,6 +51,11 @@ export default function LoginPage() {
         router.push("/public");
       } else {
         setError(data.message || 'Error al iniciar sesión');
+        
+        // ✅ AQUÍ es donde debes verificar si está deshabilitado (DESPUÉS de obtener data)
+        if (data.disabled) {
+          setClienteDeshabilitado(true);
+        }
       }
     } catch (error) {
       setError('Error al iniciar sesión');
@@ -57,6 +64,35 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
+
+  // Mostrar estado especial si cliente está deshabilitado
+  if (clienteDeshabilitado) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md text-center">
+          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 mb-4">
+            <ExclamationTriangleIcon className="h-6 w-6 text-yellow-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Cuenta no habilitada</h2>
+          <p className="text-gray-600 mb-6">
+            Tu cuenta aún no está habilitada para usar el carrito de compras. 
+            Por favor, contacta a tu vendedor para solicitar la activación.
+          </p>
+          <button 
+            onClick={() => {
+              setClienteDeshabilitado(false);
+              setError('');
+              setCuil('');
+              setPassword('');
+            }}
+            className="w-full text-gray-600 hover:text-gray-800 py-2 px-4 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
+          >
+            Intentar con otro CUIL
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -99,7 +135,7 @@ export default function LoginPage() {
         </div>
 
         <div className="text-xs text-gray-600 text-center">
-          💡 Clientes existentes pueden ingresar solo con CUIL
+          💡 Solo clientes habilitados pueden acceder al carrito
         </div>
 
         {error && (

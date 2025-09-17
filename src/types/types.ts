@@ -39,9 +39,19 @@ export interface User {
 
 export interface LoginResponse {
   success: boolean;
-  user?: User;
-  message?: string;
+  message: string;
+  token?: string;
+  cliente?: {  // ✅ Cambié de 'user' a 'cliente'
+    id: number;
+    cuil: string;
+    nombre: string;
+    apellido: string;
+    email: string;
+    telefono: string;
+    vendedor_id: number;
+  };
   requiresPasswordSetup?: boolean;
+  disabled?: boolean; // ✅ Agregué esta propiedad
 }
 
 export interface LoginRequest {

@@ -1,14 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
+import bcrypt from 'bcryptjs';
 import { db } from '@/data/mysql';
-import { SetPasswordRequest } from '@/types/types';
-import { hashPassword } from '@/lib/bcrypt';
 
-export async function POST(request: NextRequest) {
-  let connection;
-  
+export async function POST(request: Request) {
   try {
-    const { cuil, newPassword, confirmPassword }: SetPasswordRequest = await request.json();
+    const { cuil, newPassword, confirmPassword } = await request.json();
 
+    // Validaciones básicas
     if (!cuil || !newPassword || !confirmPassword) {
       return NextResponse.json(
         { success: false, message: 'Todos los campos son requeridos' },
@@ -30,54 +28,62 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    connection = await db.getConnection();
-    await connection.query('SET SESSION wait_timeout=300');
-    await connection.query('SET SESSION interactive_timeout=300');
-
-    // Verificar que el cliente existe
-    const [clienteRows] = await connection.query(
-      `SELECT id, nombre, apellido FROM clientes WHERE cuit_dni = ?`,
+    // Buscar cliente por CUIL incluyendo la columna habilitado
+    const [clienteRows] = await db.execute(
+      'SELECT id, habilitado FROM clientes WHERE cuit_dni = ?',
       [cuil]
-    );
+    ) as [any[], any];
 
-    if ((clienteRows as any).length === 0) {
+    if ((clienteRows as any[]).length === 0) {
       return NextResponse.json(
         { success: false, message: 'Cliente no encontrado' },
         { status: 404 }
       );
     }
 
-    const cliente = (clienteRows as any)[0];
+    const cliente = (clienteRows as any[])[0];
 
-    // ✅ VERIFICAR SI YA TIENE CONTRASEÑA CONFIGURADA
-    const [authRows] = await connection.query(
-      `SELECT password_hash FROM clientes_auth WHERE cliente_id = ?`,
-      [cliente.id]
-    );
-
-    const yaTienePassword = authRows && (authRows as any).length > 0 && (authRows as any)[0].password_hash;
-
-    if (yaTienePassword) {
+    // Verificar si el cliente está habilitado
+    if (!cliente.habilitado) {
       return NextResponse.json(
         { 
           success: false, 
-          message: 'Ya tienes una contraseña configurada. Si la olvidaste, usa la opción "Recuperar contraseña"',
-          hasPassword: true 
+          message: 'Tu cuenta no está habilitada para usar el carrito de compras. Contacta a tu vendedor.',
+          disabled: true 
         },
+        { status: 403 }
+      );
+    }
+
+    // Verificar si ya tiene contraseña configurada
+    const [authRows] = await db.execute(
+      'SELECT id, password_hash FROM clientes_auth WHERE cliente_id = ?',
+      [cliente.id]
+    ) as [any[], any];
+
+    if ((authRows as any[]).length > 0 && (authRows as any[])[0].password_hash) {
+      return NextResponse.json(
+        { success: false, message: 'Ya tienes una contraseña configurada', hasPassword: true },
         { status: 400 }
       );
     }
 
-    // Solo llegar aquí si NO tiene contraseña
-    const hashedPassword = await hashPassword(newPassword);
+    // Hashear la nueva contraseña
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
 
-    // Crear registro de autenticación (primera vez)
-    await connection.query(
-      `INSERT INTO clientes_auth (cliente_id, password_hash) VALUES (?, ?)`,
-      [cliente.id, hashedPassword]
-    );
-
-    console.log(`✅ Primera contraseña configurada para: ${cliente.nombre} ${cliente.apellido} (ID: ${cliente.id})`);
+    // Si no existe registro de auth, crearlo
+    if (authRows.length === 0) {
+      await db.execute(
+        'INSERT INTO clientes_auth (cliente_id, password_hash, email_verified, failed_login_attempts) VALUES (?, ?, 0, 0)',
+        [cliente.id, hashedPassword]
+      );
+    } else {
+      // Actualizar contraseña existente
+      await db.execute(
+        'UPDATE clientes_auth SET password_hash = ?, failed_login_attempts = 0, locked_until = NULL WHERE cliente_id = ?',
+        [hashedPassword, cliente.id]
+      );
+    }
 
     return NextResponse.json({
       success: true,
@@ -85,14 +91,10 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ Error en set-password:', error);
+    console.error('Error al configurar contraseña:', error);
     return NextResponse.json(
-      { success: false, message: 'Error al configurar contraseña' },
+      { success: false, message: 'Error interno del servidor' },
       { status: 500 }
     );
-  } finally {
-    if (connection) {
-      connection.release();
-    }
   }
 }

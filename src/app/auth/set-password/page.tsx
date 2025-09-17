@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeftIcon, EyeIcon, EyeSlashIcon, LockClosedIcon } from '@heroicons/react/24/outline';
+import { ArrowLeftIcon, EyeIcon, EyeSlashIcon, LockClosedIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 
 export default function SetPasswordPage() {
   const router = useRouter();
@@ -16,6 +16,7 @@ export default function SetPasswordPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [hasExistingPassword, setHasExistingPassword] = useState(false);
+  const [clienteDeshabilitado, setClienteDeshabilitado] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,9 +54,14 @@ export default function SetPasswordPage() {
       } else {
         setError(data.message || 'Error al configurar la contraseña');
         
-        // ✅ Detectar si ya tiene contraseña
+        // Detectar si ya tiene contraseña
         if (data.hasPassword) {
           setHasExistingPassword(true);
+        }
+        
+        // Detectar si el cliente está deshabilitado
+        if (data.disabled) {
+          setClienteDeshabilitado(true);
         }
       }
     } catch (error) {
@@ -65,7 +71,33 @@ export default function SetPasswordPage() {
     }
   };
 
-  // ✅ Pantalla especial si ya tiene contraseña
+  // Pantalla especial si el cliente está deshabilitado
+  if (clienteDeshabilitado) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md text-center">
+          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 mb-4">
+            <ExclamationTriangleIcon className="h-6 w-6 text-yellow-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Cuenta no habilitada</h2>
+          <p className="text-gray-600 mb-6">
+            Tu cuenta aún no está habilitada para usar el carrito de compras. 
+            Por favor, contacta a tu vendedor para solicitar la activación.
+          </p>
+          <div className="space-y-3">
+            <Link 
+              href="/" 
+              className="w-full text-gray-600 hover:text-gray-800 py-2 px-4 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors inline-block"
+            >
+              Volver al login
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Pantalla especial si ya tiene contraseña
   if (hasExistingPassword) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -135,7 +167,7 @@ export default function SetPasswordPage() {
           <p className="text-gray-600 mt-2">
             Configura una contraseña para mayor seguridad en tu cuenta.
           </p>
-          {/* ✅ Advertencia de que es solo para primera vez */}
+          {/* Advertencia de que es solo para primera vez */}
           <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <p className="text-blue-800 text-sm">
               <strong>Importante:</strong> Esta opción es solo para configurar tu primera contraseña. 
