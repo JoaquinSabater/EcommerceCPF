@@ -124,19 +124,17 @@ export interface ItemCarrito {
 }
 
 // ✅ Crear pedido preliminar con soporte para sugerencias (con manejo mejorado de conexiones)
+// ✅ Crear pedido preliminar obteniendo vendedor_id del cliente
 export async function crearPedidoPreliminar(
   clienteId: number,
-  vendedorId: number,
   itemsCarrito: ItemCarrito[],
   observaciones?: string
 ): Promise<number> {
   let connection;
   
   try {
-    // ✅ Obtener nueva conexión con timeout
     connection = await db.getConnection();
     
-    // ✅ Configurar timeout de conexión
     await connection.query('SET SESSION wait_timeout=300');
     await connection.query('SET SESSION interactive_timeout=300');
     
@@ -144,20 +142,37 @@ export async function crearPedidoPreliminar(
 
     console.log('🟢 === INICIO DEBUG PEDIDO PRELIMINAR ===');
     console.log('Cliente ID:', clienteId);
-    console.log('Vendedor ID:', vendedorId);
+
+    // ✅ 1. PRIMERO: Obtener el vendedor_id del cliente
+    const [clienteResult] = await connection.query(
+      'SELECT vendedor_id FROM clientes WHERE id = ?',
+      [clienteId]
+    );
+
+    if ((clienteResult as any).length === 0) {
+      throw new Error(`Cliente con ID ${clienteId} no encontrado`);
+    }
+
+    const vendedorId = (clienteResult as any)[0].vendedor_id;
+    
+    if (!vendedorId) {
+      throw new Error(`El cliente ${clienteId} no tiene un vendedor asignado`);
+    }
+
+    console.log('🟢 Vendedor ID obtenido del cliente:', vendedorId);
     console.log('Items carrito completo:', JSON.stringify(itemsCarrito, null, 2));
 
-    // 1. Crear el pedido preliminar
+    // 2. Crear el pedido preliminar con el vendedor_id correcto
     const [pedidoResult] = await connection.query(
       `INSERT INTO pedido_preliminar (cliente_id, vendedor_id, observaciones_generales) 
        VALUES (?, ?, ?)`,
-      [clienteId, vendedorId, observaciones || null]
+      [clienteId, vendedorId, observaciones || null] // ✅ Usar vendedorId obtenido
     );
 
     const pedidoPreliminarId = (pedidoResult as any).insertId;
     console.log('🟢 Pedido preliminar creado con ID:', pedidoPreliminarId);
 
-    // 2. Insertar todos los detalles del pedido con sugerencias
+    // 3. Insertar todos los detalles del pedido con sugerencias
     for (let i = 0; i < itemsCarrito.length; i++) {
       const item = itemsCarrito[i];
       console.log(`🟡 === PROCESANDO ITEM ${i + 1}/${itemsCarrito.length} ===`);
@@ -181,7 +196,7 @@ export async function crearPedidoPreliminar(
 
       console.log('🟢 Artículo existe en BD');
 
-      // ✅ Insertar detalle del pedido
+      // Insertar detalle del pedido
       const [detalleResult] = await connection.query(
         `INSERT INTO pedido_preliminar_detalle 
          (pedido_preliminar_id, articulo_codigo_interno, cantidad_solicitada, precio_unitario) 
@@ -192,7 +207,7 @@ export async function crearPedidoPreliminar(
       const detalleId = (detalleResult as any).insertId;
       console.log('🟢 Detalle creado con ID:', detalleId);
 
-      // ✅ Verificar e insertar sugerencia
+      // Verificar e insertar sugerencia
       const tieneSugerencia = item.sugerencia && item.sugerencia.trim() !== '';
       console.log('🟡 ¿Tiene sugerencia válida?', tieneSugerencia);
 
@@ -229,6 +244,7 @@ export async function crearPedidoPreliminar(
 
     await connection.commit();
     console.log('🟢 === TRANSACCIÓN COMPLETADA EXITOSAMENTE ===');
+    console.log('🟢 Pedido creado para cliente:', clienteId, 'con vendedor:', vendedorId);
     return pedidoPreliminarId;
 
   } catch (error) {
