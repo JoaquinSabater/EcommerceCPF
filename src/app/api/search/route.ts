@@ -7,49 +7,92 @@ export async function GET(request: NextRequest) {
     const query = url.searchParams.get('q');
 
     if (!query || query.trim().length < 2) {
-      return NextResponse.json({ results: [] });
+      return NextResponse.json({ 
+        success: false,
+        message: 'Debe proporcionar un término de búsqueda',
+        results: [] 
+      });
     }
 
-    const searchTerm = `%${query.trim()}%`;
+    // ✅ Dividir la búsqueda en palabras clave (como en PHP)
+    const palabrasClave = query.trim().split(' ').filter(palabra => palabra.trim() !== '');
+    
+    if (palabrasClave.length === 0) {
+      return NextResponse.json({
+        success: false,
+        message: 'Término de búsqueda inválido',
+        results: []
+      });
+    }
 
-    const [rows]: any = await db.query(
-      `SELECT 
-         i.id as item_id,
-         i.nombre AS item,
-         a.codigo_interno,
-         a.modelo,
-         m.nombre AS marca_nombre,
-         a.precio_venta,
-         calcular_stock_fisico(a.codigo_interno) - calcular_stock_comprometido(a.codigo_interno) AS stock_real,
-         d.foto1_url,
-         d.foto_portada,
-         CONCAT(m.nombre, ' ', a.modelo) AS marca_modelo_completo
-       FROM articulos a
-       JOIN items i ON a.item_id = i.id
-       LEFT JOIN marcas m ON a.marca_id = m.id
-       LEFT JOIN item_detalle d ON a.item_id = d.item_id
-       WHERE (
-         a.modelo LIKE ? OR 
-         m.nombre LIKE ? OR 
-         CONCAT(m.nombre, ' ', a.modelo) LIKE ? OR
-         i.nombre LIKE ?
-       )
-       HAVING stock_real > 0
-       ORDER BY i.nombre, m.nombre, a.modelo`,
-      [searchTerm, searchTerm, searchTerm, searchTerm]
-    );
+    // ✅ Construir condiciones dinámicas para cada palabra
+    const condiciones: string[] = [];
+    const parametros: string[] = [];
+
+    palabrasClave.forEach(palabra => {
+      condiciones.push(`(
+        a.codigo_interno LIKE ? OR 
+        i.nombre LIKE ? OR 
+        m.nombre LIKE ? OR 
+        a.modelo LIKE ?
+      )`);
+      // Agregar la misma palabra 4 veces para los 4 campos
+      parametros.push(`%${palabra}%`, `%${palabra}%`, `%${palabra}%`, `%${palabra}%`);
+    });
+
+    // ✅ Unir condiciones con AND (todas las palabras deben coincidir)
+    const whereClause = condiciones.join(' AND ');
+
+    // ✅ Query principal - TODOS los resultados
+    const sqlMain = `
+      SELECT 
+        a.codigo_interno,
+        CONCAT(
+          IFNULL(i.nombre, ''), ' ', 
+          IFNULL(m.nombre, ''), ' ', 
+          IFNULL(a.modelo, '')
+        ) AS descripcion,
+        i.id as item_id,
+        i.nombre AS item,
+        a.modelo,
+        m.nombre AS marca_nombre,
+        a.precio_venta,
+        calcular_stock_fisico(a.codigo_interno) - calcular_stock_comprometido(a.codigo_interno) AS stock_real,
+        a.ubicacion,
+        d.foto1_url,
+        d.foto_portada,
+        CONCAT(m.nombre, ' ', a.modelo) AS marca_modelo_completo
+      FROM articulos a
+      INNER JOIN items i ON a.item_id = i.id
+      INNER JOIN marcas m ON a.marca_id = m.id
+      LEFT JOIN item_detalle d ON a.item_id = d.item_id
+      WHERE ${whereClause}
+      HAVING stock_real > 0
+      ORDER BY i.nombre, m.nombre, a.modelo
+    `;
+
+    // ✅ Ejecutar consulta - sin LIMIT ni OFFSET
+    const [rows]: any = await db.query(sqlMain, parametros);
 
     console.log(`Búsqueda: "${query}" - ${rows.length} resultados encontrados`);
+    console.log(`Palabras clave: [${palabrasClave.join(', ')}]`);
 
     return NextResponse.json({ 
+      success: true,
       results: rows,
-      query: query 
+      query: query,
+      total: rows.length
     });
 
   } catch (error) {
     console.error('Error en búsqueda:', error);
     return NextResponse.json(
-      { error: 'Error interno del servidor', results: [] },
+      { 
+        success: false,
+        error: 'Error interno del servidor', 
+        message: 'Error al buscar artículos',
+        results: [] 
+      },
       { status: 500 }
     );
   }

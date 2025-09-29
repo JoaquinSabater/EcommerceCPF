@@ -68,7 +68,6 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
 
       console.log('Enviando pedido preliminar con sugerencias:', {
         clienteId: user.id,
-        vendedorId: 1,
         itemsCarrito
       });
 
@@ -79,7 +78,6 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
         },
         body: JSON.stringify({
           clienteId: user.id,
-          vendedorId: 1,
           itemsCarrito,
           observaciones: `Pedido creado desde el carrito - Total: $${Math.round(totalEnPesos).toLocaleString()} ARS (USD $${cart.reduce((sum, item) => sum + (item.cantidad * item.precio_venta), 0).toFixed(2)})`
         }),
