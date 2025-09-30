@@ -1,0 +1,66 @@
+import CollectionsSidebar from "@/components/Filters/CollectionsSidebar";
+import CollectionsDropdown from "@/components/Filters/CollectionsDropdown";
+import { getCategorias } from "@/data/data";
+import CategoriaCard from "@/components/Products/CategoriaCard";
+import CategoriaCardSkeleton from "@/components/Skeletons/CategoriaCardSkeleton";
+export const dynamic = 'force-dynamic';
+
+export default async function Fundas() {
+  const subcategoriasFundas = [
+    11,
+    8,
+    10,
+    9
+  ];
+  
+  try {
+    const promesasCategorias = subcategoriasFundas.map(subcategoriaId => 
+      getCategorias(subcategoriaId)
+    );
+    
+    const resultadosCategorias = await Promise.all(promesasCategorias);
+    
+    const todasLasCategorias = resultadosCategorias.flat();
+
+    return (
+      <div className="flex">
+        <main className="flex-1">
+          <div className="container mx-auto px-4 py-6">
+            <h1 className="text-3xl font-bold text-gray-900 mb-6">Fundas</h1>
+            <p className="text-gray-600 mb-8">
+              Encuentra la funda perfecta: silicona, lisas, flip wallet, diseños y más estilos.
+            </p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {todasLasCategorias.map((cat) => (
+                <CategoriaCard key={cat.id} categoria={cat} />
+              ))}
+            </div>
+            
+            {todasLasCategorias.length === 0 && (
+              <div className="text-center py-12">
+                <p className="text-gray-500 text-lg">No hay fundas disponibles en este momento.</p>
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
+    );
+  } catch (error) {
+    console.error('Error cargando fundas:', error);
+    return (
+      <div className="flex">
+        <main className="flex-1">
+          <div className="container mx-auto px-4 py-6">
+            <h1 className="text-3xl font-bold text-gray-900 mb-6">Fundas</h1>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {Array.from({ length: 8 }, (_, index) => (
+                <CategoriaCardSkeleton key={index} />
+              ))}
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+}

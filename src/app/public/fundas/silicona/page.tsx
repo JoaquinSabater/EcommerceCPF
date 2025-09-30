@@ -1,5 +1,3 @@
-import CollectionsSidebar from "@/components/Filters/CollectionsSidebar";
-import CollectionsDropdown from "@/components/Filters/CollectionsDropdown";
 import { getCategorias } from "@/data/data";
 import CategoriaCard from "@/components/Products/CategoriaCard";
 import CategoriaCardSkeleton from "@/components/Skeletons/CategoriaCardSkeleton";

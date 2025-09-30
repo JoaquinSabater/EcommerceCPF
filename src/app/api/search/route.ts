@@ -14,7 +14,6 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // ✅ Dividir la búsqueda en palabras clave (como en PHP)
     const palabrasClave = query.trim().split(' ').filter(palabra => palabra.trim() !== '');
     
     if (palabrasClave.length === 0) {
@@ -25,7 +24,6 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // ✅ Construir condiciones dinámicas para cada palabra
     const condiciones: string[] = [];
     const parametros: string[] = [];
 
@@ -36,14 +34,11 @@ export async function GET(request: NextRequest) {
         m.nombre LIKE ? OR 
         a.modelo LIKE ?
       )`);
-      // Agregar la misma palabra 4 veces para los 4 campos
       parametros.push(`%${palabra}%`, `%${palabra}%`, `%${palabra}%`, `%${palabra}%`);
     });
 
-    // ✅ Unir condiciones con AND (todas las palabras deben coincidir)
     const whereClause = condiciones.join(' AND ');
 
-    // ✅ Query principal - TODOS los resultados
     const sqlMain = `
       SELECT 
         a.codigo_interno,
@@ -71,7 +66,6 @@ export async function GET(request: NextRequest) {
       ORDER BY i.nombre, m.nombre, a.modelo
     `;
 
-    // ✅ Ejecutar consulta - sin LIMIT ni OFFSET
     const [rows]: any = await db.query(sqlMain, parametros);
 
     console.log(`Búsqueda: "${query}" - ${rows.length} resultados encontrados`);
