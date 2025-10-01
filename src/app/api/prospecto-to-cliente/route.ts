@@ -79,8 +79,7 @@ export async function POST(request: Request) {
       console.log('🟢 Prospecto marcado como convertido');
     }
 
-    // 4. ✅ Crear pedido preliminar usando la función existente
-    await connection.commit(); // Commit de la creación del cliente primero
+    await connection.commit();
     
     console.log('🟡 Creando pedido preliminar...');
     const pedidoPreliminarId = await crearPedidoPreliminar(

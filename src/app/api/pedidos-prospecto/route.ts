@@ -22,18 +22,23 @@ export async function POST(request: Request) {
     await connection.beginTransaction();
 
     console.log('🟡 === CREANDO PEDIDO PRELIMINAR DE PROSPECTO ===');
-    console.log('Prospecto:', prospectoData?.nombre);
+    console.log('Prospecto:', prospectoData?.nombre, 'ID:', prospectoData?.id);
     console.log('Items:', itemsCarrito.length);
 
-    // ✅ 1. Crear pedido preliminar con cliente_id = NULL y vendedor_id = NULL
+    // ✅ 1. Crear pedido preliminar con cliente_id = NULL, vendedor_id = NULL y prospecto_id = ID del prospecto
     const [pedidoResult] = await connection.query(
-      `INSERT INTO pedido_preliminar (cliente_id, vendedor_id, observaciones_generales) 
-       VALUES (NULL, NULL, ?)`,
-      [observaciones || `Pedido de prospecto: ${prospectoData?.nombre || 'Sin nombre'}`]
+      `INSERT INTO pedido_preliminar 
+       (cliente_id, vendedor_id, prospecto_id, observaciones_generales) 
+       VALUES (NULL, NULL, ?, ?)`,
+      [
+        prospectoData?.id || null, // Guardar ID del prospecto
+        observaciones || `Pedido de prospecto: ${prospectoData?.nombre || 'Sin nombre'}`
+      ]
     );
 
     const pedidoPreliminarId = (pedidoResult as any).insertId;
     console.log('🟢 Pedido preliminar creado con ID:', pedidoPreliminarId);
+    console.log('🟢 Asociado al prospecto ID:', prospectoData?.id);
 
     // ✅ 2. Insertar detalles del pedido
     for (const item of itemsCarrito) {
@@ -74,6 +79,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       pedidoPreliminarId,
+      prospectoId: prospectoData?.id,
       message: 'Pedido preliminar de prospecto creado exitosamente'
     });
 
