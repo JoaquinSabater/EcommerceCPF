@@ -25,13 +25,12 @@ export async function POST(request: Request) {
     console.log('Prospecto:', prospectoData?.nombre, 'ID:', prospectoData?.id);
     console.log('Items:', itemsCarrito.length);
 
-    // ✅ 1. Crear pedido preliminar con cliente_id = NULL, vendedor_id = NULL y prospecto_id = ID del prospecto
     const [pedidoResult] = await connection.query(
       `INSERT INTO pedido_preliminar 
        (cliente_id, vendedor_id, prospecto_id, observaciones_generales) 
        VALUES (NULL, NULL, ?, ?)`,
       [
-        prospectoData?.id || null, // Guardar ID del prospecto
+        prospectoData?.id || null, 
         observaciones || `Pedido de prospecto: ${prospectoData?.nombre || 'Sin nombre'}`
       ]
     );

@@ -16,13 +16,14 @@ export async function POST(request: Request) {
       );
     }
 
-    // Buscar cliente por CUIL incluyendo la columna habilitado
+    // Buscar cliente por CUIL incluyendo razon_social para detectar admin
     const [clienteRows] = await db.execute(
-      'SELECT id, cuit_dni, nombre, apellido, email, telefono, vendedor_id, habilitado FROM clientes WHERE cuit_dni = ?',
+      'SELECT id, cuit_dni, razon_social, nombre, apellido, email, telefono, vendedor_id, habilitado FROM clientes WHERE cuit_dni = ?',
       [cuil]
     ) as [Array<{
       id: number;
-      cuil_dni: string;
+      cuit_dni: string;
+      razon_social: string; // ✅ Agregar razon_social
       nombre: string;
       apellido: string;
       email: string;
@@ -51,6 +52,9 @@ export async function POST(request: Request) {
         { status: 403 }
       );
     }
+
+    // ✅ Detectar si es administrador
+    const isAdmin = cliente.razon_social === 'Administrador' || cliente.id === 2223;
 
     // Buscar datos de autenticación
     const [authRows] = await db.execute(
@@ -97,10 +101,11 @@ export async function POST(request: Request) {
       const token = jwt.sign(
         { 
           clienteId: cliente.id,
-          cuil: cliente.cuil_dni,
+          cuil: cliente.cuit_dni,
           nombre: cliente.nombre,
           apellido: cliente.apellido,
-          vendedorId: cliente.vendedor_id
+          vendedorId: cliente.vendedor_id,
+          isAdmin // ✅ Agregar isAdmin al token
         },
         JWT_SECRET,
         { expiresIn: '24h' }
@@ -112,12 +117,14 @@ export async function POST(request: Request) {
         token,
         cliente: {
           id: cliente.id,
-          cuil: cliente.cuil_dni,
+          cuil: cliente.cuit_dni,
+          razon_social: cliente.razon_social, // ✅ Agregar razon_social
           nombre: cliente.nombre,
           apellido: cliente.apellido,
           email: cliente.email,
           telefono: cliente.telefono,
-          vendedor_id: cliente.vendedor_id
+          vendedor_id: cliente.vendedor_id,
+          isAdmin // ✅ Agregar isAdmin
         }
       });
     }
@@ -165,10 +172,11 @@ export async function POST(request: Request) {
     const token = jwt.sign(
       { 
         clienteId: cliente.id,
-        cuil: cliente.cuil_dni,
+        cuil: cliente.cuit_dni,
         nombre: cliente.nombre,
         apellido: cliente.apellido,
-        vendedorId: cliente.vendedor_id
+        vendedorId: cliente.vendedor_id,
+        isAdmin // ✅ Agregar isAdmin al token
       },
       JWT_SECRET,
       { expiresIn: '24h' }
@@ -180,12 +188,14 @@ export async function POST(request: Request) {
       token,
       cliente: {
         id: cliente.id,
-        cuil: cliente.cuil_dni,
+        cuil: cliente.cuit_dni,
+        razon_social: cliente.razon_social, // ✅ Agregar razon_social
         nombre: cliente.nombre,
         apellido: cliente.apellido,
         email: cliente.email,
         telefono: cliente.telefono,
-        vendedor_id: cliente.vendedor_id
+        vendedor_id: cliente.vendedor_id,
+        isAdmin // ✅ Agregar isAdmin
       }
     });
 
