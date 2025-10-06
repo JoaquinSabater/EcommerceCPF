@@ -12,7 +12,6 @@ import Search from '../Search/Search';
 import { SearchSkeleton } from '../Search/Search';
 import { useAuth } from '@/hooks/useAuth';
 import { User } from '@/types/types';
-// ✅ AGREGAR ESTE IMPORT
 import { useProspectoMode } from '@/hooks/useProspectoMode';
 
 export default function NavBar() {
@@ -52,6 +51,14 @@ export default function NavBar() {
 
   const totalItems = cart.reduce((sum, item) => sum + item.cantidad, 0);
 
+  // ✅ FUNCIÓN PARA FORMATEAR EL CONTADOR
+  const formatCartCount = (count: number) => {
+    if (count > 99) {
+      return '+99';
+    }
+    return count.toString();
+  };
+
   // Si estamos en /carrito, solo mostrar logo y botón "Seguir comprando" centrado y estilizado
   if (pathname === '/public/carrito') {
     return (
@@ -83,19 +90,19 @@ export default function NavBar() {
 
   return (
     <>
-        {isProspectoMode && (
-          <div className="bg-orange-600 text-white px-4 py-2 text-sm">
-            <div className="flex items-center justify-between max-w-7xl mx-auto">
-              <div className="flex items-center gap-2">
-                <span>🛍️</span>
-                <span>
-                  <strong>Modo de prueba activado</strong> - Hola {prospectoData?.nombre} | 
-                  Acceso válido por 4 días - Puedes navegar y simular pedidos
-                </span>
-              </div>
+      {isProspectoMode && (
+        <div className="bg-orange-600 text-white px-4 py-2 text-sm">
+          <div className="flex items-center justify-between max-w-7xl mx-auto">
+            <div className="flex items-center gap-2">
+              <span>🛍️</span>
+              <span>
+                <strong>Modo de prueba activado</strong> - Hola {prospectoData?.nombre} | 
+                Acceso válido por 4 días - Puedes navegar y simular pedidos
+              </span>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
       <nav className="sticky top-0 flex items-center justify-between p-4 lg:px-6 bg-white z-[9999] shadow-sm border-b border-gray-100">
         {/* Mobile Menu */}
@@ -163,7 +170,7 @@ export default function NavBar() {
             </button>
           )}
           
-          {/* Botón carrito */}
+          {/* Botón carrito con contador mejorado */}
           <button onClick={() => setCartOpen(true)} className="relative">
             <Image
               src="/cart.svg"
@@ -172,7 +179,7 @@ export default function NavBar() {
               alt="shopping cart icon"
             />
             <div className="rounded-full flex justify-center items-center bg-orange-600 text-xs text-white absolute w-5 h-5 -top-2 -right-2">
-              {totalItems}
+              {formatCartCount(totalItems)}
             </div>
           </button>
         </div>

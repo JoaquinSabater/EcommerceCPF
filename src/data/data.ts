@@ -10,12 +10,14 @@ export async function getArticulosPorSubcategoria(subcategoriaId: number): Promi
     const [rows] = await connection.query(
       `SELECT a.codigo_interno, a.item_id, a.marca_id, a.modelo, a.code, 
               COALESCE(a.precio_venta, 0) as precio_venta, a.ubicacion, a.stock_actual,
-            i.nombre AS item_nombre,
-            m.nombre AS marca_nombre
+              calcular_stock_fisico(a.codigo_interno) - calcular_stock_comprometido(a.codigo_interno) AS stock_real,
+              i.nombre AS item_nombre,
+              m.nombre AS marca_nombre
       FROM articulos a
       JOIN items i ON a.item_id = i.id
       LEFT JOIN marcas m ON a.marca_id = m.id
       WHERE a.item_id = ? AND a.ubicacion <> 'SIN STOCK'
+      HAVING stock_real > 0
       ORDER BY a.precio_venta ASC, a.modelo ASC`,
       [subcategoriaId]
     );
@@ -34,6 +36,104 @@ export async function getArticulosPorSubcategoria(subcategoriaId: number): Promi
     }
   }
 }
+
+export interface ItemAdmin {
+  id: number;
+  nombre: string;
+  subcategoria_id: number;
+  disponible: boolean | null;
+  subcategoria_nombre?: string;
+  total_articulos?: number;
+}
+
+export async function getAllItems(): Promise<ItemAdmin[]> {
+  let connection;
+  try {
+    connection = await db.getConnection();
+    
+    const sql = `
+      SELECT 
+        i.id,
+        i.nombre,
+        i.subcategoria_id,
+        i.disponible,
+        s.nombre AS subcategoria_nombre,
+        COUNT(a.codigo_interno) AS total_articulos
+      FROM items i
+      LEFT JOIN subcategorias s ON i.subcategoria_id = s.id
+      LEFT JOIN articulos a ON i.id = a.item_id
+      GROUP BY i.id, i.nombre, i.subcategoria_id, i.disponible, s.nombre
+      ORDER BY s.nombre ASC, i.nombre ASC
+    `;
+
+    const [rows] = await connection.query<RowDataPacket[]>(sql);
+    
+    // ✅ CONVERTIR VALORES DE MySQL A BOOLEAN
+    const items = rows.map(row => ({
+      ...row,
+      // Convertir disponible: 1 -> true, 0 -> false, null -> false
+      disponible: row.disponible === 1 ? true : row.disponible === 0 ? false : false
+    })) as ItemAdmin[];
+
+    console.log('📊 Items cargados desde BD:', items.length);
+    console.log('🔍 Primeros 3 items disponibilidad:', items.slice(0, 3).map(i => ({
+      id: i.id,
+      nombre: i.nombre,
+      disponible_raw: rows.find(r => r.id === i.id)?.disponible,
+      disponible_converted: i.disponible
+    })));
+
+    return items;
+  } catch (error) {
+    console.error('Error en getAllItems:', error);
+    throw error;
+  } finally {
+    if (connection) {
+      connection.release();
+    }
+  }
+}
+
+export async function updateItemDisponible(itemId: number, disponible: boolean | null): Promise<void> {
+  let connection;
+  try {
+    connection = await db.getConnection();
+    
+    const mysqlValue = disponible === true ? 1 : disponible === false ? 0 : null;
+    
+    const sql = `UPDATE items SET disponible = ? WHERE id = ?`;
+    const [result] = await connection.query(sql, [mysqlValue, itemId]);
+    
+    console.log(`✅ Item ${itemId} actualizado: disponible = ${disponible} (MySQL: ${mysqlValue})`);
+    console.log('📊 Resultado de la actualización:', result);
+  } catch (error) {
+    console.error('Error en updateItemDisponible:', error);
+    throw error;
+  } finally {
+    if (connection) {
+      connection.release();
+    }
+  }
+}
+
+export async function getSubcategorias(): Promise<{id: number, nombre: string}[]> {
+  let connection;
+  try {
+    connection = await db.getConnection();
+    
+    const sql = `SELECT id, nombre FROM subcategorias ORDER BY nombre ASC`;
+    const [rows] = await connection.query<RowDataPacket[]>(sql);
+    return rows as {id: number, nombre: string}[];
+  } catch (error) {
+    console.error('Error en getSubcategorias:', error);
+    throw error;
+  } finally {
+    if (connection) {
+      connection.release();
+    }
+  }
+}
+
 export async function getPedidosByCliente(clienteId: number): Promise<Pedido[]> {
   let connection;
   try {
@@ -82,13 +182,34 @@ export async function getArticulosDePedido(pedidoId: number): Promise<ArticuloPe
 }
 
 export async function getCategorias(subcategoriaId: number): Promise<categorias[]> {
-  const [rows]: any = await db.query(
-    `
-      SELECT * FROM items WHERE subcategoria_id = ?;
-    `,
-    [subcategoriaId]
-  );
-  return rows as categorias[];
+  let connection;
+  try {
+    connection = await db.getConnection();
+    
+    const [rows] = await connection.query(
+      `SELECT DISTINCT i.* 
+       FROM items i
+       INNER JOIN articulos a ON i.id = a.item_id
+       WHERE i.subcategoria_id = ? 
+         AND i.disponible = 1 
+         AND (calcular_stock_fisico(a.codigo_interno) - calcular_stock_comprometido(a.codigo_interno)) > 0
+       ORDER BY i.nombre ASC`,
+      [subcategoriaId]
+    );
+    
+    return rows as categorias[];
+  } catch (error) {
+    console.error('Error en getCategorias:', error);
+    throw error;
+  } finally {
+    if (connection) {
+      try {
+        connection.release();
+      } catch (releaseError) {
+        console.error('🔴 Error al liberar conexión en getCategorias:', releaseError);
+      }
+    }
+  }
 }
 
 export async function getDolar(): Promise<number> {
@@ -102,7 +223,6 @@ export async function getDolar(): Promise<number> {
   return parseInt(rows[0].valor);
 }
 
-// Interfaces para pedidos preliminares
 export interface PedidoPreliminar {
   id?: number;
   vendedor_id: number;
@@ -120,11 +240,9 @@ export interface ItemCarrito {
   cantidad: number;
   precio: number;
   item_nombre?: string;
-  sugerencia?: string; // ✅ Agregar sugerencia a la interfaz
+  sugerencia?: string;
 }
 
-// ✅ Crear pedido preliminar con soporte para sugerencias (con manejo mejorado de conexiones)
-// ✅ Crear pedido preliminar obteniendo vendedor_id del cliente
 export async function crearPedidoPreliminar(
   clienteId: number,
   itemsCarrito: any[],
@@ -140,7 +258,6 @@ export async function crearPedidoPreliminar(
     console.log('Cliente ID:', clienteId);
     console.log('Items:', itemsCarrito.length);
 
-    // Obtener vendedor del cliente
     const [clienteData] = await connection.query(
       'SELECT vendedor_id FROM clientes WHERE id = ?',
       [clienteId]
@@ -152,7 +269,6 @@ export async function crearPedidoPreliminar(
 
     const vendedorId = (clienteData as any[])[0].vendedor_id;
 
-    // ✅ Crear pedido preliminar - prospecto_id = NULL para clientes
     const [pedidoResult] = await connection.query(
       `INSERT INTO pedido_preliminar 
        (cliente_id, vendedor_id, prospecto_id, observaciones_generales) 
@@ -164,9 +280,7 @@ export async function crearPedidoPreliminar(
     console.log('🟢 Pedido preliminar creado con ID:', pedidoPreliminarId);
     console.log('🟢 Cliente ID:', clienteId, '| Vendedor ID:', vendedorId, '| Prospecto ID: NULL');
 
-    // Insertar detalles del pedido
     for (const item of itemsCarrito) {
-      // Verificar que el artículo existe
       const [articuloExists] = await connection.query(
         'SELECT codigo_interno FROM articulos WHERE codigo_interno = ?',
         [item.codigo_interno]
@@ -176,7 +290,6 @@ export async function crearPedidoPreliminar(
         throw new Error(`Artículo con código ${item.codigo_interno} no encontrado`);
       }
 
-      // Insertar detalle del pedido
       const [detalleResult] = await connection.query(
         `INSERT INTO pedido_preliminar_detalle 
          (pedido_preliminar_id, articulo_codigo_interno, cantidad_solicitada, precio_unitario) 
@@ -186,7 +299,6 @@ export async function crearPedidoPreliminar(
 
       const detalleId = (detalleResult as any).insertId;
 
-      // Insertar sugerencia si existe
       if (item.sugerencia && item.sugerencia.trim() !== '') {
         await connection.query(
           `INSERT INTO pedido_preliminar_detalle_sugerencias 
@@ -225,7 +337,6 @@ export async function crearPedidoPreliminar(
   }
 }
 
-// Obtener pedidos preliminares por cliente con manejo mejorado
 export async function getPedidosPreliminaresByCliente(clienteId: number): Promise<PedidoPreliminar[]> {
   let connection;
   try {
@@ -253,7 +364,6 @@ export async function getPedidosPreliminaresByCliente(clienteId: number): Promis
   }
 }
 
-// ✅ Obtener artículos de un pedido preliminar con sugerencias
 export async function getArticulosDePedidoPreliminar(pedidoPreliminarId: number): Promise<ArticuloPedido[]> {
   const sql = `
     SELECT 
@@ -274,7 +384,6 @@ export async function getArticulosDePedidoPreliminar(pedidoPreliminarId: number)
   return rows as ArticuloPedido[];
 }
 
-// ✅ Nueva función para obtener sugerencias de un detalle específico
 export async function getSugerenciasPorDetalle(detalleId: number): Promise<string[]> {
   const sql = `
     SELECT sugerencia
@@ -287,7 +396,6 @@ export async function getSugerenciasPorDetalle(detalleId: number): Promise<strin
   return rows.map((row: any) => row.sugerencia);
 }
 
-// ✅ Nueva función para agregar sugerencia a un detalle existente
 export async function agregarSugerenciaADetalle(detalleId: number, sugerencia: string): Promise<void> {
   if (!sugerencia || sugerencia.trim() === '') {
     throw new Error('La sugerencia no puede estar vacía');

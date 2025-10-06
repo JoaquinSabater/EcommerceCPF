@@ -2,8 +2,11 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { XMarkIcon, ChevronDownIcon, ChevronUpIcon, UserCircleIcon } from '@heroicons/react/24/outline';
 import Search from '../Search/Search';
+import { useCart } from '@/components/CartContext';
+import { useProspectoMode } from '@/hooks/useProspectoMode';
 
 type MenuItem = {
   title: string;
@@ -14,9 +17,21 @@ type MenuItem = {
 export default function MobileMenu({ menu }: { menu: MenuItem[] }) {
   const [isOpen, setIsOpen] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const { cart } = useCart();
+  const { isProspectoMode } = useProspectoMode();
 
   const toggleSubmenu = (title: string) => {
     setExpanded((prev) => (prev === title ? null : title));
+  };
+
+  const totalItems = cart.reduce((sum, item) => sum + item.cantidad, 0);
+
+  // ✅ FUNCIÓN PARA FORMATEAR EL CONTADOR
+  const formatCartCount = (count: number) => {
+    if (count > 99) {
+      return '+99';
+    }
+    return count.toString();
   };
 
   return (
@@ -32,23 +47,46 @@ export default function MobileMenu({ menu }: { menu: MenuItem[] }) {
 
       {isOpen && (
         <div className="fixed inset-0 z-50 bg-white p-4 space-y-6 overflow-y-auto">
-          {/* Top bar: Close + User */}
+          {/* Top bar: Close + User + Cart */}
           <div className="flex justify-between items-center">
             <button onClick={() => setIsOpen(false)} className="p-2 border rounded text-black bg-white">
               <XMarkIcon className="h-6 w-6" />
             </button>
             
-            {/* Solo el icono de usuario */}
-            <div className="flex items-center">
+            {/* User + Cart icons */}
+            <div className="flex items-center gap-4">
+              {/* ✅ SOLO MOSTRAR USUARIO SI NO ES PROSPECTO */}
+              {!isProspectoMode && (
+                <button
+                  onClick={() => {
+                    setIsOpen(false);
+                    window.location.href = '/admin';
+                  }}
+                  className="p-1"
+                  aria-label="Panel de administración"
+                >
+                  <UserCircleIcon className="h-8 w-8 text-gray-700 hover:text-orange-600 transition" />
+                </button>
+              )}
+
+              {/* ✅ CARRITO CON CONTADOR MEJORADO */}
               <button
                 onClick={() => {
                   setIsOpen(false);
-                  window.location.href = '/admin';
+                  // Aquí podrías abrir el CartSidebar si lo necesitas
+                  window.location.href = '/public/carrito';
                 }}
-                className="p-1"
-                aria-label="Panel de administración"
+                className="relative"
               >
-                <UserCircleIcon className="h-8 w-8 text-gray-700 hover:text-orange-600 transition" />
+                <Image
+                  src="/cart.svg"
+                  width={30}
+                  height={30}
+                  alt="shopping cart icon"
+                />
+                <div className="rounded-full flex justify-center items-center bg-orange-600 text-xs text-white absolute w-5 h-5 -top-2 -right-2">
+                  {formatCartCount(totalItems)}
+                </div>
               </button>
             </div>
           </div>
