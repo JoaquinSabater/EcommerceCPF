@@ -20,7 +20,6 @@ export async function POST(request: Request) {
       itemsCarrito
     } = await request.json();
 
-    // Validaciones
     if (!razon_social || !telefono || !cuit_dni || !provincia_id || !localidad_id) {
       return NextResponse.json(
         { error: 'Faltan campos obligatorios' },
@@ -35,7 +34,6 @@ export async function POST(request: Request) {
     console.log('Prospecto ID:', prospectoId);
     console.log('Datos cliente:', { razon_social, nombre, cuit_dni });
 
-    // 1. ✅ Verificar si el CUIT ya existe
     const [existeCliente] = await connection.query(
       'SELECT id FROM clientes WHERE cuit_dni = ?',
       [cuit_dni]
@@ -49,7 +47,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. ✅ Crear el cliente (habilitado = 1, vendedor_id = 1 por defecto)
     const [clienteResult] = await connection.query(
       `INSERT INTO clientes 
        (razon_social, nombre, email, telefono, cuit_dni, vendedor_id, 
@@ -70,7 +67,6 @@ export async function POST(request: Request) {
     const clienteId = (clienteResult as any).insertId;
     console.log('🟢 Cliente creado con ID:', clienteId);
 
-    // 3. ✅ Marcar prospecto como convertido (si existe)
     if (prospectoId) {
       await connection.query(
         'UPDATE prospectos SET convertido = 1 WHERE id = ?',

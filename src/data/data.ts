@@ -337,6 +337,65 @@ export async function crearPedidoPreliminar(
   }
 }
 
+export async function getMarcasConStock(subcategoriaId: number): Promise<{id: number, nombre: string}[]> {
+  let connection;
+  try {
+    connection = await db.getConnection();
+    
+    const [rows] = await connection.query(
+      `SELECT DISTINCT m.id, m.nombre 
+       FROM marcas m
+       INNER JOIN articulos a ON m.id = a.marca_id
+       INNER JOIN items i ON a.item_id = i.id
+       WHERE i.subcategoria_id = ? 
+         AND i.disponible = 1 
+         AND a.ubicacion <> 'SIN STOCK'
+         AND (calcular_stock_fisico(a.codigo_interno) - calcular_stock_comprometido(a.codigo_interno)) > 0
+       ORDER BY m.nombre ASC`,
+      [subcategoriaId]
+    );
+    
+    return rows as {id: number, nombre: string}[];
+  } catch (error) {
+    console.error('Error en getMarcasConStock:', error);
+    throw error;
+  } finally {
+    if (connection) {
+      connection.release();
+    }
+  }
+}
+
+export async function getCategoriasPorMarca(subcategoriaId: number, marcaId: number): Promise<categorias[]> {
+  let connection;
+  try {
+    connection = await db.getConnection();
+    
+    const [rows] = await connection.query(
+      `SELECT DISTINCT i.* 
+       FROM items i
+       INNER JOIN articulos a ON i.id = a.item_id
+       INNER JOIN marcas m ON a.marca_id = m.id
+       WHERE i.subcategoria_id = ? 
+         AND m.id = ?
+         AND i.disponible = 1 
+         AND a.ubicacion <> 'SIN STOCK'
+         AND (calcular_stock_fisico(a.codigo_interno) - calcular_stock_comprometido(a.codigo_interno)) > 0
+       ORDER BY i.nombre ASC`,
+      [subcategoriaId, marcaId]
+    );
+    
+    return rows as categorias[];
+  } catch (error) {
+    console.error('Error en getCategoriasPorMarca:', error);
+    throw error;
+  } finally {
+    if (connection) {
+      connection.release();
+    }
+  }
+}
+
 export async function getPedidosPreliminaresByCliente(clienteId: number): Promise<PedidoPreliminar[]> {
   let connection;
   try {

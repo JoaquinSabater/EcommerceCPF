@@ -22,10 +22,6 @@ export default async function Accesorios() {
       <div className="flex">
         <main className="flex-1">
           <div className="container mx-auto px-4 py-6">
-            <h1 className="text-3xl font-bold text-gray-900 mb-6">Accesorios</h1>
-            <p className="text-gray-600 mb-8">
-              Descubre todos nuestros accesorios: popsockets, aros de luz, earbuds y más.
-            </p>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {todasLasCategorias.map((cat) => (

@@ -19,21 +19,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No file received' }, { status: 400 });
     }
 
-    // Convertir archivo a buffer
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Subir a Cloudinary
     const result = await new Promise((resolve, reject) => {
       cloudinary.uploader.upload_stream(
         {
-          folder: 'ecommerce/products', // Organizar en carpetas
-          public_id: `product-${productId}-img${imageIndex}-${Date.now()}`, // ID único
+          folder: 'ecommerce/products',
+          public_id: `product-${productId}-img${imageIndex}-${Date.now()}`, 
           resource_type: 'auto',
           transformation: [
-            { width: 800, height: 800, crop: 'limit' }, // Redimensionar para optimizar
-            { quality: 'auto' }, // Calidad automática
-            { format: 'auto' } // Formato automático (WebP cuando sea posible)
+            { width: 800, height: 800, crop: 'limit' }, 
+            { quality: 'auto' },
+            { format: 'auto' } 
           ]
         },
         (error, result) => {

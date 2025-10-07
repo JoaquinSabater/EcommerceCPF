@@ -19,7 +19,6 @@ export async function POST(request: Request) {
       itemsCount: itemsCarrito.length
     });
 
-    // Crear el pedido en la BD (la función obtiene el vendedorId automáticamente del cliente)
     const pedidoPreliminarId = await crearPedidoPreliminar(
       clienteId,
       itemsCarrito,

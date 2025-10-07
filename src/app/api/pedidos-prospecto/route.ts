@@ -39,9 +39,7 @@ export async function POST(request: Request) {
     console.log('🟢 Pedido preliminar creado con ID:', pedidoPreliminarId);
     console.log('🟢 Asociado al prospecto ID:', prospectoData?.id);
 
-    // ✅ 2. Insertar detalles del pedido
     for (const item of itemsCarrito) {
-      // Verificar que el artículo existe
       const [articuloExists] = await connection.query(
         'SELECT codigo_interno FROM articulos WHERE codigo_interno = ?',
         [item.codigo_interno]
@@ -51,7 +49,6 @@ export async function POST(request: Request) {
         throw new Error(`Artículo con código ${item.codigo_interno} no encontrado`);
       }
 
-      // Insertar detalle del pedido
       const [detalleResult] = await connection.query(
         `INSERT INTO pedido_preliminar_detalle 
          (pedido_preliminar_id, articulo_codigo_interno, cantidad_solicitada, precio_unitario) 
@@ -61,7 +58,6 @@ export async function POST(request: Request) {
 
       const detalleId = (detalleResult as any).insertId;
 
-      // Insertar sugerencia si existe
       if (item.sugerencia && item.sugerencia.trim() !== '') {
         await connection.query(
           `INSERT INTO pedido_preliminar_detalle_sugerencias 

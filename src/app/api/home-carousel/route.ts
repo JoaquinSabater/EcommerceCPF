@@ -42,7 +42,6 @@ export async function POST(request: NextRequest) {
     
     const connection = await mysql.createConnection(dbConfig);
     
-    // Verificar que no exceda el límite de 4 slides
     const [countResult] = await connection.execute(
       'SELECT COUNT(*) as total FROM home_carousel WHERE activo = true'
     );

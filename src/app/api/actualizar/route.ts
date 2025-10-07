@@ -28,12 +28,12 @@ export async function PUT(request: NextRequest) {
       foto2_url,
       foto3_url,
       foto4_url,
-      destacar // ✅ Agregar este campo
+      destacar
     } = body;
 
     console.log('Datos recibidos para actualizar:', {
       productId: finalProductId,
-      destacar, // ✅ Log para debug
+      destacar,
       foto_portada,
       foto1_url,
       foto2_url,
@@ -41,7 +41,6 @@ export async function PUT(request: NextRequest) {
       foto4_url
     });
 
-    // ✅ Actualizar la consulta SQL para incluir destacar
     const [result]: any = await db.query(
       `UPDATE item_detalle 
        SET
@@ -70,12 +69,12 @@ export async function PUT(request: NextRequest) {
         foto2_url || null,
         foto3_url || null,
         foto4_url || null,
-        destacar ? 1 : 0, // ✅ Convertir boolean a tinyint
+        destacar ? 1 : 0, 
         finalProductId
       ]
     );
 
-    // Verificar si se actualizó algún registro
+
     if (result.affectedRows === 0) {
       return NextResponse.json(
         { error: 'Producto no encontrado' },

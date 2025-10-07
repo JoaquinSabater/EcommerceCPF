@@ -16,7 +16,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validar formato de email básico
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return NextResponse.json(
@@ -29,14 +28,12 @@ export async function POST(request: NextRequest) {
     await connection.query('SET SESSION wait_timeout=300');
     await connection.query('SET SESSION interactive_timeout=300');
 
-    // Buscar cliente por email
     const [clienteRows] = await connection.query(
       'SELECT id, nombre, apellido, email FROM clientes WHERE email = ?',
       [email]
     );
 
     if ((clienteRows as any).length === 0) {
-      // Por seguridad, siempre responder éxito aunque no exista el email
       return NextResponse.json({
         success: true,
         message: 'Si el email existe en nuestro sistema, recibirás instrucciones para restablecer tu contraseña'
@@ -45,11 +42,9 @@ export async function POST(request: NextRequest) {
 
     const cliente = (clienteRows as any)[0];
 
-    // Generar token de reset
     const resetToken = generateResetToken();
     const tokenExpiry = generateTokenExpiry();
 
-    // Guardar o actualizar token en la tabla clientes_auth
     await connection.query(
       `INSERT INTO clientes_auth (cliente_id, reset_token, reset_token_expires) 
        VALUES (?, ?, ?) 
@@ -61,7 +56,6 @@ export async function POST(request: NextRequest) {
 
     console.log(`✅ Token de reset generado para: ${cliente.email} (Cliente ID: ${cliente.id})`);
 
-    // ✅ Incluir configuración de EmailJS desde el servidor
     return NextResponse.json({
       success: true,
       message: 'Si el email existe en nuestro sistema, recibirás instrucciones para restablecer tu contraseña',
@@ -70,7 +64,6 @@ export async function POST(request: NextRequest) {
         nombre: cliente.nombre,
         resetToken: resetToken
       },
-      // ✅ Configuración EmailJS desde el servidor
       emailConfig: {
         serviceId: process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID,
         templateId: process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID,

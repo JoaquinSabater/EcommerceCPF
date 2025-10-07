@@ -6,7 +6,6 @@ export async function POST(request: Request) {
   try {
     const { cuil, newPassword, confirmPassword } = await request.json();
 
-    // Validaciones básicas
     if (!cuil || !newPassword || !confirmPassword) {
       return NextResponse.json(
         { success: false, message: 'Todos los campos son requeridos' },
@@ -28,7 +27,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Buscar cliente por CUIL incluyendo la columna habilitado
     const [clienteRows] = await db.execute(
       'SELECT id, habilitado FROM clientes WHERE cuit_dni = ?',
       [cuil]
@@ -43,7 +41,6 @@ export async function POST(request: Request) {
 
     const cliente = (clienteRows as any[])[0];
 
-    // Verificar si el cliente está habilitado
     if (!cliente.habilitado) {
       return NextResponse.json(
         { 
@@ -55,7 +52,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Verificar si ya tiene contraseña configurada
     const [authRows] = await db.execute(
       'SELECT id, password_hash FROM clientes_auth WHERE cliente_id = ?',
       [cliente.id]
@@ -68,17 +64,14 @@ export async function POST(request: Request) {
       );
     }
 
-    // Hashear la nueva contraseña
     const hashedPassword = await bcrypt.hash(newPassword, 12);
 
-    // Si no existe registro de auth, crearlo
     if (authRows.length === 0) {
       await db.execute(
         'INSERT INTO clientes_auth (cliente_id, password_hash, email_verified, failed_login_attempts) VALUES (?, ?, 0, 0)',
         [cliente.id, hashedPassword]
       );
     } else {
-      // Actualizar contraseña existente
       await db.execute(
         'UPDATE clientes_auth SET password_hash = ?, failed_login_attempts = 0, locked_until = NULL WHERE cliente_id = ?',
         [hashedPassword, cliente.id]

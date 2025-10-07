@@ -16,14 +16,13 @@ export async function POST(request: Request) {
       );
     }
 
-    // Buscar cliente por CUIL incluyendo razon_social para detectar admin
     const [clienteRows] = await db.execute(
       'SELECT id, cuit_dni, razon_social, nombre, apellido, email, telefono, vendedor_id, habilitado FROM clientes WHERE cuit_dni = ?',
       [cuil]
     ) as [Array<{
       id: number;
       cuit_dni: string;
-      razon_social: string; // ✅ Agregar razon_social
+      razon_social: string;
       nombre: string;
       apellido: string;
       email: string;
@@ -41,7 +40,6 @@ export async function POST(request: Request) {
 
     const cliente = clienteRows[0];
 
-    // Verificar si el cliente está habilitado
     if (!cliente.habilitado) {
       return NextResponse.json(
         { 
@@ -53,10 +51,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // ✅ Detectar si es administrador
     const isAdmin = cliente.razon_social === 'Administrador' || cliente.id === 2223;
 
-    // Buscar datos de autenticación
     const [authRows] = await db.execute(
       'SELECT id, cliente_id, password_hash, email_verified, failed_login_attempts, locked_until FROM clientes_auth WHERE cliente_id = ?',
       [cliente.id]
@@ -69,7 +65,6 @@ export async function POST(request: Request) {
       locked_until: Date | string | null;
     }>, any];
 
-    // Si no hay registro de auth, crear uno
     if (authRows.length === 0) {
       await db.execute(
         'INSERT INTO clientes_auth (cliente_id, email_verified, failed_login_attempts) VALUES (?, 0, 0)',
@@ -79,7 +74,6 @@ export async function POST(request: Request) {
 
     const auth = authRows[0] || { password_hash: null, failed_login_attempts: 0, locked_until: null };
 
-    // Verificar si la cuenta está bloqueada
     if (auth.locked_until && new Date() < new Date(auth.locked_until)) {
       return NextResponse.json(
         { success: false, message: 'Cuenta bloqueada temporalmente' },
@@ -87,9 +81,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Si no se proporciona contraseña, permitir acceso (solo CUIL)
     if (!password) {
-      // Resetear intentos fallidos
       if (authRows.length > 0) {
         await db.execute(
           'UPDATE clientes_auth SET failed_login_attempts = 0, locked_until = NULL WHERE cliente_id = ?',
@@ -105,7 +97,7 @@ export async function POST(request: Request) {
           nombre: cliente.nombre,
           apellido: cliente.apellido,
           vendedorId: cliente.vendedor_id,
-          isAdmin // ✅ Agregar isAdmin al token
+          isAdmin 
         },
         JWT_SECRET,
         { expiresIn: '24h' }
@@ -118,18 +110,17 @@ export async function POST(request: Request) {
         cliente: {
           id: cliente.id,
           cuil: cliente.cuit_dni,
-          razon_social: cliente.razon_social, // ✅ Agregar razon_social
+          razon_social: cliente.razon_social, 
           nombre: cliente.nombre,
           apellido: cliente.apellido,
           email: cliente.email,
           telefono: cliente.telefono,
           vendedor_id: cliente.vendedor_id,
-          isAdmin // ✅ Agregar isAdmin
+          isAdmin 
         }
       });
     }
 
-    // Si se proporciona contraseña, validarla
     if (!auth.password_hash) {
       return NextResponse.json(
         { success: false, message: 'No tienes contraseña configurada. Puedes ingresar solo con tu CUIL.' },
@@ -140,7 +131,6 @@ export async function POST(request: Request) {
     const isValidPassword = await bcrypt.compare(password, auth.password_hash);
 
     if (!isValidPassword) {
-      // Incrementar intentos fallidos
       const newAttempts = (auth.failed_login_attempts || 0) + 1;
       const lockUntil = newAttempts >= 5 ? new Date(Date.now() + 15 * 60 * 1000) : null;
 
@@ -176,7 +166,7 @@ export async function POST(request: Request) {
         nombre: cliente.nombre,
         apellido: cliente.apellido,
         vendedorId: cliente.vendedor_id,
-        isAdmin // ✅ Agregar isAdmin al token
+        isAdmin 
       },
       JWT_SECRET,
       { expiresIn: '24h' }
@@ -189,13 +179,13 @@ export async function POST(request: Request) {
       cliente: {
         id: cliente.id,
         cuil: cliente.cuit_dni,
-        razon_social: cliente.razon_social, // ✅ Agregar razon_social
+        razon_social: cliente.razon_social,
         nombre: cliente.nombre,
         apellido: cliente.apellido,
         email: cliente.email,
         telefono: cliente.telefono,
         vendedor_id: cliente.vendedor_id,
-        isAdmin // ✅ Agregar isAdmin
+        isAdmin
       }
     });
 

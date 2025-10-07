@@ -11,7 +11,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'itemId es requerido' }, { status: 400 });
     }
 
-    // Obtener el item_detalle_id
     const [itemDetalle]: any = await db.query(
       `SELECT id FROM item_detalle WHERE item_id = ? LIMIT 1`,
       [itemId]
@@ -21,7 +20,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ recomendaciones: [] });
     }
 
-    // Obtener las recomendaciones (máximo 5, ordenadas)
     const [recomendaciones]: any = await db.query(
       `SELECT modelo_recomendado 
        FROM item_detalle_recomendaciones 
@@ -50,17 +48,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'itemId y recomendaciones son requeridos' }, { status: 400 });
     }
 
-    // Limitar a máximo 5 recomendaciones
     const recomendacionesLimitadas = recomendaciones.slice(0, 5);
 
-    // Obtener el item_detalle_id
     const [itemDetalle]: any = await db.query(
       `SELECT id FROM item_detalle WHERE item_id = ? LIMIT 1`,
       [itemId]
     );
 
     if (!itemDetalle || itemDetalle.length === 0) {
-      // Crear item_detalle si no existe
       const [result]: any = await db.query(
         `INSERT INTO item_detalle (item_id) VALUES (?)`,
         [itemId]
@@ -70,13 +65,11 @@ export async function POST(request: NextRequest) {
       var itemDetalleId = itemDetalle[0].id;
     }
 
-    // Eliminar recomendaciones existentes
     await db.query(
       `DELETE FROM item_detalle_recomendaciones WHERE item_detalle_id = ?`,
       [itemDetalleId]
     );
 
-    // Insertar nuevas recomendaciones (hasta 5)
     if (recomendacionesLimitadas.length > 0) {
       const values = recomendacionesLimitadas.map((modelo: string, index: number) => 
         [itemDetalleId, modelo, index + 1]

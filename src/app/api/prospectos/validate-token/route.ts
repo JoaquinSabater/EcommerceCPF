@@ -19,7 +19,6 @@ export async function POST(request: NextRequest) {
     await connection.query('SET SESSION wait_timeout=300');
     await connection.query('SET SESSION interactive_timeout=300');
 
-    // Buscar token y datos del prospecto
     const [tokenRows] = await connection.query(
       `SELECT pt.prospecto_id, pt.expires_at, pt.used, 
               p.nombre, p.email, p.telefono, p.cuit, p.negocio
@@ -38,15 +37,6 @@ export async function POST(request: NextRequest) {
 
     const tokenData = (tokenRows as any)[0];
 
-    // ✅ REMOVER VERIFICACIÓN DE "used" - permitir uso múltiple
-    // if (tokenData.used) {
-    //   return NextResponse.json(
-    //     { success: false, message: 'Este link ya fue utilizado' },
-    //     { status: 400 }
-    //   );
-    // }
-
-    // Verificar si expiró (4 días)
     if (isTokenExpired(new Date(tokenData.expires_at))) {
       return NextResponse.json(
         { success: false, message: 'El link ha expirado (4 días). Solicita uno nuevo.' },

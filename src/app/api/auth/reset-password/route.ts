@@ -30,7 +30,6 @@ export async function POST(request: NextRequest) {
     await connection.query('SET SESSION wait_timeout=300');
     await connection.query('SET SESSION interactive_timeout=300');
 
-    // ✅ Buscar cliente por token (igual que antes)
     const [authRows] = await connection.query(
       `SELECT ca.cliente_id, ca.reset_token_expires, c.nombre, c.apellido 
        FROM clientes_auth ca
@@ -48,7 +47,6 @@ export async function POST(request: NextRequest) {
 
     const authData = (authRows as any)[0];
 
-    // ✅ Verificar que el token no haya expirado
     if (isTokenExpired(new Date(authData.reset_token_expires))) {
       return NextResponse.json(
         { success: false, message: 'El token ha expirado. Solicita uno nuevo.' },
@@ -56,10 +54,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ✅ Hash de la nueva contraseña
     const hashedPassword = await hashPassword(passwordToHash);
 
-    // ✅ CORRECCIÓN: Actualizar en clientes_auth, NO en clientes
     await connection.query(
       `UPDATE clientes_auth 
        SET password_hash = ?, reset_token = NULL, reset_token_expires = NULL 

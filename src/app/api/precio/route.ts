@@ -11,7 +11,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'itemId es requerido' }, { status: 400 });
     }
 
-    // Obtener el precio promedio en dólares
     const [rows]: any = await db.query(
       `SELECT AVG(precio_venta) as precio_promedio_usd
        FROM articulos 
@@ -21,10 +20,8 @@ export async function GET(request: NextRequest) {
 
     const precioPromedioDolares = rows[0]?.precio_promedio_usd || 0;
 
-    // Obtener la cotización del dólar
     const dolar = await getDolar();
 
-    // Convertir a pesos
     const precioEnPesos = precioPromedioDolares * dolar;
 
     return NextResponse.json({ 

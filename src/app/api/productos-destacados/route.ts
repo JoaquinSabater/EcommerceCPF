@@ -4,7 +4,6 @@ import { db } from '@/data/mysql';
 
 export async function GET(request: NextRequest) {
   try {
-    // Query simple para obtener las subcategoria_id de los items destacados
     const query = `
       SELECT DISTINCT i.subcategoria_id
       FROM item_detalle id_table
@@ -18,13 +17,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json([]);
     }
 
-    // Usar la función existente getCategorias para cada subcategoria_id
     let productosDestacados = [];
     
     for (const row of rows) {
       const categorias = await getCategorias(row.subcategoria_id);
       
-      // Filtrar solo los items que están marcados como destacados
       const categoriasDestacadas = await Promise.all(
         categorias.map(async (categoria) => {
           const [destacadoRows]: any = await db.query(
@@ -36,7 +33,6 @@ export async function GET(request: NextRequest) {
         })
       );
       
-      // Agregar solo las categorías que no son null
       productosDestacados.push(...categoriasDestacadas.filter(Boolean));
     }
 
