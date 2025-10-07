@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { categorias } from "@/types/types";
 import { CldImage } from 'next-cloudinary';
-import { createPortal } from 'react-dom'; // ✅ Importar createPortal
+import { createPortal } from 'react-dom';
 import DetalleProductoModal from "@/components/Products/DetalleProductoModal";
 
 interface ProductoDestacadoCardProps {
@@ -17,9 +17,8 @@ export default function ProductoDestacadoCard({ categoria, onClick }: ProductoDe
   const [modalOpen, setModalOpen] = useState(false);
   const [imagenPrincipal, setImagenPrincipal] = useState<string>('');
   const [imageError, setImageError] = useState(false);
-  const [mounted, setMounted] = useState(false); // ✅ Para evitar hidration issues
+  const [mounted, setMounted] = useState(false);
 
-  // ✅ Para evitar hydration mismatch
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -34,14 +33,12 @@ export default function ProductoDestacadoCard({ categoria, onClick }: ProductoDe
         const dataPrice = await resPrice.json();
         setPrecio(dataPrice.precio);
 
-        // Buscar la foto_portada específicamente
         const resDetail = await fetch(`/api/detalle?id=${categoria.id}`);
         if (resDetail.ok) {
           const dataDetail = await resDetail.json();
           
           console.log('Datos del producto destacado:', dataDetail);
           
-          // Priorizar foto_portada, si no existe usar foto1_url como fallback
           if (dataDetail.foto_portada && dataDetail.foto_portada.trim() !== '') {
             setImagenPrincipal(dataDetail.foto_portada);
             setImageError(false);
@@ -78,11 +75,9 @@ export default function ProductoDestacadoCard({ categoria, onClick }: ProductoDe
     setModalOpen(false);
   };
 
-  // Callback para actualizar la imagen cuando se edite en el modal
   const handleProductUpdate = (updatedProduct: any) => {
     console.log('Actualizando producto destacado en card:', updatedProduct);
     
-    // Priorizar foto_portada en la actualización
     if (updatedProduct.foto_portada && updatedProduct.foto_portada.trim() !== '') {
       setImagenPrincipal(updatedProduct.foto_portada);
       setImageError(false);
@@ -108,43 +103,40 @@ export default function ProductoDestacadoCard({ categoria, onClick }: ProductoDe
         role="button"
         aria-label={`Ver detalles de ${categoria.nombre}`}
       >
-        <div className="relative bg-gradient-to-b from-orange-50 to-white pt-10 px-4 flex justify-center items-center h-48 md:h-56">
+        {/* ✅ SECCIÓN DE IMAGEN - IGUAL QUE CategoriaCard */}
+        <div className="relative bg-white p-2 flex justify-center items-center h-72 md:h-80 border-b border-gray-100">
           {imageError || !imagenPrincipal ? (
             <img
               src="/not-image.png"
               alt={categoria.nombre}
-              className="object-contain max-h-40 md:max-h-48 transition-transform duration-300 hover:scale-105"
-              width={160}
-              height={160}
+              className="object-contain w-full h-full transition-transform duration-300 hover:scale-105"
+              width={400}
+              height={400}
               onError={() => console.log('Error cargando not-image.png')}
             />
           ) : (
             <CldImage
               src={imagenPrincipal}
               alt={categoria.nombre}
-              width={160}
-              height={160}
-              className="object-contain max-h-40 md:max-h-48 transition-transform duration-300 hover:scale-105"
+              width={600}
+              height={600}
+              className="object-contain w-full h-full transition-transform duration-300 hover:scale-105"
+              crop="fit"
+              quality="auto"
+              format="auto"
               onError={handleImageError}
             />
           )}
         </div>
         
-        <div className="p-5 flex flex-col flex-grow">
-          <h3 className="font-bold text-gray-800 text-lg mb-2 line-clamp-2 min-h-[3.5rem]">{categoria.nombre}</h3>
+        {/* ✅ SECCIÓN DE CONTENIDO - IGUAL QUE CategoriaCard */}
+        <div className="p-4 flex flex-col flex-grow">
+          <h3 className="font-bold text-gray-800 text-base mb-2 line-clamp-2 min-h-[2.5rem]">
+            {categoria.nombre}
+          </h3>
           
-          <div className="mt-auto pt-4 flex items-center justify-between">
-            {loading ? (
-              <div className="inline-block h-6 animate-pulse bg-gray-200 rounded w-16"></div>
-            ) : precio ? (
-              <div className="flex flex-col">
-                <span className="text-2xl font-bold text-orange-600">${precio.toLocaleString()}</span>
-                <span className="text-xs text-gray-500">Precio actualizado</span>
-              </div>
-            ) : (
-              <div className="w-16"></div>
-            )}
-            
+          {/* ✅ BOTÓN - IGUAL QUE CategoriaCard */}
+          <div className="mt-auto flex items-center justify-between">
             <button
               className="bg-orange-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-orange-600 transition-colors flex items-center gap-1 shadow-sm hover:shadow"
               onClick={handleVerClick}
@@ -158,7 +150,6 @@ export default function ProductoDestacadoCard({ categoria, onClick }: ProductoDe
         </div>
       </div>
 
-      {/* ✅ Renderizar el modal usando createPortal para que aparezca fuera del Swiper */}
       {mounted && modalOpen && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center">
           <DetalleProductoModal 

@@ -42,8 +42,11 @@ export default function SearchQuantityButton({
     }
   };
 
+  // ✅ FIX 1: Validar que no supere el stock máximo
   const handleSet = (value: number) => {
-    if (value <= maxStock && value >= 0) {
+    if (value > maxStock) {
+      setQuantity(maxStock); // Limitar al stock máximo
+    } else if (value >= 0) {
       setQuantity(value);
     }
   };
@@ -54,23 +57,20 @@ export default function SearchQuantityButton({
     setIsAdding(true);
     
     try {
-      // Crear objeto Articulo compatible con CartContext
       const articulo = {
         codigo_interno: codigoInterno,
         item_id: itemId,
-        marca_id: 0, // Valor por defecto
+        marca_id: 0,
         modelo: modelo,
-        code: '', // Valor por defecto
+        code: '',
         precio_venta: precio,
-        ubicacion: '', // Valor por defecto
+        ubicacion: '',
         stock_actual: maxStock,
         item_nombre: itemName
       };
 
-      // Usar el CartContext
       addToCart(articulo, itemName, quantity);
 
-      // Callback opcional
       if (onAddToCart) {
         const cartItem = {
           itemId,
@@ -84,10 +84,7 @@ export default function SearchQuantityButton({
         onAddToCart(cartItem);
       }
 
-      // Mostrar confirmación
       alert(`${quantity} ${itemName} agregado al carrito`);
-      
-      // Resetear cantidad después de agregar
       setQuantity(0);
       
     } catch (error) {
@@ -99,8 +96,8 @@ export default function SearchQuantityButton({
   };
 
   return (
-    <div className={`flex flex-col gap-2 min-w-[100px] ${className}`}>
-      {/* Quantity Button */}
+    <div className={`flex flex-col gap-3 min-w-[120px] ${className}`}>
+      {/* ✅ FIX 2: Botón de cantidad más grande */}
       <div className="flex justify-center">
         <QuantityButton
           value={quantity}
@@ -109,26 +106,27 @@ export default function SearchQuantityButton({
           onSet={handleSet}
           modelo={modelo}
           hideModelo={true}
-          size="xs"
+          size="normal" // ✅ Cambiado de "xs" a "normal"
+          maxStock={maxStock} // ✅ Pasar maxStock para validación
         />
       </div>
 
-      {/* Botón Agregar - aparece cuando quantity > 0 */}
+      {/* Botón Agregar - mejorado visualmente */}
       {quantity > 0 && (
         <div className="flex justify-center">
           <button
             onClick={handleAddToCart}
             disabled={isAdding || maxStock <= 0}
-            className="flex items-center justify-center gap-1.5 bg-orange-500 hover:bg-orange-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md min-w-[80px]"
+            className="flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md min-w-[100px]"
           >
             {isAdding ? (
               <>
-                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                 <span>Agregando...</span>
               </>
             ) : (
               <>
-                <ShoppingCartIcon className="w-3.5 h-3.5" />
+                <ShoppingCartIcon className="w-4 h-4" />
                 <span>Agregar</span>
               </>
             )}

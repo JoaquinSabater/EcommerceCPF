@@ -144,7 +144,6 @@ export default function SearchResults({
               </div>
             </div>
 
-            {/* SearchQuantityButton - En su propia columna */}
             <div 
               className="flex justify-center sm:justify-end items-start" 
               onClick={(e) => e.stopPropagation()}
@@ -153,7 +152,7 @@ export default function SearchResults({
                 itemId={result.item_id}
                 codigoInterno={result.codigo_interno}
                 itemName={result.item}
-                modelo={formatModeloDisplay(result)} // ✅ Pasar marca + modelo
+                modelo={formatModeloDisplay(result)}
                 maxStock={result.stock_real}
                 precio={result.precio_venta}
                 onAddToCart={onAddToCart}
