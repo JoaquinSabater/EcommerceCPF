@@ -302,11 +302,11 @@ export default function DetalleProductoModal({
                 <div className="md:hidden space-y-6">
                   <DetalleMobile 
                     producto={formatearProducto(detalleProducto, precio)} 
-                    onSugerenciaChange={handleSugerenciaChange} // ✅ Pasar callback
+                    onSugerenciaChange={handleSugerenciaChange} 
                   />
                   <ModelosSelector 
                     subcategoriaId={parseInt(itemId)} 
-                    sugerenciaActual={sugerenciaActual} // ✅ Pasar sugerencia al selector de modelos
+                    sugerenciaActual={sugerenciaActual} 
                   />
                 </div>
                 
@@ -314,11 +314,11 @@ export default function DetalleProductoModal({
                 <div className="hidden md:flex flex-col space-y-8">
                   <DetalleDesktop 
                     producto={formatearProducto(detalleProducto, precio)}
-                    onSugerenciaChange={handleSugerenciaChange} // ✅ Pasar callback
+                    onSugerenciaChange={handleSugerenciaChange} 
                   />
                   <ModelosSelector 
                     subcategoriaId={parseInt(itemId)}
-                    sugerenciaActual={sugerenciaActual} // ✅ Pasar sugerencia al selector de modelos
+                    sugerenciaActual={sugerenciaActual} 
                   />
                 </div>
               </div>

@@ -6,10 +6,11 @@ export async function GET(request: NextRequest) {
     const url = new URL(request.url);
     const query = url.searchParams.get('q');
 
-    if (!query || query.trim().length < 2) {
+    // ✅ Cambiar validación de 2 a 4 caracteres
+    if (!query || query.trim().length < 3) {
       return NextResponse.json({ 
         success: false,
-        message: 'Debe proporcionar un término de búsqueda',
+        message: 'Debe proporcionar al menos 3 caracteres para buscar',
         results: [] 
       });
     }
@@ -24,10 +25,21 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // ✅ Validar que cada palabra tenga al menos 3 caracteres (opcional)
+    const palabrasValidas = palabrasClave.filter(palabra => palabra.length >= 2);
+    
+    if (palabrasValidas.length === 0) {
+      return NextResponse.json({
+        success: false,
+        message: 'Las palabras de búsqueda deben tener al menos 2 caracteres',
+        results: []
+      });
+    }
+
     const condiciones: string[] = [];
     const parametros: string[] = [];
 
-    palabrasClave.forEach(palabra => {
+    palabrasValidas.forEach(palabra => {
       condiciones.push(`(
         a.codigo_interno LIKE ? OR 
         i.nombre LIKE ? OR 
@@ -64,18 +76,17 @@ export async function GET(request: NextRequest) {
       WHERE ${whereClause}
       HAVING stock_real > 0
       ORDER BY i.nombre, m.nombre, a.modelo
+      LIMIT 50
     `;
 
     const [rows]: any = await db.query(sqlMain, parametros);
-
-    console.log(`Búsqueda: "${query}" - ${rows.length} resultados encontrados`);
-    console.log(`Palabras clave: [${palabrasClave.join(', ')}]`);
 
     return NextResponse.json({ 
       success: true,
       results: rows,
       query: query,
-      total: rows.length
+      total: rows.length,
+      searchLength: query.length
     });
 
   } catch (error) {

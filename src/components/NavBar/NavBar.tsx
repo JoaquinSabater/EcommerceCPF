@@ -24,10 +24,10 @@ export default function NavBar() {
   const router = useRouter();
 
   const menu = [
-    { title: 'baterias', path: '/public/baterias' },
-    { title: 'cables', path: '/public/cables' },
-    { title: 'vidrios', path: '/public/vidrios' },
-    { title: 'modulos', path: '/public/pantallas' },
+    { title: 'Baterias', path: '/public/baterias' },
+    { title: 'Cables', path: '/public/cables' },
+    { title: 'Vidrios', path: '/public/vidrios' },
+    { title: 'Modulos', path: '/public/pantallas' },
     {
       title: 'Fundas',
       path: '/public/fundas',
