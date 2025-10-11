@@ -27,6 +27,8 @@ interface DetalleProducto {
   foto3_url?: string;
   foto4_url?: string;
   foto_portada?: string;
+  destacar?: boolean;
+  activo?: boolean;
 }
 
 interface ProductoFormateado {
@@ -36,7 +38,8 @@ interface ProductoFormateado {
   descripcion: string;
   precio: number;
   caracteristicas: Caracteristica[];
-  sugerencia?: string; // ✅ Agregar sugerencia
+  sugerencia?: string;
+  mostrarCaracteristicas?: boolean; // ✅ Nueva prop para controlar características
 }
 
 interface DetalleProductoModalProps {
@@ -58,7 +61,7 @@ export default function DetalleProductoModal({
   const [error, setError] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [sugerenciaActual, setSugerenciaActual] = useState(''); // ✅ Estado para manejar la sugerencia
+  const [sugerenciaActual, setSugerenciaActual] = useState('');
   const { isAdmin } = useAuth(); 
 
   const fetchProductoDetalle = async (id: string) => {
@@ -68,7 +71,8 @@ export default function DetalleProductoModal({
         throw new Error('Error al obtener detalles del producto');
       }
       const data = await response.json();
-      return data as DetalleProducto;
+      console.log('🔍 Detalle obtenido del API:', data.detalle);
+      return data.detalle as DetalleProducto;
     } catch (error) {
       console.error("Error al obtener detalles del producto:", error);
       throw error;
@@ -90,10 +94,8 @@ export default function DetalleProductoModal({
   };
 
   const formatearProducto = (detalle: DetalleProducto, precio: number): ProductoFormateado => {
-    // ✅ Priorizar foto_portada como imagen principal
     const imagenPrincipal = detalle.foto_portada || detalle.foto1_url || '';
     
-    // ✅ Crear array con todas las imágenes disponibles (SIN duplicar la foto_portada)
     const todasLasImagenes = [
       detalle.foto1_url,
       detalle.foto2_url,
@@ -101,13 +103,19 @@ export default function DetalleProductoModal({
       detalle.foto4_url,
     ].filter((img): img is string => typeof img === 'string' && img.trim() !== '');
 
+    // ✅ Usar el campo activo para determinar si mostrar características
+    const mostrarCaracteristicas = Boolean(detalle.activo);
+    
+    console.log(`🎛️ Formateando producto - Activo: ${detalle.activo}, Mostrar características: ${mostrarCaracteristicas}`);
+
     return {
       imagen: imagenPrincipal,
       nombre: detalle.item_nombre,
       descripcion: detalle.descripcion,
       precio: precio,
       imagenes: todasLasImagenes,
-      sugerencia: sugerenciaActual, // ✅ Incluir la sugerencia actual
+      sugerencia: sugerenciaActual,
+      mostrarCaracteristicas: mostrarCaracteristicas, // ✅ Usar el campo activo
       caracteristicas: [
         { label: "Material", value: detalle.material || "No especificado" },
         { label: "Espesor", value: detalle.espesor || "No especificado" },
@@ -118,29 +126,26 @@ export default function DetalleProductoModal({
     };
   };
 
-  // ✅ Callback para recibir cambios de sugerencia desde los componentes hijos
   const handleSugerenciaChange = (nuevaSugerencia: string) => {
     console.log('🟡 Sugerencia actualizada en DetalleProductoModal:', nuevaSugerencia);
     setSugerenciaActual(nuevaSugerencia);
   };
 
-  // Función para abrir el modal de edición
   const handleEditProduct = () => {
     if (detalleProducto) {
       setShowEditModal(true);
     }
   };
 
-  // Función para cerrar el modal de edición
   const handleCloseEditModal = () => {
     setShowEditModal(false);
   };
 
-  // Función para guardar los cambios del producto
   const handleSaveProduct = async (updatedProduct: DetalleProducto) => {
     setIsUpdating(true);
     
     try {
+      // ✅ Actualizar el estado local con los nuevos datos
       setDetalleProducto(updatedProduct);
       setShowEditModal(false);
       
@@ -148,7 +153,11 @@ export default function DetalleProductoModal({
         onUpdate(updatedProduct);
       }
       
-      console.log('✅ Producto actualizado exitosamente:', updatedProduct.item_nombre);
+      console.log('✅ Producto actualizado exitosamente:', {
+        nombre: updatedProduct.item_nombre,
+        activo: updatedProduct.activo,
+        destacar: updatedProduct.destacar
+      });
       
     } catch (error) {
       console.error('Error al procesar la actualización:', error);
@@ -157,13 +166,11 @@ export default function DetalleProductoModal({
     }
   };
 
-  // Cargar datos del producto
   useEffect(() => {
     if (isOpen && itemId) {
       const loadData = async () => {
         setLoading(true);
         setError(null);
-        // ✅ Resetear sugerencia cuando se abre un nuevo producto
         setSugerenciaActual('');
         
         try {
@@ -174,8 +181,16 @@ export default function DetalleProductoModal({
           
           setDetalleProducto(detalleData);
           setPrecio(precioData);
+          
+          console.log('📊 Datos cargados:', {
+            item_id: detalleData.item_id,
+            activo: detalleData.activo,
+            destacar: detalleData.destacar
+          });
+          
         } catch (err) {
           setError('Error al cargar los datos del producto');
+          console.error('❌ Error cargando datos:', err);
         } finally {
           setLoading(false);
         }
@@ -185,7 +200,6 @@ export default function DetalleProductoModal({
     }
   }, [isOpen, itemId]);
 
-  // Cerrar modal con ESC
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -208,7 +222,6 @@ export default function DetalleProductoModal({
     };
   }, [isOpen, showEditModal, onClose]);
 
-  // Función para cerrar el modal principal
   const handleCloseMainModal = () => {
     if (isUpdating) return;
     
@@ -224,17 +237,13 @@ export default function DetalleProductoModal({
 
   return (
     <>
-      {/* Modal Principal */}
       <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
-        {/* Overlay */}
         <div 
           className="absolute inset-0 backdrop-blur-sm bg-[rgba(255,255,255,0.1)]"
           onClick={handleCloseMainModal}
         />
         
-        {/* Modal Content */}
         <div className="relative bg-white rounded-lg shadow-2xl max-w-[95vw] lg:max-w-6xl xl:max-w-7xl mx-auto max-h-[95vh] overflow-y-auto w-full">
-          {/* Header */}
           <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center z-10 rounded-t-lg">
             <div className="flex items-center gap-4">
               <h2 className="text-xl font-semibold">
@@ -246,14 +255,31 @@ export default function DetalleProductoModal({
                 )}
               </h2>
               
-              {/* ✅ Mostrar sugerencia actual si existe (debug) */}
+              {/* ✅ Mostrar estado del detalle activo */}
+              {detalleProducto && (
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs px-2 py-1 rounded-full ${
+                    detalleProducto.activo 
+                      ? 'bg-green-100 text-green-700' 
+                      : 'bg-gray-100 text-gray-600'
+                  }`}>
+                    {detalleProducto.activo ? '✅ Características activas' : '❌ Características ocultas'}
+                  </span>
+                  
+                  {detalleProducto.destacar && (
+                    <span className="text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-700">
+                      ⭐ Destacado
+                    </span>
+                  )}
+                </div>
+              )}
+              
               {sugerenciaActual && (
-                <span className="text-xs text-gray-500 bg-yellow-100 px-2 py-1 rounded">
-                  Con sugerencia: {sugerenciaActual.substring(0, 30)}...
+                <span className="text-xs text-gray-500 bg-blue-100 px-2 py-1 rounded">
+                  📝 Con sugerencia: {sugerenciaActual.substring(0, 20)}...
                 </span>
               )}
               
-              {/* Botón de editar - Solo visible para admin */}
               {isAdmin && detalleProducto && (
                 <button
                   onClick={handleEditProduct}
@@ -280,7 +306,6 @@ export default function DetalleProductoModal({
             </button>
           </div>
 
-          {/* Content */}
           <div className="p-6 lg:p-8">
             {loading ? (
               <div className="flex items-center justify-center py-20">
@@ -298,7 +323,6 @@ export default function DetalleProductoModal({
               </div>
             ) : detalleProducto ? (
               <div className="min-h-[60vh]">
-                {/* Mobile */}
                 <div className="md:hidden space-y-6">
                   <DetalleMobile 
                     producto={formatearProducto(detalleProducto, precio)} 
@@ -310,7 +334,6 @@ export default function DetalleProductoModal({
                   />
                 </div>
                 
-                {/* Desktop */}
                 <div className="hidden md:flex flex-col space-y-8">
                   <DetalleDesktop 
                     producto={formatearProducto(detalleProducto, precio)}
@@ -327,7 +350,6 @@ export default function DetalleProductoModal({
         </div>
       </div>
 
-      {/* Modal de Edición */}
       {detalleProducto && (
         <EditProductModal
           producto={detalleProducto}

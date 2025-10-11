@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { XMarkIcon, PhotoIcon, TrashIcon, StarIcon } from "@heroicons/react/24/outline";
+import { XMarkIcon, PhotoIcon, TrashIcon, StarIcon, EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import { CldImage, CldUploadWidget } from 'next-cloudinary';
 
 interface DetalleProducto {
@@ -19,6 +19,7 @@ interface DetalleProducto {
   foto4_url?: string;
   foto_portada?: string;
   destacar?: boolean;
+  activo?: boolean; // ✅ Nuevo campo
 }
 
 interface EditProductModalProps {
@@ -35,7 +36,6 @@ interface ImageData {
   toDelete: boolean;
 }
 
-// ✅ Función helper para sanitizar valores null/undefined
 const sanitizeValue = (value: any): string => {
   if (value === null || value === undefined) {
     return '';
@@ -51,7 +51,6 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
 
   useEffect(() => {
     if (isOpen && producto) {
-      // ✅ Sanitizar todos los valores del producto
       const sanitizedProducto: DetalleProducto = {
         ...producto,
         descripcion: sanitizeValue(producto.descripcion),
@@ -65,7 +64,8 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
         foto3_url: sanitizeValue(producto.foto3_url),
         foto4_url: sanitizeValue(producto.foto4_url),
         foto_portada: sanitizeValue(producto.foto_portada),
-        destacar: Boolean(producto.destacar) // ✅ Asegurar que sea boolean
+        destacar: Boolean(producto.destacar),
+        activo: Boolean(producto.activo) // ✅ Nuevo campo
       };
       
       setFormData(sanitizedProducto);
@@ -200,8 +200,8 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
       console.log('Datos a enviar al servidor:', {
         item_id: updatedProduct.item_id,
         destacar: updatedProduct.destacar,
-        foto_portada: updatedProduct.foto_portada,
-        foto1_url: updatedProduct.foto1_url
+        activo: updatedProduct.activo, // ✅ Log del nuevo campo
+        foto_portada: updatedProduct.foto_portada
       });
 
       const response = await fetch(`/api/actualizar?id=${producto.item_id}`, {
@@ -222,7 +222,16 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
 
       onSave(updatedProduct);
       onClose();
-      alert(`Producto actualizado exitosamente${updatedProduct.destacar ? ' y marcado como destacado' : ''}`);
+      
+      // ✅ Mensaje mejorado que incluye el estado del detalle
+      const statusMessages = [];
+      if (updatedProduct.destacar) statusMessages.push('marcado como destacado');
+      if (updatedProduct.activo) statusMessages.push('detalle activado');
+      else statusMessages.push('detalle desactivado');
+      
+      const statusText = statusMessages.length > 0 ? ` y ${statusMessages.join(', ')}` : '';
+      alert(`Producto actualizado exitosamente${statusText}`);
+      
     } catch (error) {
       console.error('Error saving product:', error);
       alert(`Error al guardar el producto: ${error instanceof Error ? error.message : 'Error desconocido'}`);
@@ -390,31 +399,153 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
         </div>
 
         <div className="p-6 space-y-6">
-          {/* Checkbox para destacar producto */}
-          <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-4">
-            <div className="flex items-center space-x-3">
-              <input
-                type="checkbox"
-                id="destacar"
-                name="destacar"
-                checked={formData.destacar || false}
-                onChange={handleInputChange}
-                className="h-5 w-5 text-yellow-600 focus:ring-yellow-500 border-yellow-300 rounded"
-              />
-              <label htmlFor="destacar" className="flex items-center cursor-pointer">
-                <StarIcon className="w-5 h-5 text-yellow-500 mr-2" />
-                <span className="text-sm font-medium text-gray-900">
-                  Marcar como producto destacado
-                </span>
-              </label>
+          {/* ✅ Sección de controles principales */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Switch para activar detalle */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-center space-x-3">
+                <input
+                  type="checkbox"
+                  id="activo"
+                  name="activo"
+                  checked={formData.activo || false}
+                  onChange={handleInputChange}
+                  className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-blue-300 rounded"
+                />
+                <label htmlFor="activo" className="flex items-center cursor-pointer">
+                  {formData.activo ? (
+                    <EyeIcon className="w-5 h-5 text-blue-500 mr-2" />
+                  ) : (
+                    <EyeSlashIcon className="w-5 h-5 text-gray-400 mr-2" />
+                  )}
+                  <span className="text-sm font-medium text-gray-900">
+                    Activar detalle del producto
+                  </span>
+                </label>
+              </div>
+              <p className="text-xs text-gray-600 mt-2 ml-8">
+                {formData.activo 
+                  ? 'Las características se mostrarán en el detalle del producto'
+                  : 'Las características estarán ocultas en el detalle del producto'
+                }
+              </p>
             </div>
-            <p className="text-xs text-gray-600 mt-2 ml-8">
-              Los productos destacados aparecen en el carrusel de la página principal
-            </p>
+
+            {/* Checkbox para destacar producto */}
+            <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-4">
+              <div className="flex items-center space-x-3">
+                <input
+                  type="checkbox"
+                  id="destacar"
+                  name="destacar"
+                  checked={formData.destacar || false}
+                  onChange={handleInputChange}
+                  className="h-5 w-5 text-yellow-600 focus:ring-yellow-500 border-yellow-300 rounded"
+                />
+                <label htmlFor="destacar" className="flex items-center cursor-pointer">
+                  <StarIcon className="w-5 h-5 text-yellow-500 mr-2" />
+                  <span className="text-sm font-medium text-gray-900">
+                    Marcar como producto destacado
+                  </span>
+                </label>
+              </div>
+              <p className="text-xs text-gray-600 mt-2 ml-8">
+                Los productos destacados aparecen en el carrusel de la página principal
+              </p>
+            </div>
           </div>
 
-          {/* Formulario de campos */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* ✅ Campos de características - solo visible si activo está marcado */}
+          {formData.activo && (
+            <div className="border border-blue-200 rounded-lg p-4 bg-blue-50">
+              <h3 className="text-lg font-semibold text-blue-800 mb-4 flex items-center">
+                <EyeIcon className="w-5 h-5 mr-2" />
+                Características del Producto
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Material
+                  </label>
+                  <input
+                    type="text"
+                    name="material"
+                    value={sanitizeValue(formData.material)}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Espesor
+                  </label>
+                  <input
+                    type="text"
+                    name="espesor"
+                    value={sanitizeValue(formData.espesor)}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Protección
+                  </label>
+                  <input
+                    type="text"
+                    name="proteccion"
+                    value={sanitizeValue(formData.proteccion)}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Compatibilidad
+                  </label>
+                  <input
+                    type="text"
+                    name="compatibilidad"
+                    value={sanitizeValue(formData.compatibilidad)}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Pegamento
+                  </label>
+                  <input
+                    type="text"
+                    name="pegamento"
+                    value={sanitizeValue(formData.pegamento)}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ✅ Mensaje cuando las características están desactivadas */}
+          {!formData.activo && (
+            <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+              <div className="flex items-center text-gray-500">
+                <EyeSlashIcon className="w-5 h-5 mr-2" />
+                <span className="text-sm">
+                  Las características están ocultas. Active "Activar detalle del producto" para editarlas.
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Información básica del producto */}
+          <div className="grid grid-cols-1 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Nombre del producto
@@ -423,7 +554,7 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
               <input
                 type="text"
                 name="item_nombre"
-                value={sanitizeValue(formData.item_nombre)} // ✅ Sanitizar aquí también
+                value={sanitizeValue(formData.item_nombre)}
                 readOnly={true}
                 className="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-gray-600 cursor-not-allowed"
                 title="Este campo no se puede modificar"
@@ -432,81 +563,16 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Material
+                Descripción
               </label>
-              <input
-                type="text"
-                name="material"
-                value={sanitizeValue(formData.material)} // ✅ Sanitizar
+              <textarea
+                name="descripcion"
+                value={sanitizeValue(formData.descripcion)}
                 onChange={handleInputChange}
+                rows={4}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
               />
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Espesor
-              </label>
-              <input
-                type="text"
-                name="espesor"
-                value={sanitizeValue(formData.espesor)} // ✅ Sanitizar
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Protección
-              </label>
-              <input
-                type="text"
-                name="proteccion"
-                value={sanitizeValue(formData.proteccion)} // ✅ Sanitizar
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Compatibilidad
-              </label>
-              <input
-                type="text"
-                name="compatibilidad"
-                value={sanitizeValue(formData.compatibilidad)} // ✅ Sanitizar
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Pegamento
-              </label>
-              <input
-                type="text"
-                name="pegamento"
-                value={sanitizeValue(formData.pegamento)} // ✅ Sanitizar
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Descripción
-            </label>
-            <textarea
-              name="descripcion"
-              value={sanitizeValue(formData.descripcion)} // ✅ Sanitizar
-              onChange={handleInputChange}
-              rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-            />
           </div>
 
           {/* Foto de portada */}

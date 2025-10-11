@@ -15,12 +15,13 @@ interface ProductoFormateado {
   precio: number;
   caracteristicas: Caracteristica[];
   imagenes?: string[];
-  sugerencia?: string; // ✅ Nueva prop
+  sugerencia?: string;
+  mostrarCaracteristicas?: boolean; // ✅ Nueva prop
 }
 
 interface DetalleMobileProps {
   producto: ProductoFormateado;
-  onSugerenciaChange?: (sugerencia: string) => void; // ✅ Callback
+  onSugerenciaChange?: (sugerencia: string) => void;
 }
 
 export default function DetalleMobile({ producto, onSugerenciaChange }: DetalleMobileProps) {
@@ -32,10 +33,9 @@ export default function DetalleMobile({ producto, onSugerenciaChange }: DetalleM
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [startX, setStartX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
-  const [sugerencia, setSugerencia] = useState(producto.sugerencia || ''); // ✅ Estado local
+  const [sugerencia, setSugerencia] = useState(producto.sugerencia || '');
   const imageRef = useRef<HTMLDivElement>(null);
 
-  // ... (mantener todas las funciones de navegación de imágenes existentes)
   const nextImage = () => {
     setCurrentImageIndex((prev) => 
       prev === todasLasImagenes.length - 1 ? 0 : prev + 1
@@ -121,6 +121,7 @@ export default function DetalleMobile({ producto, onSugerenciaChange }: DetalleM
 
   return (
     <div className="p-4 rounded-lg bg-white shadow-sm">
+      {/* ✅ SIEMPRE MOSTRAR: Sección de imágenes */}
       <div className="relative mb-4">
         <div className="flex items-center justify-center rounded-lg overflow-hidden">
           {todasLasImagenes.length > 0 ? (
@@ -187,10 +188,12 @@ export default function DetalleMobile({ producto, onSugerenciaChange }: DetalleM
         )}
       </div>
 
+      {/* ✅ SIEMPRE MOSTRAR: Información básica del producto */}
       <div className="mb-2 text-xs text-gray-500">Vidrio templado</div>
       <div className="font-bold text-xl mb-1">{producto.nombre}</div>
       <div className="text-gray-700 mb-2">{producto.descripcion}</div>
 
+      {/* ✅ SIEMPRE MOSTRAR: Campo de sugerencias */}
       <div className="mb-4">
         <label className="block text-sm font-bold text-orange-600 mb-2">
           SUGERENCIAS ESPECIALES
@@ -207,17 +210,22 @@ export default function DetalleMobile({ producto, onSugerenciaChange }: DetalleM
         </div>
       </div>
 
-      <div className="mb-2 font-bold text-orange-600">CARACTERÍSTICAS</div>
-      <table className="w-full text-sm mb-4">
-        <tbody>
-          {producto.caracteristicas.map((c: any) => (
-            <tr key={c.label} className="border-b">
-              <td className="py-2 text-gray-500">{c.label}:</td>
-              <td className="py-2 font-bold text-gray-800">{c.value}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {/* ✅ SOLO OCULTAR ESTA SECCIÓN: Tabla de características */}
+      {producto.mostrarCaracteristicas && (
+        <>
+          <div className="mb-2 font-bold text-orange-600">CARACTERÍSTICAS</div>
+          <table className="w-full text-sm mb-4">
+            <tbody>
+              {producto.caracteristicas.map((c: any) => (
+                <tr key={c.label} className="border-b">
+                  <td className="py-2 text-gray-500">{c.label}:</td>
+                  <td className="py-2 font-bold text-gray-800">{c.value}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
     </div>
   );
 }

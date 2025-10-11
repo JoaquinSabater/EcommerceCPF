@@ -17,6 +17,7 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
   const [modalOpen, setModalOpen] = useState(false);
   const [imagenPrincipal, setImagenPrincipal] = useState<string>('');
   const [imageError, setImageError] = useState(false);
+  const [descripcion, setDescripcion] = useState<string>('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -24,21 +25,22 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
       setImageError(false);
       
       try {
-        // Cargar precio y detalles en paralelo
-        const [resPrice, resDetail] = await Promise.all([
-          fetch(`/api/precio?itemId=${categoria.id}`),
+        const [resDetail] = await Promise.all([
           fetch(`/api/detalle?id=${categoria.id}`)
         ]);
 
-        // Procesar precio
-        if (resPrice.ok) {
-          const dataPrice = await resPrice.json();
-          setPrecioEnPesos(dataPrice.precio);
-        }
 
-        // Procesar imagen
         if (resDetail.ok) {
           const dataDetail = await resDetail.json();
+          
+          console.log(`🖼️ Datos obtenidos para ${categoria.nombre}:`, {
+            foto_portada: dataDetail.foto_portada,
+            foto1_url: dataDetail.foto1_url,
+            descripcion: dataDetail.descripcion,
+            activo: dataDetail.activo
+          });
+          
+          setDescripcion(dataDetail.descripcion || '');
           
           if (dataDetail.foto_portada && dataDetail.foto_portada.trim() !== '') {
             setImagenPrincipal(dataDetail.foto_portada);
@@ -46,26 +48,37 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
           } else if (dataDetail.foto1_url && dataDetail.foto1_url.trim() !== '') {
             setImagenPrincipal(dataDetail.foto1_url);
             setImageError(false);
+          } else if (dataDetail.foto2_url && dataDetail.foto2_url.trim() !== '') {
+            setImagenPrincipal(dataDetail.foto2_url);
+            setImageError(false);
+          } else if (dataDetail.foto3_url && dataDetail.foto3_url.trim() !== '') {
+            setImagenPrincipal(dataDetail.foto3_url);
+            setImageError(false);
+          } else if (dataDetail.foto4_url && dataDetail.foto4_url.trim() !== '') {
+            setImagenPrincipal(dataDetail.foto4_url);
+            setImageError(false);
           } else {
             setImagenPrincipal('');
             setImageError(true);
           }
         } else {
+          console.warn(`❌ No se pudieron obtener detalles para ${categoria.nombre}`);
           setImagenPrincipal('');
           setImageError(true);
+          setDescripcion('');
         }
       } catch (error) {
-        console.error("Error al obtener datos:", error);
+        console.error(`❌ Error al obtener datos para ${categoria.nombre}:`, error);
         setImagenPrincipal('');
         setImageError(true);
+        setDescripcion('');
       }
       
-      // ✅ TERMINAR LOADING DESPUÉS DE PROCESAR DATOS
       setLoading(false);
     };
 
     fetchData();
-  }, [categoria.id]);
+  }, [categoria.id, categoria.nombre]);
 
   const handleVerClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -77,7 +90,9 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
   };
 
   const handleProductUpdate = (updatedProduct: any) => {
-    console.log('Actualizando producto en card:', updatedProduct);
+    console.log('🔄 Actualizando producto en card:', updatedProduct);
+    
+    setDescripcion(updatedProduct.descripcion || '');
     
     if (updatedProduct.foto_portada && updatedProduct.foto_portada.trim() !== '') {
       setImagenPrincipal(updatedProduct.foto_portada);
@@ -85,13 +100,22 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
     } else if (updatedProduct.foto1_url && updatedProduct.foto1_url.trim() !== '') {
       setImagenPrincipal(updatedProduct.foto1_url);
       setImageError(false);
+    } else if (updatedProduct.foto2_url && updatedProduct.foto2_url.trim() !== '') {
+      setImagenPrincipal(updatedProduct.foto2_url);
+      setImageError(false);
+    } else if (updatedProduct.foto3_url && updatedProduct.foto3_url.trim() !== '') {
+      setImagenPrincipal(updatedProduct.foto3_url);
+      setImageError(false);
+    } else if (updatedProduct.foto4_url && updatedProduct.foto4_url.trim() !== '') {
+      setImagenPrincipal(updatedProduct.foto4_url);
+      setImageError(false);
     } else {
       setImagenPrincipal('');
       setImageError(true);
     }
   };
 
-  // ✅ MOSTRAR SKELETON MIENTRAS CARGA
+  // ✅ Mostrar skeleton mientras carga
   if (loading) {
     return <CategoriaCardSkeleton />;
   }
@@ -105,6 +129,7 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
         role="button"
         aria-label={`Ver detalles de ${categoria.nombre}`}
       >
+        {/* ✅ Sección de imagen */}
         <div className="relative bg-white p-2 flex justify-center items-center h-72 md:h-80 border-b border-gray-100">
           {imageError || !imagenPrincipal ? (
             <img
@@ -124,15 +149,30 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
               crop="fit"
               quality="auto"
               format="auto"
+              onError={() => {
+                console.warn(`❌ Error cargando imagen: ${imagenPrincipal}`);
+                setImageError(true);
+              }}
             />
           )}
         </div>
         
+        {/* ✅ Información del producto */}
         <div className="p-4 flex flex-col flex-grow">
-          <h3 className="font-bold text-gray-800 text-base mb-2 line-clamp-2 min-h-[2.5rem]">{categoria.nombre}</h3>
+          <h3 className="font-bold text-gray-800 text-base mb-2 line-clamp-2 min-h-[2.5rem]">
+            {categoria.nombre}
+          </h3>
+          
           <div className="mt-auto flex items-center justify-between">
+            {/* ✅ Mostrar precio si está disponible */}
+            {precioEnPesos && (
+              <div className="text-lg font-bold text-green-600">
+                ${precioEnPesos.toLocaleString('es-AR')}
+              </div>
+            )}
+            
             <button
-              className="bg-orange-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-orange-600 transition-colors flex items-center gap-1 shadow-sm hover:shadow"
+              className="bg-orange-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-orange-600 transition-colors flex items-center gap-1 shadow-sm hover:shadow ml-auto"
               onClick={handleVerClick}
             >
               ver +

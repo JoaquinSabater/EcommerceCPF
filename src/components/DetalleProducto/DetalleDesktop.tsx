@@ -11,12 +11,13 @@ interface ProductoFormateado {
   precio: number;
   caracteristicas: any[];
   imagenes?: string[];
-  sugerencia?: string; // ✅ Nueva prop para la sugerencia
+  sugerencia?: string;
+  mostrarCaracteristicas?: boolean; // ✅ Nueva prop para controlar características
 }
 
 interface DetalleDesktopProps {
   producto: ProductoFormateado;
-  onSugerenciaChange?: (sugerencia: string) => void; // ✅ Callback para manejar cambios
+  onSugerenciaChange?: (sugerencia: string) => void;
 }
 
 export default function DetalleDesktop({ producto, onSugerenciaChange }: DetalleDesktopProps) {
@@ -26,7 +27,7 @@ export default function DetalleDesktop({ producto, onSugerenciaChange }: Detalle
   ].filter(img => img && img.trim() !== '' && img !== 'not-image');
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [sugerencia, setSugerencia] = useState(producto.sugerencia || ''); // ✅ Estado local para la sugerencia
+  const [sugerencia, setSugerencia] = useState(producto.sugerencia || '');
 
   const nextImage = () => {
     setCurrentImageIndex((prev) => 
@@ -44,7 +45,6 @@ export default function DetalleDesktop({ producto, onSugerenciaChange }: Detalle
     setCurrentImageIndex(index);
   };
 
-  // ✅ Manejar cambios en la sugerencia
   const handleSugerenciaChange = (value: string) => {
     setSugerencia(value);
     if (onSugerenciaChange) {
@@ -56,10 +56,12 @@ export default function DetalleDesktop({ producto, onSugerenciaChange }: Detalle
     <div className="rounded-lg bg-white shadow-sm">
       <div className="flex w-full items-start p-6">
         <div className="flex-1 flex flex-col justify-start pr-8">
+          {/* ✅ SIEMPRE MOSTRAR: Tipo, nombre y descripción */}
           <div className="mb-2 text-xs text-gray-500">Vidrio templado</div>
           <div className="font-bold text-3xl mb-2">{producto.nombre}</div>
           <div className="text-gray-700 mb-4 text-lg">{producto.descripcion}</div>
-          {/* ✅ Campo de sugerencias */}
+          
+          {/* ✅ SIEMPRE MOSTRAR: Campo de sugerencias */}
           <div className="mb-4">
             <label className="block text-sm font-bold text-orange-600 mb-2">
               SUGERENCIAS ESPECIALES
@@ -76,21 +78,27 @@ export default function DetalleDesktop({ producto, onSugerenciaChange }: Detalle
             </div>
           </div>
 
-          <div className="mb-2 font-bold text-orange-600 text-xl">CARACTERÍSTICAS</div>
-          <div className="flex-1 flex flex-col justify-between">
-            <table className="w-full text-base">
-              <tbody>
-                {producto.caracteristicas.map((c: any) => (
-                  <tr key={c.label} className="border-b align-top">
-                    <td className="py-2 text-gray-500">{c.label}:</td>
-                    <td className="py-2 font-bold text-gray-800">{c.value}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {/* ✅ SOLO OCULTAR ESTA SECCIÓN: Tabla de características */}
+          {producto.mostrarCaracteristicas && (
+            <>
+              <div className="mb-2 font-bold text-orange-600 text-xl">CARACTERÍSTICAS</div>
+              <div className="flex-1 flex flex-col justify-between">
+                <table className="w-full text-base">
+                  <tbody>
+                    {producto.caracteristicas.map((c: any) => (
+                      <tr key={c.label} className="border-b align-top">
+                        <td className="py-2 text-gray-500">{c.label}:</td>
+                        <td className="py-2 font-bold text-gray-800">{c.value}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
         </div>
 
+        {/* ✅ SIEMPRE MOSTRAR: Sección de imágenes */}
         <div className="flex-1">
           <div className="relative">
             <div className="flex items-center justify-center rounded-lg overflow-hidden">
