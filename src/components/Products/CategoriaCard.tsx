@@ -29,7 +29,6 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
           fetch(`/api/detalle?id=${categoria.id}`)
         ]);
 
-
         if (resDetail.ok) {
           const dataDetail = await resDetail.json();
           
@@ -80,9 +79,14 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
     fetchData();
   }, [categoria.id, categoria.nombre]);
 
-  const handleVerClick = (e: React.MouseEvent) => {
+  // ✅ Cambiar la función para abrir el modal desde toda la card
+  const handleCardClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setModalOpen(true);
+    // ✅ También ejecutar el onClick original si existe (para compatibilidad)
+    if (onClick) {
+      onClick();
+    }
   };
 
   const handleCloseModal = () => {
@@ -123,8 +127,8 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
   return (
     <>
       <div
-        className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden flex flex-col h-full"
-        onClick={onClick}
+        className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden flex flex-col h-full cursor-pointer"
+        onClick={handleCardClick} // ✅ Toda la card abre el modal
         tabIndex={0}
         role="button"
         aria-label={`Ver detalles de ${categoria.nombre}`}
@@ -171,15 +175,13 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
               </div>
             )}
             
-            <button
-              className="bg-orange-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-orange-600 transition-colors flex items-center gap-1 shadow-sm hover:shadow ml-auto"
-              onClick={handleVerClick}
-            >
+            {/* ✅ El botón ahora es solo decorativo, pero mantiene el estilo */}
+            <div className="bg-orange-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-orange-600 transition-colors flex items-center gap-1 shadow-sm hover:shadow ml-auto">
               ver +
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
-            </button>
+            </div>
           </div>
         </div>
       </div>
