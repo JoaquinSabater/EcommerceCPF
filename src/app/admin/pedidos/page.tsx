@@ -11,7 +11,8 @@ import {
   User,
   FileText,
   AlertCircle,
-  Filter
+  Filter,
+  AlertTriangle
 } from 'lucide-react';
 import { Pedido, ArticuloPedido } from "@/types/types";
 import { PedidoPreliminar } from "@/data/data";
@@ -34,7 +35,7 @@ type PedidoCombinado = (Pedido | PedidoPreliminar) & {
 };
 
 export default function PedidosPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isDistribuidor } = useAuth();
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [pedidosPreliminares, setPedidosPreliminares] = useState<PedidoPreliminar[]>([]);
   const [expandedPedido, setExpandedPedido] = useState<string | null>(null);
@@ -45,6 +46,9 @@ export default function PedidosPage() {
   const [filtroEstado, setFiltroEstado] = useState<string>('todos');
   const [loadingArticulos, setLoadingArticulos] = useState<{[key: string]: boolean}>({});
   const [showFilters, setShowFilters] = useState(false);
+
+  // ✅ Verificar si el usuario es distribuidor
+  const esDistribuidor = isDistribuidor();
 
   useEffect(() => {
     if (user && !authLoading) {
@@ -166,6 +170,19 @@ export default function PedidosPage() {
     );
   };
 
+  // ✅ Función para formatear precios según si es distribuidor
+  const formatearPrecio = (precio: number) => {
+    if (esDistribuidor) {
+      return (
+        <span className="text-amber-600 font-medium">
+          ${precio.toLocaleString()} 
+          <span className="text-xs ml-1 text-amber-700">(Precio interno)</span>
+        </span>
+      );
+    }
+    return <span className="font-medium text-gray-900">${precio.toLocaleString()}</span>;
+  };
+
   if (authLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -184,13 +201,55 @@ export default function PedidosPage() {
 
   return (
     <div className="w-full max-w-none">
+      {/* ✅ ADVERTENCIA PARA DISTRIBUIDORES */}
+      {esDistribuidor && (
+        <div className="mb-4 md:mb-6 bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-amber-400 rounded-lg shadow-sm">
+          <div className="p-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-amber-800 mb-1">
+                  ⚠️ Advertencia - Precios para Distribuidores
+                </h3>
+                <div className="text-sm text-amber-700 space-y-1">
+                  <p>
+                    <strong>Los precios mostrados aquí son precios internos de remitos, no reflejan tu descuento de distribuidor.</strong>
+                  </p>
+                  <p className="text-xs">
+                    • En el catálogo y carrito ves precios con 20% de descuento
+                  </p>
+                  <p className="text-xs">
+                    • En pedidos/remitos se muestran precios originales del sistema
+                  </p>
+                  <p className="text-xs">
+                    • Tu facturación final aplicará el descuento correspondiente
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header - Responsive */}
       <div className="mb-4 md:mb-8">
-        <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 mb-1 md:mb-2">
-          Mis Pedidos
-        </h1>
+        <div className="flex items-center gap-2 mb-1 md:mb-2">
+          <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-900">
+            Mis Pedidos
+          </h1>
+          {esDistribuidor && (
+            <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full font-medium">
+              Distribuidor
+            </span>
+          )}
+        </div>
         <p className="text-sm md:text-base text-gray-600">
           Historial completo de todos tus pedidos
+          {esDistribuidor && (
+            <span className="block text-xs text-amber-600 mt-1">
+              * Los precios mostrados son precios internos del sistema
+            </span>
+          )}
         </p>
       </div>
 
@@ -282,7 +341,7 @@ export default function PedidosPage() {
             <div key={`${pedido.esPreliminar ? 'preliminar' : 'normal'}-${pedido.id}`} 
                  className={`bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow ${
                    pedido.esPreliminar ? 'border-l-4 border-l-purple-500' : ''
-                 }`}>
+                 } ${esDistribuidor ? 'border-l-4 border-l-amber-400' : ''}`}>
               
               {/* Header del pedido */}
               <div className="p-3 md:p-4 lg:p-6">
@@ -298,6 +357,12 @@ export default function PedidosPage() {
                         {pedido.esPreliminar && (
                           <span className="text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded-md font-medium">
                             Pendiente
+                          </span>
+                        )}
+                        {/* ✅ Badge para distribuidores */}
+                        {esDistribuidor && (
+                          <span className="text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded-md font-medium">
+                            Precios internos
                           </span>
                         )}
                       </div>
@@ -344,6 +409,23 @@ export default function PedidosPage() {
               {expandedPedido === `${pedido.esPreliminar ? 'preliminar' : 'normal'}-${pedido.id}` && (
                 <div className="border-t bg-gray-50 px-3 md:px-4 lg:px-6 py-3 md:py-4">
                   
+                  {/* ✅ ADVERTENCIA ESPECÍFICA PARA ESTE PEDIDO (solo distribuidores) */}
+                  {esDistribuidor && (
+                    <div className="mb-4 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0" />
+                        <div className="text-sm">
+                          <p className="font-medium text-amber-800">
+                            Los precios de este pedido son precios internos del remito
+                          </p>
+                          <p className="text-amber-700 text-xs mt-1">
+                            No reflejan tu descuento de distribuidor del 20%
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Información adicional - solo para pedidos normales */}
                   {!pedido.esPreliminar && (
                     <div className="mb-4">
@@ -377,6 +459,12 @@ export default function PedidosPage() {
                   <div>
                     <h4 className="font-semibold mb-3 text-sm md:text-base text-gray-900">
                       Artículos del Pedido
+                      {/* ✅ Indicador de precios para distribuidores */}
+                      {esDistribuidor && (
+                        <span className="ml-2 text-xs text-amber-600 font-normal">
+                          (Precios internos)
+                        </span>
+                      )}
                     </h4>
                     
                     {loadingArticulos[`${pedido.esPreliminar ? 'preliminar' : 'normal'}-${pedido.id}`] ? (
@@ -402,7 +490,9 @@ export default function PedidosPage() {
                                 {pedido.esPreliminar && 'precio_unitario' in articulo && (
                                   <div className="flex justify-between items-center">
                                     <span className="text-xs text-gray-600">Precio:</span>
-                                    <span className="font-semibold text-sm">${articulo.precio_unitario?.toLocaleString()}</span>
+                                    <div className="text-right">
+                                      {articulo.precio_unitario?.toLocaleString()}
+                                    </div>
                                   </div>
                                 )}
                               </div>
@@ -419,7 +509,14 @@ export default function PedidosPage() {
                                 <th className="text-left py-3 px-4 font-semibold text-gray-900">Modelo</th>
                                 <th className="text-right py-3 px-4 font-semibold text-gray-900">Cantidad</th>
                                 {pedido.esPreliminar && (
-                                  <th className="text-right py-3 px-4 font-semibold text-gray-900">Precio Unit.</th>
+                                  <th className="text-right py-3 px-4 font-semibold text-gray-900">
+                                    Precio Unit.
+                                    {esDistribuidor && (
+                                      <span className="block text-xs font-normal text-amber-600">
+                                        (Interno)
+                                      </span>
+                                    )}
+                                  </th>
                                 )}
                               </tr>
                             </thead>
@@ -430,8 +527,8 @@ export default function PedidosPage() {
                                   <td className="py-3 px-4 text-gray-600">{articulo.modelo}</td>
                                   <td className="py-3 px-4 text-right font-medium text-gray-900">{articulo.cantidad}</td>
                                   {pedido.esPreliminar && 'precio_unitario' in articulo && (
-                                    <td className="py-3 px-4 text-right font-medium text-gray-900">
-                                      ${articulo.precio_unitario?.toLocaleString()}
+                                    <td className="py-3 px-4 text-right">
+                                      {articulo.precio_unitario?.toLocaleString()}
                                     </td>
                                   )}
                                 </tr>

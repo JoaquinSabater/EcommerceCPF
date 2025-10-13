@@ -79,11 +79,9 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
     fetchData();
   }, [categoria.id, categoria.nombre]);
 
-  // ✅ Cambiar la función para abrir el modal desde toda la card
   const handleCardClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setModalOpen(true);
-    // ✅ También ejecutar el onClick original si existe (para compatibilidad)
     if (onClick) {
       onClick();
     }
@@ -119,7 +117,6 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
     }
   };
 
-  // ✅ Mostrar skeleton mientras carga
   if (loading) {
     return <CategoriaCardSkeleton />;
   }
@@ -128,12 +125,11 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
     <>
       <div
         className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden flex flex-col h-full cursor-pointer"
-        onClick={handleCardClick} // ✅ Toda la card abre el modal
+        onClick={handleCardClick}
         tabIndex={0}
         role="button"
         aria-label={`Ver detalles de ${categoria.nombre}`}
       >
-        {/* ✅ Sección de imagen */}
         <div className="relative bg-white p-2 flex justify-center items-center h-72 md:h-80 border-b border-gray-100">
           {imageError || !imagenPrincipal ? (
             <img
@@ -161,21 +157,18 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
           )}
         </div>
         
-        {/* ✅ Información del producto */}
         <div className="p-4 flex flex-col flex-grow">
           <h3 className="font-bold text-gray-800 text-base mb-2 line-clamp-2 min-h-[2.5rem]">
             {categoria.nombre}
           </h3>
           
           <div className="mt-auto flex items-center justify-between">
-            {/* ✅ Mostrar precio si está disponible */}
             {precioEnPesos && (
               <div className="text-lg font-bold text-green-600">
                 ${precioEnPesos.toLocaleString('es-AR')}
               </div>
             )}
             
-            {/* ✅ El botón ahora es solo decorativo, pero mantiene el estilo */}
             <div className="bg-orange-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-orange-600 transition-colors flex items-center gap-1 shadow-sm hover:shadow ml-auto">
               ver +
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

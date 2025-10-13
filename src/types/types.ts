@@ -34,7 +34,8 @@ export interface User {
   domicilio: string;
   cuil: string;
   isAdmin?: boolean;
-  hasPassword?: boolean; // ✅ Solo este campo nuevo
+  hasPassword?: boolean;
+  Distribuidor?: number;
 }
 
 export interface LoginResponse {

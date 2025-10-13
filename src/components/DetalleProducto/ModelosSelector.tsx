@@ -33,25 +33,27 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
   const [modeloSeleccionadoAdmin, setModeloSeleccionadoAdmin] = useState<Articulo | null>(null);
 
   const { addToCart } = useCart();
-  const { isAdmin } = useAuth();
+  const { isAdmin, getPrecioConDescuento, isDistribuidor } = useAuth(); // ✅ Usar nuevas funciones
 
   useEffect(() => {
     console.log('🟡 ModelosSelector recibió sugerenciaActual:', `"${sugerenciaActual}"`);
   }, [sugerenciaActual]);
 
-  // ✅ Función helper para mostrar marca + modelo + precio
+  // ✅ Función helper para mostrar marca + modelo + precio CON DESCUENTO
   const formatModeloDisplay = (articulo: Articulo) => {
     const marcaModelo = articulo.marca_nombre 
       ? `${articulo.marca_nombre} ${articulo.modelo}` 
       : articulo.modelo;
     
-    const precioUsd = Number(articulo.precio_venta || 0);
-    const precioArs = Math.round(precioUsd * dolar);
+    const precioOriginalUsd = Number(articulo.precio_venta || 0);
+    const precioConDescuentoUsd = getPrecioConDescuento(precioOriginalUsd); // ✅ Aplicar descuento
+    const precioArs = Math.round(precioConDescuentoUsd * dolar);
     
     return {
-      texto: `${marcaModelo} - $${precioUsd} USD ($${precioArs.toLocaleString()} ARS)`,
+      texto: `${marcaModelo} - $${precioConDescuentoUsd.toFixed(2)} USD ($${precioArs.toLocaleString()} ARS)`,
       marcaModelo: marcaModelo,
-      precioUsd: precioUsd,
+      precioUsd: precioConDescuentoUsd, // ✅ Precio con descuento para mostrar
+      precioOriginalUsd: precioOriginalUsd, // ✅ Precio original para pedidos
       precioArs: precioArs
     };
   };
@@ -121,11 +123,12 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
     setSeleccionados(seleccionados.filter((s) => s.articulo.modelo !== modelo));
   };
 
-  // ✅ Función modificada para agregar al carrito CON sugerencia
+  // ✅ Función modificada para agregar al carrito CON PRECIO ORIGINAL
   const handleAddToCart = () => {
     console.log('🟢 === AGREGANDO AL CARRITO DESDE MODELOSSELECTOR ===');
     console.log('Sugerencia a aplicar:', `"${sugerenciaActual}"`);
     console.log('Modelos seleccionados:', seleccionados.length);
+    console.log('Es distribuidor:', isDistribuidor());
 
     seleccionados.forEach(({ articulo, cantidad }) => {
       if (!articulo.precio_venta || isNaN(Number(articulo.precio_venta))) {
@@ -133,26 +136,28 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
         articulo.precio_venta = 0;
       }
       
+      // ✅ IMPORTANTE: Guardar en el carrito el PRECIO ORIGINAL (no el con descuento)
       const articuloConCantidad = {
         ...articulo,
         cantidad: cantidad,
-        precio_venta: Number(articulo.precio_venta)
+        precio_venta: Number(articulo.precio_venta) // ✅ Precio original para el pedido
       };
       
-      console.log(`🟡 Agregando ${articulo.modelo} con sugerencia: "${sugerenciaActual}"`);
+      console.log(`🟡 Agregando ${articulo.modelo} - Precio original: $${articulo.precio_venta} USD`);
       
       // ✅ Pasar la sugerencia al agregar al carrito
       addToCart(articuloConCantidad, articulo.modelo, cantidad, sugerenciaActual);
     });
     
-    // ✅ Calcular total en pesos con precios individuales
-    const totalUsd = seleccionados.reduce((sum, { articulo, cantidad }) => 
+    // ✅ Calcular total VISUAL (con descuento) para el mensaje
+    const totalOriginalUsd = seleccionados.reduce((sum, { articulo, cantidad }) => 
       sum + (Number(articulo.precio_venta || 0) * cantidad), 0);
-    const totalPesos = totalUsd * dolar;
+    const totalConDescuentoUsd = getPrecioConDescuento(totalOriginalUsd);
+    const totalPesos = totalConDescuentoUsd * dolar;
       
     const mensajeConSugerencia = sugerenciaActual 
-      ? `Se agregaron ${seleccionados.length} modelo(s) al carrito con sugerencias especiales. Total: $${Math.round(totalPesos).toLocaleString()} ARS`
-      : `Se agregaron ${seleccionados.length} modelo(s) al carrito. Total: $${Math.round(totalPesos).toLocaleString()} ARS`;
+      ? `Se agregaron ${seleccionados.length} modelo(s) al carrito con sugerencias especiales. Total: $${Math.round(totalPesos).toLocaleString()} ARS${isDistribuidor() ? ' (con descuento distribuidor)' : ''}`
+      : `Se agregaron ${seleccionados.length} modelo(s) al carrito. Total: $${Math.round(totalPesos).toLocaleString()} ARS${isDistribuidor() ? ' (con descuento distribuidor)' : ''}`;
       
     alert(mensajeConSugerencia);
     setSeleccionados([]);
@@ -259,6 +264,12 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
     <div className="w-full mt-4 rounded-lg bg-white shadow-sm p-4">
       <h3 className="text-lg font-bold mb-3 text-gray-800">
         Selección de modelos
+        {/* ✅ Mostrar badge de descuento distribuidor */}
+        {isDistribuidor() && (
+          <span className="ml-2 text-sm bg-green-100 text-green-800 px-2 py-1 rounded-full">
+            20% OFF Distribuidor 🎉
+          </span>
+        )}
         {sugerenciaActual && (
           <span className="ml-2 text-sm bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
             Con sugerencias especiales ✨
@@ -299,13 +310,17 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
                         ? 'bg-gray-100 text-gray-600 cursor-default' 
                         : 'bg-pink-50 text-pink-700 hover:bg-pink-100 border border-pink-200'
                     }`}
-                    title={displayInfo ? `$${displayInfo.precioUsd} USD - $${displayInfo.precioArs.toLocaleString()} ARS` : ''}
+                    title={displayInfo ? `$${displayInfo.precioUsd} USD - $${displayInfo.precioArs.toLocaleString()} ARS${isDistribuidor() ? ' (con descuento)' : ''}` : ''}
                   >
                     <div className="flex flex-col items-start">
                       <span className="font-medium">{modeloNombre}</span>
                       {displayInfo && !isEditingRecomendados && (
                         <span className="text-xs text-pink-600">
                           ${displayInfo.precioUsd} USD
+                          {/* ✅ Mostrar descuento si aplica */}
+                          {isDistribuidor() && (
+                            <span className="ml-1 text-green-600">(-20%)</span>
+                          )}
                         </span>
                       )}
                     </div>
@@ -323,7 +338,7 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
             })}
           </div>
 
-          {/* Panel de edición para admin (mantener igual) */}
+          {/* Panel de edición para admin (mantener igual pero con precios con descuento en UI) */}
           {isEditingRecomendados && (
             <div className="mt-4 pt-4 border-t border-gray-200">
               <div className="flex items-center justify-between mb-3">
@@ -382,6 +397,9 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
                                     <div className="text-right">
                                       <div className="text-sm font-medium text-green-600">
                                         ${displayInfo.precioUsd} USD
+                                        {isDistribuidor() && (
+                                          <span className="ml-1 text-xs text-green-700">(-20%)</span>
+                                        )}
                                       </div>
                                       <div className="text-xs text-gray-500">
                                         ${displayInfo.precioArs.toLocaleString()} ARS
@@ -428,7 +446,7 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
                         onClick={() => handleAddToRecomendados(modelo.modelo)}
                         disabled={tempRecomendados.includes(modelo.modelo) || tempRecomendados.length >= 5}
                         className="px-2 py-1 text-xs bg-gray-100 border border-gray-300 text-gray-700 rounded hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        title={`$${displayInfo.precioUsd} USD - $${displayInfo.precioArs.toLocaleString()} ARS`}
+                        title={`$${displayInfo.precioUsd} USD - $${displayInfo.precioArs.toLocaleString()} ARS${isDistribuidor() ? ' (con descuento)' : ''}`}
                       >
                         + {displayInfo.marcaModelo} (${displayInfo.precioUsd})
                       </button>
@@ -505,6 +523,9 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
                         <div className="text-right">
                           <div className="text-sm font-medium text-green-600">
                             ${displayInfo.precioUsd} USD
+                            {isDistribuidor() && (
+                              <span className="ml-1 text-xs text-green-700">(-20%)</span>
+                            )}
                           </div>
                           <div className="text-xs text-gray-500">
                             ${displayInfo.precioArs.toLocaleString()} ARS
@@ -571,6 +592,9 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
                               <div className="text-right">
                                 <div className="text-sm font-medium text-green-600">
                                   ${displayInfo.precioUsd} USD
+                                  {isDistribuidor() && (
+                                    <span className="ml-1 text-xs text-green-700">(-20%)</span>
+                                  )}
                                 </div>
                                 <div className="text-xs text-gray-500">
                                   ${displayInfo.precioArs.toLocaleString()} ARS
@@ -615,14 +639,14 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
         )}
       </div>
 
-      {/* Lista de modelos seleccionados con precios */}
+      {/* Lista de modelos seleccionados con precios CON DESCUENTO VISUAL */}
       {seleccionados.length > 0 && (
         <div className="mb-4">
           <h4 className="font-medium text-gray-700 mb-2">Modelos seleccionados:</h4>
           <div className={`flex flex-col gap-2 ${seleccionados.length > 3 ? "max-h-48 overflow-y-auto pr-1" : ""}`}>
             {seleccionados.map((s) => {
               const displayInfo = formatModeloDisplay(s.articulo);
-              const subtotalUsd = Number(s.articulo.precio_venta || 0) * s.cantidad;
+              const subtotalUsd = displayInfo.precioUsd * s.cantidad; // ✅ Usar precio con descuento para mostrar
               const subtotalArs = subtotalUsd * dolar;
               
               return (
@@ -635,11 +659,17 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
                         </span>
                         <div className="text-sm text-gray-600">
                           Cantidad: {s.cantidad} x ${displayInfo.precioUsd} USD
+                          {isDistribuidor() && (
+                            <span className="ml-1 text-green-600 text-xs">(-20%)</span>
+                          )}
                         </div>
                       </div>
                       <div className="text-right">
                         <div className="text-sm font-medium text-green-600">
                           ${subtotalUsd.toFixed(2)} USD
+                          {isDistribuidor() && (
+                            <span className="ml-1 text-xs text-green-700">(-20%)</span>
+                          )}
                         </div>
                         <div className="text-xs text-gray-500">
                           ${Math.round(subtotalArs).toLocaleString()} ARS
@@ -658,16 +688,25 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
             })}
           </div>
           
-          {/* Total de seleccionados */}
+          {/* Total de seleccionados CON DESCUENTO VISUAL */}
           <div className="mt-2 pt-2 border-t border-gray-200">
             <div className="flex justify-between items-center">
               <span className="font-medium text-gray-700">Total:</span>
               <div className="text-right">
                 <div className="font-bold text-green-600">
-                  ${seleccionados.reduce((sum, s) => sum + (Number(s.articulo.precio_venta || 0) * s.cantidad), 0).toFixed(2)} USD
+                  ${seleccionados.reduce((sum, s) => {
+                    const displayInfo = formatModeloDisplay(s.articulo);
+                    return sum + (displayInfo.precioUsd * s.cantidad);
+                  }, 0).toFixed(2)} USD
+                  {isDistribuidor() && (
+                    <span className="ml-1 text-xs text-green-700">(-20%)</span>
+                  )}
                 </div>
                 <div className="text-sm text-gray-500">
-                  ${Math.round(seleccionados.reduce((sum, s) => sum + (Number(s.articulo.precio_venta || 0) * s.cantidad), 0) * dolar).toLocaleString()} ARS
+                  ${Math.round(seleccionados.reduce((sum, s) => {
+                    const displayInfo = formatModeloDisplay(s.articulo);
+                    return sum + (displayInfo.precioUsd * s.cantidad);
+                  }, 0) * dolar).toLocaleString()} ARS
                 </div>
               </div>
             </div>
@@ -682,7 +721,7 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
         onClick={handleAddToCart}
       >
         {seleccionados.length > 0 
-          ? `Añadir ${seleccionados.length} modelo(s) al carrito${sugerenciaActual ? ' con sugerencias ✨' : ''}` 
+          ? `Añadir ${seleccionados.length} modelo(s) al carrito${sugerenciaActual ? ' con sugerencias ✨' : ''}${isDistribuidor() ? ' (20% OFF)' : ''}` 
           : 'Añadir al carrito'
         }
       </button>

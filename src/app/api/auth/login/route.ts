@@ -16,8 +16,9 @@ export async function POST(request: Request) {
       );
     }
 
+    // ✅ AGREGAR EL CAMPO DISTRIBUIDOR EN LA CONSULTA
     const [clienteRows] = await db.execute(
-      'SELECT id, cuit_dni, razon_social, nombre, apellido, email, telefono, vendedor_id, habilitado FROM clientes WHERE cuit_dni = ?',
+      'SELECT id, cuit_dni, razon_social, nombre, apellido, email, telefono, vendedor_id, habilitado, Distribuidor FROM clientes WHERE cuit_dni = ?',
       [cuil]
     ) as [Array<{
       id: number;
@@ -29,6 +30,7 @@ export async function POST(request: Request) {
       telefono: string;
       vendedor_id: number;
       habilitado: number;
+      Distribuidor: number; // ✅ Agregar el tipo
     }>, any];
 
     if (clienteRows.length === 0) {
@@ -52,6 +54,16 @@ export async function POST(request: Request) {
     }
 
     const isAdmin = cliente.razon_social === 'Administrador' || cliente.id === 2223;
+    const isDistribuidor = Boolean(cliente.Distribuidor); // ✅ Convertir a boolean
+
+    // ✅ Logging para debugging
+    console.log(`🔍 Usuario autenticando:`, {
+      id: cliente.id,
+      nombre: cliente.nombre,
+      Distribuidor_raw: cliente.Distribuidor,
+      isDistribuidor: isDistribuidor,
+      isAdmin: isAdmin
+    });
 
     const [authRows] = await db.execute(
       'SELECT id, cliente_id, password_hash, email_verified, failed_login_attempts, locked_until FROM clientes_auth WHERE cliente_id = ?',
@@ -89,7 +101,7 @@ export async function POST(request: Request) {
         );
       }
 
-      // Generar token JWT
+      // ✅ Generar token JWT CON DISTRIBUIDOR
       const token = jwt.sign(
         { 
           clienteId: cliente.id,
@@ -97,7 +109,8 @@ export async function POST(request: Request) {
           nombre: cliente.nombre,
           apellido: cliente.apellido,
           vendedorId: cliente.vendedor_id,
-          isAdmin 
+          isAdmin,
+          Distribuidor: cliente.Distribuidor // ✅ Incluir en JWT
         },
         JWT_SECRET,
         { expiresIn: '24h' }
@@ -116,7 +129,8 @@ export async function POST(request: Request) {
           email: cliente.email,
           telefono: cliente.telefono,
           vendedor_id: cliente.vendedor_id,
-          isAdmin 
+          isAdmin,
+          Distribuidor: cliente.Distribuidor // ✅ INCLUIR DISTRIBUIDOR EN LA RESPUESTA
         }
       });
     }
@@ -158,7 +172,7 @@ export async function POST(request: Request) {
       [cliente.id]
     );
 
-    // Generar token JWT
+    // ✅ Generar token JWT CON DISTRIBUIDOR
     const token = jwt.sign(
       { 
         clienteId: cliente.id,
@@ -166,7 +180,8 @@ export async function POST(request: Request) {
         nombre: cliente.nombre,
         apellido: cliente.apellido,
         vendedorId: cliente.vendedor_id,
-        isAdmin 
+        isAdmin,
+        Distribuidor: cliente.Distribuidor // ✅ Incluir en JWT
       },
       JWT_SECRET,
       { expiresIn: '24h' }
@@ -185,7 +200,8 @@ export async function POST(request: Request) {
         email: cliente.email,
         telefono: cliente.telefono,
         vendedor_id: cliente.vendedor_id,
-        isAdmin
+        isAdmin,
+        Distribuidor: cliente.Distribuidor // ✅ INCLUIR DISTRIBUIDOR EN LA RESPUESTA
       }
     });
 

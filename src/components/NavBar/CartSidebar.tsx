@@ -12,7 +12,7 @@ import { useProspectoMode } from '@/hooks/useProspectoMode';
 export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const sidebarRef = useRef<HTMLDivElement>(null);
   const { cart, changeQuantity, clearCart } = useCart();
-  const { user } = useAuth();
+  const { user, getPrecioConDescuento, isDistribuidor } = useAuth(); // ✅ Usar nuevas funciones
   const { isProspectoMode, prospectoData } = useProspectoMode();
   const router = useRouter();
 
@@ -32,8 +32,12 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
     fetchDolar();
   }, []);
 
+  // ✅ Calcular total VISUAL (con descuento) pero mantener precios originales en cart
   const totalEnPesos = cart.reduce(
-    (sum, item) => sum + (item.cantidad * item.precio_venta * dolar),
+    (sum, item) => {
+      const precioConDescuento = getPrecioConDescuento(item.precio_venta);
+      return sum + (item.cantidad * precioConDescuento * dolar);
+    },
     0
   );
 
@@ -46,11 +50,12 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
     setIsCreatingOrder(true);
     
     try {
+      // ✅ IMPORTANTE: Enviar precios ORIGINALES al pedido (sin descuento)
       const itemsCarrito = cart.map(item => ({
         codigo_interno: item.codigo_interno,
         modelo: item.modelo,
         cantidad: item.cantidad,
-        precio: item.precio_venta,
+        precio: item.precio_venta, // ✅ Precio original (sin descuento)
         item_nombre: item.item_nombre,
         sugerencia: item.sugerencia || ''
       }));
@@ -67,7 +72,7 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
           body: JSON.stringify({
             prospectoData,
             itemsCarrito,
-            observaciones: `Pedido de prospecto ${prospectoData?.nombre} - Total: $${Math.round(totalEnPesos).toLocaleString()} ARS`
+            observaciones: `Pedido de prospecto ${prospectoData?.nombre} - Total: $${Math.round(totalEnPesos).toLocaleString()} ARS${isDistribuidor() ? ' (precio mostrado con descuento distribuidor)' : ''}`
           }),
         });
       } else {
@@ -86,7 +91,7 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
           body: JSON.stringify({
             clienteId: user.id,
             itemsCarrito,
-            observaciones: `Pedido creado desde el carrito - Total: $${Math.round(totalEnPesos).toLocaleString()} ARS`
+            observaciones: `Pedido creado desde el carrito - Total: $${Math.round(totalEnPesos).toLocaleString()} ARS${isDistribuidor() ? ' (precio mostrado con descuento distribuidor)' : ''}`
           }),
         });
       }
@@ -145,10 +150,16 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
-        {/* ✅ HEADER MÁS COMPACTO */}
+        {/* ✅ HEADER CON BADGE DISTRIBUIDOR */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-orange-50 to-orange-100">
           <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
             🛒 Mi carrito
+            {/* ✅ Badge de descuento distribuidor */}
+            {isDistribuidor() && (
+              <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                20% OFF
+              </span>
+            )}
           </h2>
           <button 
             onClick={onClose}
@@ -170,56 +181,78 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
           </div>
         ) : (
           <div className="flex flex-col h-[calc(100%-64px)]">
-            {/* ✅ LISTA DE PRODUCTOS - MÁS COMPACTA */}
+            {/* ✅ LISTA DE PRODUCTOS CON PRECIOS CON DESCUENTO */}
             <div className="flex-1 overflow-y-auto p-3">
               <ul className="space-y-3">
-                {cart.map((item) => (
-                  <li key={item.codigo_interno} className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="font-semibold text-gray-900 text-sm leading-tight mb-1">{item.modelo}</div>
-                        <div className="text-xs text-gray-500 mb-2">{item.item_nombre}</div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-orange-600 font-bold text-sm">
-                            ${Math.round(item.precio_venta * dolar).toLocaleString()}
-                          </span>
-                          <span className="text-xs text-gray-500">c/u</span>
-                        </div>
-                        {item.sugerencia && (
-                          <div className="bg-blue-50 border border-blue-200 rounded p-2 mt-2">
-                            <div className="text-xs font-medium text-blue-800">💡 Sugerencia:</div>
-                            <div className="text-xs text-blue-700">{item.sugerencia}</div>
+                {cart.map((item) => {
+                  const precioConDescuento = getPrecioConDescuento(item.precio_venta);
+                  const precioFinalPesos = Math.round(precioConDescuento * dolar);
+                  
+                  return (
+                    <li key={item.codigo_interno} className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-gray-900 text-sm leading-tight mb-1">{item.modelo}</div>
+                          <div className="text-xs text-gray-500 mb-2">{item.item_nombre}</div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-orange-600 font-bold text-sm">
+                              ${precioFinalPesos.toLocaleString()}
+                            </span>
+                            <span className="text-xs text-gray-500">c/u</span>
+                            {/* ✅ Mostrar descuento aplicado */}
+                            {isDistribuidor() && (
+                              <span className="text-xs bg-green-100 text-green-700 px-1 py-0.5 rounded">
+                                -20%
+                              </span>
+                            )}
                           </div>
-                        )}
+                          {item.sugerencia && (
+                            <div className="bg-blue-50 border border-blue-200 rounded p-2 mt-2">
+                              <div className="text-xs font-medium text-blue-800">💡 Sugerencia:</div>
+                              <div className="text-xs text-blue-700">{item.sugerencia}</div>
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="flex-shrink-0">
+                          <QuantityButton
+                            value={item.cantidad}
+                            onAdd={() => changeQuantity(item.codigo_interno, 1)}
+                            onRemove={() => changeQuantity(item.codigo_interno, -1)}
+                            onSet={(val) => changeQuantity(item.codigo_interno, val - item.cantidad)}
+                            modelo={item.modelo}
+                            hideModelo={true}
+                            size="normal"
+                          />
+                        </div>
                       </div>
-                      
-                      <div className="flex-shrink-0">
-                        <QuantityButton
-                          value={item.cantidad}
-                          onAdd={() => changeQuantity(item.codigo_interno, 1)}
-                          onRemove={() => changeQuantity(item.codigo_interno, -1)}
-                          onSet={(val) => changeQuantity(item.codigo_interno, val - item.cantidad)}
-                          modelo={item.modelo}
-                          hideModelo={true}
-                          size="normal"
-                        />
-                      </div>
-                    </div>
-                  </li>
-                ))}
+                    </li>
+                  );
+                })}
               </ul>
             </div>
             
-            {/* ✅ FOOTER MÁS COMPACTO */}
+            {/* ✅ FOOTER CON TOTAL CON DESCUENTO */}
             <div className="border-t border-gray-200 bg-gray-50 p-4">
               <div className="flex justify-between items-center mb-4">
-                <span className="font-bold text-gray-900">Total</span>
+                <span className="font-bold text-gray-900">
+                  Total
+                  {isDistribuidor() && (
+                    <span className="ml-2 text-xs text-green-600">(con 20% OFF)</span>
+                  )}
+                </span>
                 <div className="text-right">
                   <div className="text-xl font-bold text-gray-900">
                     ${Math.round(totalEnPesos).toLocaleString()} ARS
                   </div>
                   <div className="text-xs text-gray-500">
-                    USD ${cart.reduce((sum, item) => sum + (item.cantidad * item.precio_venta), 0).toFixed(2)}
+                    USD ${cart.reduce((sum, item) => {
+                      const precioConDescuento = getPrecioConDescuento(item.precio_venta);
+                      return sum + (item.cantidad * precioConDescuento);
+                    }, 0).toFixed(2)}
+                    {isDistribuidor() && (
+                      <span className="ml-1 text-green-600">(-20%)</span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -239,7 +272,7 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
                 )}
               </button>
 
-              {/* ✅ MENSAJE PARA PROSPECTOS - MÁS COMPACTO */}
+              {/* ✅ MENSAJE PARA PROSPECTOS Y DISTRIBUIDORES */}
               {isProspectoMode && (
                 <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
                   <div className="flex items-center gap-2">
@@ -250,6 +283,23 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
                       </p>
                       <p className="text-orange-700 text-xs">
                         Tu pedido será enviado al vendedor para que se contacte contigo
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ✅ MENSAJE PARA DISTRIBUIDORES */}
+              {isDistribuidor() && !isProspectoMode && (
+                <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <span className="text-green-500 text-sm">🎉</span>
+                    <div>
+                      <p className="text-green-800 font-semibold text-xs">
+                        Descuento Distribuidor Aplicado
+                      </p>
+                      <p className="text-green-700 text-xs">
+                        Los precios mostrados incluyen tu 20% de descuento
                       </p>
                     </div>
                   </div>
