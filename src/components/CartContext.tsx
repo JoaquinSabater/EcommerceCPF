@@ -33,18 +33,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
 
   const addToCart = (articulo: Articulo, nombre: string, cantidad: number = 1, sugerencia: string = '') => {
-    console.log("🟢 === DEBUG ADDTOCART COMPLETO ===");
-    console.log("Artículo código:", articulo?.codigo_interno);
-    console.log("Nombre:", nombre);
-    console.log("Cantidad:", cantidad);
-    console.log("Sugerencia recibida:", `"${sugerencia}"`);
-    console.log("¿Sugerencia tiene contenido?", !!sugerencia && sugerencia.trim() !== '');
-    console.log("Longitud sugerencia:", sugerencia?.length || 0);
+    // console.log("🟢 === DEBUG ADDTOCART COMPLETO ===");
+    // console.log("Artículo código:", articulo?.codigo_interno);
+    // console.log("Nombre:", nombre);
+    // console.log("Cantidad:", cantidad);
+    // console.log("Sugerencia recibida:", `"${sugerencia}"`);
+    // console.log("¿Sugerencia tiene contenido?", !!sugerencia && sugerencia.trim() !== '');
+    // console.log("Longitud sugerencia:", sugerencia?.length || 0);
     
     setCart((prev) => {
       const found = prev.find((i) => i.codigo_interno === articulo.codigo_interno);
       if (found) {
-        console.log("🟡 Item ya existe en carrito, actualizando...");
+        // console.log("🟡 Item ya existe en carrito, actualizando...");
         const updatedCart = prev.map((i) =>
           i.codigo_interno === articulo.codigo_interno
             ? { 
@@ -55,11 +55,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
               }
             : i
         );
-        console.log("🟢 Carrito actualizado:", updatedCart);
+        // console.log("🟢 Carrito actualizado:", updatedCart);
         return updatedCart;
       }
       
-      console.log("🟡 Item nuevo, agregando al carrito...");
+      //console.log("🟡 Item nuevo, agregando al carrito...");
       const nuevoItem = {
         codigo_interno: articulo.codigo_interno,
         modelo: articulo.modelo,
@@ -69,9 +69,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
         sugerencia: sugerencia, // ✅ Agregar sugerencia
       };
       
-      console.log("🟢 Nuevo item creado:", nuevoItem);
+      //console.log("🟢 Nuevo item creado:", nuevoItem);
       const nuevoCarrito = [...prev, nuevoItem];
-      console.log("🟢 Carrito completo después de agregar:", nuevoCarrito);
+      //console.log("🟢 Carrito completo después de agregar:", nuevoCarrito);
       
       return nuevoCarrito;
     });
@@ -133,7 +133,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   // ✅ Nueva función para actualizar sugerencias
   const updateSugerencia = (codigo_interno: string, sugerencia: string) => {
-    console.log("🟡 Actualizando sugerencia para:", codigo_interno, "Nueva sugerencia:", sugerencia);
+    // console.log("🟡 Actualizando sugerencia para:", codigo_interno, "Nueva sugerencia:", sugerencia);
     setCart((prev) =>
       prev.map((i) =>
         i.codigo_interno === codigo_interno
@@ -144,7 +144,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const clearCart = () => {
-    console.log("🟡 Limpiando carrito completo");
+    //console.log("🟡 Limpiando carrito completo");
     setCart([]);
   };
 

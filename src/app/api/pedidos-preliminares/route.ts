@@ -14,10 +14,10 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log('Creando pedido preliminar:', {
-      clienteId,
-      itemsCount: itemsCarrito.length
-    });
+    //console.log('Creando pedido preliminar:', {
+      //clienteId,
+      //itemsCount: itemsCarrito.length
+    //});
 
     const pedidoPreliminarId = await crearPedidoPreliminar(
       clienteId,

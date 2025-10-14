@@ -21,9 +21,9 @@ export async function POST(request: Request) {
     connection = await db.getConnection();
     await connection.beginTransaction();
 
-    console.log('🟡 === CREANDO PEDIDO PRELIMINAR DE PROSPECTO ===');
-    console.log('Prospecto:', prospectoData?.nombre, 'ID:', prospectoData?.id);
-    console.log('Items:', itemsCarrito.length);
+  // console.log('🟡 === CREANDO PEDIDO PRELIMINAR DE PROSPECTO ===');
+  // console.log('Prospecto:', prospectoData?.nombre, 'ID:', prospectoData?.id);
+  // console.log('Items:', itemsCarrito.length);
 
     const [pedidoResult] = await connection.query(
       `INSERT INTO pedido_preliminar 
@@ -36,8 +36,8 @@ export async function POST(request: Request) {
     );
 
     const pedidoPreliminarId = (pedidoResult as any).insertId;
-    console.log('🟢 Pedido preliminar creado con ID:', pedidoPreliminarId);
-    console.log('🟢 Asociado al prospecto ID:', prospectoData?.id);
+    // console.log('🟢 Pedido preliminar creado con ID:', pedidoPreliminarId);
+    // console.log('🟢 Asociado al prospecto ID:', prospectoData?.id);
 
     for (const item of itemsCarrito) {
       const [articuloExists] = await connection.query(
@@ -69,7 +69,7 @@ export async function POST(request: Request) {
     }
 
     await connection.commit();
-    console.log('🟢 === PEDIDO DE PROSPECTO CREADO EXITOSAMENTE ===');
+    // console.log('🟢 === PEDIDO DE PROSPECTO CREADO EXITOSAMENTE ===');
 
     return NextResponse.json({
       success: true,

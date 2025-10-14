@@ -8,7 +8,6 @@ import { useAuth } from '@/hooks/useAuth';
 
 const menu = [
   { title: 'Pedidos', path: '/admin/pedidos', icon: <ShoppingBagIcon className="w-6 h-6" /> },
-  { title: 'Stock', path: '/admin/products', icon: <CubeIcon className="w-6 h-6" /> },
 ];
 
 export default function AdminMobileMenu() {

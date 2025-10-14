@@ -121,7 +121,7 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
       const publicId = result.info.public_id as string;
       const secureUrl = result.info.secure_url as string;
       
-      console.log('Nueva foto de portada subida:', { publicId, secureUrl });
+      //console.log('Nueva foto de portada subida:', { publicId, secureUrl });
       
       setFotoPortada({
         publicId: publicId,
@@ -148,9 +148,9 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
     if (result.info && typeof result.info === 'object' && 'public_id' in result.info) {
       const publicId = result.info.public_id as string;
       const secureUrl = result.info.secure_url as string;
-      
-      console.log('Nueva imagen subida:', { publicId, secureUrl });
-      
+
+      // console.log('Nueva imagen subida:', { publicId, secureUrl });
+
       setImages(prev => {
         const newImages = [...prev];
         newImages[index] = {
@@ -197,12 +197,12 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
         foto4_url: images[3].toDelete ? undefined : (images[3].publicId || '') || undefined,
       };
 
-      console.log('Datos a enviar al servidor:', {
-        item_id: updatedProduct.item_id,
-        destacar: updatedProduct.destacar,
-        activo: updatedProduct.activo, // ✅ Log del nuevo campo
-        foto_portada: updatedProduct.foto_portada
-      });
+      // console.log('Datos a enviar al servidor:', {
+      //   item_id: updatedProduct.item_id,
+      //   destacar: updatedProduct.destacar,
+      //   activo: updatedProduct.activo, // ✅ Log del nuevo campo
+      //   foto_portada: updatedProduct.foto_portada
+      // });
 
       const response = await fetch(`/api/actualizar?id=${producto.item_id}`, {
         method: 'PUT',
@@ -218,7 +218,7 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
       }
 
       const result = await response.json();
-      console.log('Respuesta del servidor:', result);
+      //console.log('Respuesta del servidor:', result);
 
       onSave(updatedProduct);
       onClose();
@@ -297,7 +297,7 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
           <div 
             className="border-2 border-dashed border-yellow-300 rounded-lg p-4 text-center hover:border-yellow-500 hover:bg-yellow-50 transition-colors cursor-pointer"
             onClick={() => {
-              console.log('Abriendo widget de portada');
+              //console.log('Abriendo widget de portada');
               if (open) open();
             }}
           >
@@ -367,7 +367,7 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
           <div 
             className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-orange-500 hover:bg-orange-50 transition-colors cursor-pointer"
             onClick={() => {
-              console.log(`Abriendo widget de galería ${index + 1}`);
+              //console.log(`Abriendo widget de galería ${index + 1}`);
               if (open) open();
             }}
           >

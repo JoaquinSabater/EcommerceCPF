@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
       [cliente.id, resetToken, tokenExpiry]
     );
 
-    console.log(`✅ Token de reset generado para: ${cliente.email} (Cliente ID: ${cliente.id})`);
+    //console.log(`✅ Token de reset generado para: ${cliente.email} (Cliente ID: ${cliente.id})`);
 
     return NextResponse.json({
       success: true,

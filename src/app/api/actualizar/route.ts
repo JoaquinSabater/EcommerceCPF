@@ -32,13 +32,14 @@ export async function PUT(request: NextRequest) {
       activo // ✅ Nuevo campo
     } = body;
 
-    console.log('Datos recibidos para actualizar:', {
-      productId: finalProductId,
-      destacar,
-      activo, // ✅ Log del nuevo campo
-      foto_portada,
-      foto1_url
-    });
+    //console.log('Datos recibidos para actualizar:', {
+    //  productId: finalProductId,
+    //  destacar,
+    //  activo, // ✅ Log del nuevo campo
+    //  foto_portada,
+    //  foto1_url
+    //});
+    //});
 
     const [result]: any = await db.query(
       `UPDATE item_detalle 
@@ -70,7 +71,7 @@ export async function PUT(request: NextRequest) {
         foto3_url || null,
         foto4_url || null,
         destacar ? 1 : 0, 
-        activo ? 1 : 0, // ✅ Nuevo campo
+        activo ? 1 : 0,
         finalProductId
       ]
     );
@@ -82,7 +83,7 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    console.log(`✅ Producto actualizado: ID ${finalProductId}, destacar: ${destacar}, activo: ${activo}`);
+    //console.log(`✅ Producto actualizado: ID ${finalProductId}, destacar: ${destacar}, activo: ${activo}`);
 
     return NextResponse.json({ 
       success: true, 

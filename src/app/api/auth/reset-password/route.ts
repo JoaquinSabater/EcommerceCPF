@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
       [hashedPassword, authData.cliente_id]
     );
 
-    console.log(`✅ Contraseña restablecida para: ${authData.nombre} ${authData.apellido} (ID: ${authData.cliente_id})`);
+    //console.log(`✅ Contraseña restablecida para: ${authData.nombre} ${authData.apellido} (ID: ${authData.cliente_id})`);
 
     return NextResponse.json({
       success: true,

@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
       productosDestacados.push(...categoriasDestacadas.filter(Boolean));
     }
 
-    console.log('Productos destacados encontrados:', productosDestacados.length);
+    //console.log('Productos destacados encontrados:', productosDestacados.length);
     
     return NextResponse.json(productosDestacados);
   } catch (error) {

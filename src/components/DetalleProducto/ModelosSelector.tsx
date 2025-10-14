@@ -36,7 +36,7 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
   const { isAdmin, getPrecioConDescuento, isDistribuidor } = useAuth(); // ✅ Usar nuevas funciones
 
   useEffect(() => {
-    console.log('🟡 ModelosSelector recibió sugerenciaActual:', `"${sugerenciaActual}"`);
+    //console.log('🟡 ModelosSelector recibió sugerenciaActual:', `"${sugerenciaActual}"`);
   }, [sugerenciaActual]);
 
   // ✅ Función helper para mostrar marca + modelo + precio CON DESCUENTO
@@ -125,10 +125,10 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
 
   // ✅ Función modificada para agregar al carrito CON PRECIO ORIGINAL
   const handleAddToCart = () => {
-    console.log('🟢 === AGREGANDO AL CARRITO DESDE MODELOSSELECTOR ===');
-    console.log('Sugerencia a aplicar:', `"${sugerenciaActual}"`);
-    console.log('Modelos seleccionados:', seleccionados.length);
-    console.log('Es distribuidor:', isDistribuidor());
+    //console.log('🟢 === AGREGANDO AL CARRITO DESDE MODELOSSELECTOR ===');
+    // console.log('Sugerencia a aplicar:', `"${sugerenciaActual}"`);
+    // console.log('Modelos seleccionados:', seleccionados.length);
+    // console.log('Es distribuidor:', isDistribuidor());
 
     seleccionados.forEach(({ articulo, cantidad }) => {
       if (!articulo.precio_venta || isNaN(Number(articulo.precio_venta))) {
@@ -136,20 +136,17 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
         articulo.precio_venta = 0;
       }
       
-      // ✅ IMPORTANTE: Guardar en el carrito el PRECIO ORIGINAL (no el con descuento)
       const articuloConCantidad = {
         ...articulo,
         cantidad: cantidad,
-        precio_venta: Number(articulo.precio_venta) // ✅ Precio original para el pedido
+        precio_venta: Number(articulo.precio_venta)
       };
       
-      console.log(`🟡 Agregando ${articulo.modelo} - Precio original: $${articulo.precio_venta} USD`);
+      //console.log(`🟡 Agregando ${articulo.modelo} - Precio original: $${articulo.precio_venta} USD`);
       
-      // ✅ Pasar la sugerencia al agregar al carrito
       addToCart(articuloConCantidad, articulo.modelo, cantidad, sugerenciaActual);
     });
     
-    // ✅ Calcular total VISUAL (con descuento) para el mensaje
     const totalOriginalUsd = seleccionados.reduce((sum, { articulo, cantidad }) => 
       sum + (Number(articulo.precio_venta || 0) * cantidad), 0);
     const totalConDescuentoUsd = getPrecioConDescuento(totalOriginalUsd);

@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`✅ Token válido para prospecto: ${tokenData.nombre} (uso múltiple permitido)`);
+    //console.log(`✅ Token válido para prospecto: ${tokenData.nombre} (uso múltiple permitido)`);
 
     return NextResponse.json({
       success: true,

@@ -18,10 +18,10 @@ export default function ForgotPasswordPage() {
     setError('');
     setMessage('');
 
-    console.log('🔍 Debug: Iniciando proceso de forgot password para:', email);
+    // console.log('🔍 Debug: Iniciando proceso de forgot password para:', email);
 
     try {
-      console.log('🔍 Debug: Llamando a API forgot-password...');
+      // console.log('🔍 Debug: Llamando a API forgot-password...');
       const response = await fetch('/api/auth/forgot-password', {
         method: 'POST',
         headers: {
@@ -30,9 +30,9 @@ export default function ForgotPasswordPage() {
         body: JSON.stringify({ email }),
       });
 
-      console.log('🔍 Debug: Response status:', response.status);
+      // console.log('🔍 Debug: Response status:', response.status);
       const data = await response.json();
-      console.log('🔍 Debug: Respuesta de API:', data);
+      // console.log('🔍 Debug: Respuesta de API:', data);
 
       if (response.ok && data.success) {
         if (data.emailData && data.emailConfig) {

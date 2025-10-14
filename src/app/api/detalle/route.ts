@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
       activo: Boolean(producto.activo)
     };
 
-    console.log(`📦 Detalle obtenido - ID: ${id}, Activo: ${detalleProducto.activo}, Destacar: ${detalleProducto.destacar}`);
+    //console.log(`📦 Detalle obtenido - ID: ${id}, Activo: ${detalleProducto.activo}, Destacar: ${detalleProducto.destacar}`);
 
     // ✅ Devolver en el formato que espera CategoriaCard
     return NextResponse.json({

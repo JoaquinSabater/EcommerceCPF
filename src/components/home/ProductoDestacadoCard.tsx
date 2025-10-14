@@ -37,7 +37,7 @@ export default function ProductoDestacadoCard({ categoria, onClick }: ProductoDe
         if (resDetail.ok) {
           const dataDetail = await resDetail.json();
           
-          console.log('Datos del producto destacado:', dataDetail);
+          // console.log('Datos del producto destacado:', dataDetail);
           
           if (dataDetail.foto_portada && dataDetail.foto_portada.trim() !== '') {
             setImagenPrincipal(dataDetail.foto_portada);
@@ -50,12 +50,12 @@ export default function ProductoDestacadoCard({ categoria, onClick }: ProductoDe
             setImageError(true);
           }
         } else {
-          console.log('Error en la respuesta del detalle:', resDetail.status);
+          // console.log('Error en la respuesta del detalle:', resDetail.status);
           setImagenPrincipal('');
           setImageError(true);
         }
       } catch (error) {
-        console.error("Error al obtener datos del producto destacado:", error);
+        // console.error("Error al obtener datos del producto destacado:", error);
         setImagenPrincipal('');
         setImageError(true);
       } finally {
@@ -76,7 +76,7 @@ export default function ProductoDestacadoCard({ categoria, onClick }: ProductoDe
   };
 
   const handleProductUpdate = (updatedProduct: any) => {
-    console.log('Actualizando producto destacado en card:', updatedProduct);
+    // console.log('Actualizando producto destacado en card:', updatedProduct);
     
     if (updatedProduct.foto_portada && updatedProduct.foto_portada.trim() !== '') {
       setImagenPrincipal(updatedProduct.foto_portada);
@@ -91,7 +91,7 @@ export default function ProductoDestacadoCard({ categoria, onClick }: ProductoDe
   };
 
   const handleImageError = () => {
-    console.log('Error al cargar imagen de Cloudinary:', imagenPrincipal);
+    // console.log('Error al cargar imagen de Cloudinary:', imagenPrincipal);
     setImageError(true);
   };
 

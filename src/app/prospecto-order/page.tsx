@@ -42,8 +42,8 @@ function ProspectoOrderContent() {
         localStorage.setItem('prospecto_data', JSON.stringify(data.prospecto));
         localStorage.setItem('prospecto_cart', JSON.stringify([]));
         
-        console.log('✅ Modo prospecto activado para:', data.prospecto.nombre);
-        console.log('💡 Token válido por 4 días con acceso múltiple');
+        // console.log('✅ Modo prospecto activado para:', data.prospecto.nombre);
+        // console.log('💡 Token válido por 4 días con acceso múltiple');
         
         // Mostrar éxito y redirigir después de 2 segundos
         setSuccess(true);

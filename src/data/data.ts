@@ -75,13 +75,13 @@ export async function getAllItems(): Promise<ItemAdmin[]> {
       disponible: row.disponible === 1 ? true : row.disponible === 0 ? false : false
     })) as ItemAdmin[];
 
-    console.log('📊 Items cargados desde BD:', items.length);
-    console.log('🔍 Primeros 3 items disponibilidad:', items.slice(0, 3).map(i => ({
-      id: i.id,
-      nombre: i.nombre,
-      disponible_raw: rows.find(r => r.id === i.id)?.disponible,
-      disponible_converted: i.disponible
-    })));
+    // console.log('📊 Items cargados desde BD:', items.length);
+    // console.log('🔍 Primeros 3 items disponibilidad:', items.slice(0, 3).map(i => ({
+    //   id: i.id,
+    //   nombre: i.nombre,
+    //   disponible_raw: rows.find(r => r.id === i.id)?.disponible,
+    //   disponible_converted: i.disponible
+    // })));
 
     return items;
   } catch (error) {
@@ -104,8 +104,8 @@ export async function updateItemDisponible(itemId: number, disponible: boolean |
     const sql = `UPDATE items SET disponible = ? WHERE id = ?`;
     const [result] = await connection.query(sql, [mysqlValue, itemId]);
     
-    console.log(`✅ Item ${itemId} actualizado: disponible = ${disponible} (MySQL: ${mysqlValue})`);
-    console.log('📊 Resultado de la actualización:', result);
+    // console.log(`✅ Item ${itemId} actualizado: disponible = ${disponible} (MySQL: ${mysqlValue})`);
+    // console.log('📊 Resultado de la actualización:', result);
   } catch (error) {
     console.error('Error en updateItemDisponible:', error);
     throw error;
@@ -254,9 +254,9 @@ export async function crearPedidoPreliminar(
     connection = await db.getConnection();
     await connection.beginTransaction();
 
-    console.log('🟡 === CREANDO PEDIDO PRELIMINAR DE CLIENTE ===');
-    console.log('Cliente ID:', clienteId);
-    console.log('Items:', itemsCarrito.length);
+    // console.log('🟡 === CREANDO PEDIDO PRELIMINAR DE CLIENTE ===');
+    // console.log('Cliente ID:', clienteId);
+    // console.log('Items:', itemsCarrito.length);
 
     const [clienteData] = await connection.query(
       'SELECT vendedor_id FROM clientes WHERE id = ?',
@@ -277,8 +277,8 @@ export async function crearPedidoPreliminar(
     );
 
     const pedidoPreliminarId = (pedidoResult as any).insertId;
-    console.log('🟢 Pedido preliminar creado con ID:', pedidoPreliminarId);
-    console.log('🟢 Cliente ID:', clienteId, '| Vendedor ID:', vendedorId, '| Prospecto ID: NULL');
+    // console.log('🟢 Pedido preliminar creado con ID:', pedidoPreliminarId);
+    // console.log('🟢 Cliente ID:', clienteId, '| Vendedor ID:', vendedorId, '| Prospecto ID: NULL');
 
     for (const item of itemsCarrito) {
       const [articuloExists] = await connection.query(
@@ -310,7 +310,7 @@ export async function crearPedidoPreliminar(
     }
 
     await connection.commit();
-    console.log('🟢 === PEDIDO DE CLIENTE CREADO EXITOSAMENTE ===');
+    //console.log('🟢 === PEDIDO DE CLIENTE CREADO EXITOSAMENTE ===');
 
     return pedidoPreliminarId;
 

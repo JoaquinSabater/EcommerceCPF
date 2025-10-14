@@ -14,13 +14,13 @@ export async function sendResetPasswordEmailClient(
   nombre: string,
   config: EmailConfig
 ) {
-  console.log('🔍 Debug email.ts: Iniciando envío de email');
-  console.log('🔍 Debug email.ts: Parámetros recibidos:', { 
-    email, 
-    resetToken: resetToken.substring(0, 10) + '...', 
-    nombre 
-  });
-  console.log('🔍 Debug email.ts: Configuración recibida:', config);
+  // console.log('🔍 Debug email.ts: Iniciando envío de email');
+  // console.log('🔍 Debug email.ts: Parámetros recibidos:', { 
+  //   email, 
+  //   resetToken: resetToken.substring(0, 10) + '...', 
+  //   nombre 
+  // });
+  // console.log('🔍 Debug email.ts: Configuración recibida:', config);
   
   // Verificar configuración recibida
   if (!config.serviceId || !config.templateId || !config.publicKey || !config.baseUrl) {
@@ -35,11 +35,11 @@ export async function sendResetPasswordEmailClient(
   
   try {
     // Inicializar EmailJS en el cliente
-    console.log('🔍 Debug email.ts: Inicializando EmailJS con key:', config.publicKey);
+    //console.log('🔍 Debug email.ts: Inicializando EmailJS con key:', config.publicKey);
     emailjs.init(config.publicKey);
     
     const resetUrl = `${config.baseUrl}/auth/reset-password?token=${resetToken}`;
-    console.log('🔍 Debug email.ts: Reset URL generada:', resetUrl);
+    //console.log('🔍 Debug email.ts: Reset URL generada:', resetUrl);
 
     const templateParams = {
       to_email: email,
@@ -48,8 +48,8 @@ export async function sendResetPasswordEmailClient(
       company_name: 'CellPhone Free'
     };
     
-    console.log('🔍 Debug email.ts: Template params:', templateParams);
-    console.log('🔍 Debug email.ts: Enviando email con EmailJS...');
+    // console.log('🔍 Debug email.ts: Template params:', templateParams);
+    // console.log('🔍 Debug email.ts: Enviando email con EmailJS...');
     
     const response = await emailjs.send(
       config.serviceId,
@@ -57,9 +57,9 @@ export async function sendResetPasswordEmailClient(
       templateParams
     );
     
-    console.log('✅ Email enviado exitosamente con EmailJS:', response);
-    console.log('✅ Status:', response.status);
-    console.log('✅ Text:', response.text);
+    // console.log('✅ Email enviado exitosamente con EmailJS:', response);
+    // console.log('✅ Status:', response.status);
+    // console.log('✅ Text:', response.text);
     
     return { success: true, response };
   } catch (error) {

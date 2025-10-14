@@ -33,7 +33,7 @@ export default function LoginPage() {
       const data: LoginResponse = await response.json();
 
       if (response.ok && data.success) {
-        console.log('Usuario logueado:', data.cliente?.nombre);
+        //console.log('Usuario logueado:', data.cliente?.nombre);
         localStorage.setItem('user', JSON.stringify(data.cliente));
         localStorage.setItem('token', data.token || '');
         

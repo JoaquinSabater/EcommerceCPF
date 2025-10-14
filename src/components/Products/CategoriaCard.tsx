@@ -32,12 +32,12 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
         if (resDetail.ok) {
           const dataDetail = await resDetail.json();
           
-          console.log(`🖼️ Datos obtenidos para ${categoria.nombre}:`, {
-            foto_portada: dataDetail.foto_portada,
-            foto1_url: dataDetail.foto1_url,
-            descripcion: dataDetail.descripcion,
-            activo: dataDetail.activo
-          });
+          // console.log(`🖼️ Datos obtenidos para ${categoria.nombre}:`, {
+          //   foto_portada: dataDetail.foto_portada,
+          //   foto1_url: dataDetail.foto1_url,
+          //   descripcion: dataDetail.descripcion,
+          //   activo: dataDetail.activo
+          // });
           
           setDescripcion(dataDetail.descripcion || '');
           
@@ -92,7 +92,7 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
   };
 
   const handleProductUpdate = (updatedProduct: any) => {
-    console.log('🔄 Actualizando producto en card:', updatedProduct);
+    //console.log('🔄 Actualizando producto en card:', updatedProduct);
     
     setDescripcion(updatedProduct.descripcion || '');
     

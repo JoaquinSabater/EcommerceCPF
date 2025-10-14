@@ -54,16 +54,15 @@ export async function POST(request: Request) {
     }
 
     const isAdmin = cliente.razon_social === 'Administrador' || cliente.id === 2223;
-    const isDistribuidor = Boolean(cliente.Distribuidor); // ✅ Convertir a boolean
+    const isDistribuidor = Boolean(cliente.Distribuidor);
 
-    // ✅ Logging para debugging
-    console.log(`🔍 Usuario autenticando:`, {
-      id: cliente.id,
-      nombre: cliente.nombre,
-      Distribuidor_raw: cliente.Distribuidor,
-      isDistribuidor: isDistribuidor,
-      isAdmin: isAdmin
-    });
+    //console.log(`🔍 Usuario autenticando:`, {
+      //id: cliente.id,
+      //nombre: cliente.nombre,
+      //Distribuidor_raw: cliente.Distribuidor,
+      //isDistribuidor: isDistribuidor,
+      //isAdmin: isAdmin
+    //});
 
     const [authRows] = await db.execute(
       'SELECT id, cliente_id, password_hash, email_verified, failed_login_attempts, locked_until FROM clientes_auth WHERE cliente_id = ?',

@@ -124,7 +124,7 @@ export default function ClienteMovimientos({ clienteId }: ClienteMovimientosProp
       
       const data: ApiResponse = await response.json();
       
-      console.log('📥 Respuesta completa:', data);
+      //console.log('📥 Respuesta completa:', data);
       
       if (data.success) {
         setMovimientos(data.data.movimientos || []);

@@ -46,12 +46,12 @@ export default function Search() {
     setIsSearching(true);
     timeoutRef.current = setTimeout(async () => {
       try {
-        console.log(`🔍 Iniciando búsqueda con: "${search.trim()}" (${search.trim().length} caracteres)`);
+        //console.log(`🔍 Iniciando búsqueda con: "${search.trim()}" (${search.trim().length} caracteres)`);
         
         const response = await fetch(`/api/search?q=${encodeURIComponent(search.trim())}`);
         const data = await response.json();
         
-        console.log(`📊 Resultados obtenidos: ${data.results?.length || 0}`);
+        //console.log(`📊 Resultados obtenidos: ${data.results?.length || 0}`);
         
         setResults(data.results || []);
         setShowResults(true);
@@ -96,10 +96,10 @@ export default function Search() {
   };
 
   const handleItemClick = (result: SearchResult) => {
-    console.log('Search - Producto seleccionado:', result);
+    //console.log('Search - Producto seleccionado:', result);
     
     const productId = result.item_id.toString();
-    console.log('Search - Abriendo modal para producto:', productId);
+    //console.log('Search - Abriendo modal para producto:', productId);
     
     setSelectedProductId(productId);
     setIsModalOpen(true);
@@ -108,13 +108,13 @@ export default function Search() {
   };
 
   const handleCloseModal = () => {
-    console.log('Search - Cerrando modal');
+    //console.log('Search - Cerrando modal');
     setIsModalOpen(false);
     setSelectedProductId(null);
   };
 
   const handleAddToCart = (item: any) => {
-    console.log('Agregado al carrito desde búsqueda:', item);
+   // console.log('Agregado al carrito desde búsqueda:', item);
   };
 
   const getPlaceholderText = () => {

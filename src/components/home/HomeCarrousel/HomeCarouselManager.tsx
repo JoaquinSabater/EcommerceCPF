@@ -96,7 +96,7 @@ export default function HomeCarouselManager() {
         setIsEditing(false);
         setIsCreating(false);
         setEditingSlide(null);
-        console.log(`✅ Slide ${isCreating ? 'creada' : 'actualizada'} exitosamente`);
+        // console.log(`✅ Slide ${isCreating ? 'creada' : 'actualizada'} exitosamente`);
       } else {
         const error = await response.json();
         alert(error.error || 'Error al guardar la slide');
@@ -119,7 +119,7 @@ export default function HomeCarouselManager() {
 
       if (response.ok) {
         await fetchSlides();
-        console.log('✅ Slide eliminada');
+        //console.log('✅ Slide eliminada');
       }
     } catch (error) {
       console.error('Error deleting slide:', error);
@@ -132,7 +132,7 @@ export default function HomeCarouselManager() {
     // Usar el mismo formato que en EditProductModal
     if (result.info && typeof result.info === 'object' && 'public_id' in result.info) {
       const publicId = result.info.public_id as string;
-      console.log('Upload successful:', { publicId, isDesktop });
+      //console.log('Upload successful:', { publicId, isDesktop });
       
       const field = isDesktop ? 'imagen_desktop' : 'imagen_mobile';
       setEditingSlide({

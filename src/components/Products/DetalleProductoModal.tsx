@@ -71,7 +71,7 @@ export default function DetalleProductoModal({
         throw new Error('Error al obtener detalles del producto');
       }
       const data = await response.json();
-      console.log('🔍 Detalle obtenido del API:', data.detalle);
+      //console.log('🔍 Detalle obtenido del API:', data.detalle);
       return data.detalle as DetalleProducto;
     } catch (error) {
       console.error("Error al obtener detalles del producto:", error);
@@ -106,7 +106,7 @@ export default function DetalleProductoModal({
     // ✅ Usar el campo activo para determinar si mostrar características
     const mostrarCaracteristicas = Boolean(detalle.activo);
     
-    console.log(`🎛️ Formateando producto - Activo: ${detalle.activo}, Mostrar características: ${mostrarCaracteristicas}`);
+    //console.log(`🎛️ Formateando producto - Activo: ${detalle.activo}, Mostrar características: ${mostrarCaracteristicas}`);
 
     return {
       imagen: imagenPrincipal,
@@ -127,7 +127,7 @@ export default function DetalleProductoModal({
   };
 
   const handleSugerenciaChange = (nuevaSugerencia: string) => {
-    console.log('🟡 Sugerencia actualizada en DetalleProductoModal:', nuevaSugerencia);
+    //console.log('🟡 Sugerencia actualizada en DetalleProductoModal:', nuevaSugerencia);
     setSugerenciaActual(nuevaSugerencia);
   };
 
@@ -153,11 +153,11 @@ export default function DetalleProductoModal({
         onUpdate(updatedProduct);
       }
       
-      console.log('✅ Producto actualizado exitosamente:', {
-        nombre: updatedProduct.item_nombre,
-        activo: updatedProduct.activo,
-        destacar: updatedProduct.destacar
-      });
+      // console.log('✅ Producto actualizado exitosamente:', {
+      //   nombre: updatedProduct.item_nombre,
+      //   activo: updatedProduct.activo,
+      //   destacar: updatedProduct.destacar
+      // });
       
     } catch (error) {
       console.error('Error al procesar la actualización:', error);
@@ -182,11 +182,11 @@ export default function DetalleProductoModal({
           setDetalleProducto(detalleData);
           setPrecio(precioData);
           
-          console.log('📊 Datos cargados:', {
-            item_id: detalleData.item_id,
-            activo: detalleData.activo,
-            destacar: detalleData.destacar
-          });
+          // console.log('📊 Datos cargados:', {
+          //   item_id: detalleData.item_id,
+          //   activo: detalleData.activo,
+          //   destacar: detalleData.destacar
+          // });
           
         } catch (err) {
           setError('Error al cargar los datos del producto');
@@ -263,7 +263,6 @@ export default function DetalleProductoModal({
                       ? 'bg-green-100 text-green-700' 
                       : 'bg-gray-100 text-gray-600'
                   }`}>
-                    {detalleProducto.activo ? '✅ Características activas' : '❌ Características ocultas'}
                   </span>
                   
                   {detalleProducto.destacar && (

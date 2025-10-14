@@ -30,9 +30,9 @@ export async function POST(request: Request) {
     connection = await db.getConnection();
     await connection.beginTransaction();
 
-    console.log('🟢 === INICIO CONVERSIÓN PROSPECTO A CLIENTE ===');
-    console.log('Prospecto ID:', prospectoId);
-    console.log('Datos cliente:', { razon_social, nombre, cuit_dni });
+    // console.log('🟢 === INICIO CONVERSIÓN PROSPECTO A CLIENTE ===');
+    // console.log('Prospecto ID:', prospectoId);
+    // console.log('Datos cliente:', { razon_social, nombre, cuit_dni });
 
     const [existeCliente] = await connection.query(
       'SELECT id FROM clientes WHERE cuit_dni = ?',
@@ -65,28 +65,28 @@ export async function POST(request: Request) {
     );
 
     const clienteId = (clienteResult as any).insertId;
-    console.log('🟢 Cliente creado con ID:', clienteId);
+    //console.log('🟢 Cliente creado con ID:', clienteId);
 
     if (prospectoId) {
       await connection.query(
         'UPDATE prospectos SET convertido = 1 WHERE id = ?',
         [prospectoId]
       );
-      console.log('🟢 Prospecto marcado como convertido');
+      //console.log('🟢 Prospecto marcado como convertido');
     }
 
     await connection.commit();
     
-    console.log('🟡 Creando pedido preliminar...');
+    //console.log('🟡 Creando pedido preliminar...');
     const pedidoPreliminarId = await crearPedidoPreliminar(
       clienteId,
       itemsCarrito,
       `Primer pedido del cliente convertido desde prospecto ${prospectoId || 'N/A'}`
     );
 
-    console.log('🟢 === CONVERSIÓN COMPLETADA EXITOSAMENTE ===');
-    console.log('Cliente ID:', clienteId);
-    console.log('Pedido preliminar ID:', pedidoPreliminarId);
+    // console.log('🟢 === CONVERSIÓN COMPLETADA EXITOSAMENTE ===');
+    // console.log('Cliente ID:', clienteId);
+    // console.log('Pedido preliminar ID:', pedidoPreliminarId);
 
     return NextResponse.json({
       success: true,

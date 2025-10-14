@@ -52,10 +52,10 @@ export default function SearchResults({
       event.stopPropagation();
     }
 
-    console.log('SearchResults - handleItemClick ejecutado:', {
-      result,
-      itemId: result.item_id.toString()
-    });
+    // console.log('SearchResults - handleItemClick ejecutado:', {
+    //   result,
+    //   itemId: result.item_id.toString()
+    // });
     
     // Llamar al callback del componente padre (Search.tsx)
     if (onItemClick) {

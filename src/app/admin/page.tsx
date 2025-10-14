@@ -17,7 +17,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
-      console.log('Usuario no autenticado, redirigiendo al login...');
+      //console.log('Usuario no autenticado, redirigiendo al login...');
       router.push('/auth/login');
     }
   }, [isAuthenticated, loading, router]);
