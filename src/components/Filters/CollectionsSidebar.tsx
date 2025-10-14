@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useFilters } from '@/contexts/FiltersContext';
 import { usePathname } from 'next/navigation';
 
 export default function CollectionsSidebar() {
   const { selectedMarca, setSelectedMarca, marcas, setMarcas } = useFilters();
   const pathname = usePathname();
+  const [loading, setLoading] = useState(false);
 
   const getSubcategoriaId = () => {
     if (pathname.includes('/fundas/diseno')) return 11;
@@ -28,6 +29,7 @@ export default function CollectionsSidebar() {
 
     const fetchMarcas = async () => {
       try {
+        setLoading(true);
         const response = await fetch(`/api/marcas?subcategoriaId=${subcategoriaId}`);
         const data = await response.json();
         
@@ -36,6 +38,8 @@ export default function CollectionsSidebar() {
         }
       } catch (error) {
         console.error('Error cargando marcas:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -48,40 +52,88 @@ export default function CollectionsSidebar() {
 
   return (
     <aside className="hidden md:block w-48 px-4 pt-4">
-      <h3 className="text-sm font-semibold uppercase mb-4 text-orange-600">
+      <h3 className="text-sm font-semibold uppercase mb-4" style={{ color: '#ff7100' }}>
         Marcas
       </h3>
-      <ul className="space-y-2">
-        {/* Opción "Todas" */}
-        <li>
-          <button
-            onClick={() => handleMarcaClick(null)}
-            className={`text-sm block w-full text-left hover:text-orange-600 transition-colors ${
-              selectedMarca === null 
-                ? 'text-orange-600 font-semibold' 
-                : 'text-black hover:underline'
-            }`}
-          >
-            Todas las marcas
-          </button>
-        </li>
-        
-        {/* Marcas dinámicas */}
-        {marcas.map((marca) => (
-          <li key={marca.id}>
+      
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-8">
+          <div 
+            className="animate-spin rounded-full h-6 w-6 border-b-2 mb-3"
+            style={{ borderColor: '#ff7100' }}
+          ></div>
+          <p className="text-xs text-center" style={{ color: '#1a1a1a', opacity: 0.7 }}>
+            Cargando marcas...
+          </p>
+        </div>
+      ) : (
+        <ul className="space-y-2">
+          {/* Opción "Todas" */}
+          <li>
             <button
-              onClick={() => handleMarcaClick(marca)}
-              className={`text-sm block w-full text-left hover:text-orange-600 transition-colors ${
-                selectedMarca?.id === marca.id 
-                  ? 'text-orange-600 font-semibold' 
-                  : 'text-black hover:underline'
+              onClick={() => handleMarcaClick(null)}
+              className={`text-sm block w-full text-left transition-colors ${
+                selectedMarca === null 
+                  ? 'font-semibold' 
+                  : 'hover:underline'
               }`}
+              style={{
+                color: selectedMarca === null ? '#ff7100' : '#1a1a1a'
+              }}
+              onMouseEnter={(e) => {
+                if (selectedMarca !== null) {
+                  e.currentTarget.style.color = '#ff7100';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (selectedMarca !== null) {
+                  e.currentTarget.style.color = '#1a1a1a';
+                }
+              }}
             >
-              {marca.nombre}
+              Todas las marcas
             </button>
           </li>
-        ))}
-      </ul>
+          
+          {/* Marcas dinámicas */}
+          {marcas.map((marca) => (
+            <li key={marca.id}>
+              <button
+                onClick={() => handleMarcaClick(marca)}
+                className={`text-sm block w-full text-left transition-colors ${
+                  selectedMarca?.id === marca.id 
+                    ? 'font-semibold' 
+                    : 'hover:underline'
+                }`}
+                style={{
+                  color: selectedMarca?.id === marca.id ? '#ff7100' : '#1a1a1a'
+                }}
+                onMouseEnter={(e) => {
+                  if (selectedMarca?.id !== marca.id) {
+                    e.currentTarget.style.color = '#ff7100';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (selectedMarca?.id !== marca.id) {
+                    e.currentTarget.style.color = '#1a1a1a';
+                  }
+                }}
+              >
+                {marca.nombre}
+              </button>
+            </li>
+          ))}
+          
+          {/* Mensaje cuando no hay marcas */}
+          {!loading && marcas.length === 0 && (
+            <li className="py-4 text-center">
+              <p className="text-xs" style={{ color: '#d3d3d3' }}>
+                No hay marcas disponibles
+              </p>
+            </li>
+          )}
+        </ul>
+      )}
     </aside>
   );
 }

@@ -17,12 +17,14 @@ export default function Fundas() {
   const [marcas, setMarcas] = useState<Marca[]>([]);
   const [selectedMarca, setSelectedMarca] = useState<Marca | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [loadingMarcas, setLoadingMarcas] = useState(true); // ✅ Nuevo estado para marcas
   
   const subcategoriasFundas = [11, 8, 10, 9]; // Diseño, FlipWallet, Lisas, Silicona
 
   useEffect(() => {
     const fetchMarcas = async () => {
       try {
+        setLoadingMarcas(true); // ✅ Activar loading de marcas
         let todasMarcas: Marca[] = [];
         
         // Obtener marcas para cada subcategoría de fundas
@@ -46,6 +48,8 @@ export default function Fundas() {
         setMarcas(marcasUnicas);
       } catch (error) {
         console.error('Error cargando marcas:', error);
+      } finally {
+        setLoadingMarcas(false); // ✅ Desactivar loading de marcas
       }
     };
 
@@ -95,90 +99,192 @@ export default function Fundas() {
 
   return (
     <div className="flex">
-      {/* ✅ SIDEBAR DESKTOP */}
+      {/* ✅ SIDEBAR DESKTOP con loading */}
       <aside className="hidden md:block w-48 px-4 pt-4">
-        <h3 className="text-sm font-semibold uppercase mb-4 text-orange-600">
+        <h3 className="text-sm font-semibold uppercase mb-4" style={{ color: '#ff7100' }}>
           Marcas
         </h3>
-        <ul className="space-y-2">
-          {/* Opción "Todas" */}
-          <li>
-            <button
-              onClick={() => handleMarcaClick(null)}
-              className={`text-sm block w-full text-left hover:text-orange-600 transition-colors ${
-                selectedMarca === null 
-                  ? 'text-orange-600 font-semibold' 
-                  : 'text-black hover:underline'
-              }`}
-            >
-              Todas las marcas
-            </button>
-          </li>
-          
-          {/* Marcas dinámicas */}
-          {marcas.map((marca) => (
-            <li key={marca.id}>
+        
+        {loadingMarcas ? (
+          <div className="flex flex-col items-center justify-center py-8">
+            <div 
+              className="animate-spin rounded-full h-6 w-6 border-b-2 mb-3"
+              style={{ borderColor: '#ff7100' }}
+            ></div>
+            <p className="text-xs text-center" style={{ color: '#1a1a1a', opacity: 0.7 }}>
+              Cargando marcas...
+            </p>
+          </div>
+        ) : (
+          <ul className="space-y-2">
+            {/* Opción "Todas" */}
+            <li>
               <button
-                onClick={() => handleMarcaClick(marca)}
-                className={`text-sm block w-full text-left hover:text-orange-600 transition-colors ${
-                  selectedMarca?.id === marca.id 
-                    ? 'text-orange-600 font-semibold' 
-                    : 'text-black hover:underline'
+                onClick={() => handleMarcaClick(null)}
+                className={`text-sm block w-full text-left transition-colors ${
+                  selectedMarca === null 
+                    ? 'font-semibold' 
+                    : 'hover:underline'
                 }`}
+                style={{
+                  color: selectedMarca === null ? '#ff7100' : '#1a1a1a'
+                }}
+                onMouseEnter={(e) => {
+                  if (selectedMarca !== null) {
+                    e.currentTarget.style.color = '#ff7100';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (selectedMarca !== null) {
+                    e.currentTarget.style.color = '#1a1a1a';
+                  }
+                }}
               >
-                {marca.nombre}
+                Todas las marcas
               </button>
             </li>
-          ))}
-        </ul>
+            
+            {/* Marcas dinámicas */}
+            {marcas.map((marca) => (
+              <li key={marca.id}>
+                <button
+                  onClick={() => handleMarcaClick(marca)}
+                  className={`text-sm block w-full text-left transition-colors ${
+                    selectedMarca?.id === marca.id 
+                      ? 'font-semibold' 
+                      : 'hover:underline'
+                  }`}
+                  style={{
+                    color: selectedMarca?.id === marca.id ? '#ff7100' : '#1a1a1a'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (selectedMarca?.id !== marca.id) {
+                      e.currentTarget.style.color = '#ff7100';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (selectedMarca?.id !== marca.id) {
+                      e.currentTarget.style.color = '#1a1a1a';
+                    }
+                  }}
+                >
+                  {marca.nombre}
+                </button>
+              </li>
+            ))}
+            
+            {/* Mensaje cuando no hay marcas */}
+            {!loadingMarcas && marcas.length === 0 && (
+              <li className="py-4 text-center">
+                <p className="text-xs" style={{ color: '#d3d3d3' }}>
+                  No hay marcas disponibles
+                </p>
+              </li>
+            )}
+          </ul>
+        )}
       </aside>
 
       <main className="flex-1">
-        {/* ✅ DROPDOWN MOBILE */}
+        {/* ✅ DROPDOWN MOBILE con loading */}
         <div className="md:hidden px-4 mt-4">
           <button
             onClick={() => setDropdownOpen(!dropdownOpen)}
-            className="w-full flex items-center justify-between px-4 py-2 text-black rounded hover:bg-neutral-200 border"
+            className="w-full flex items-center justify-between px-4 py-2 rounded border transition-colors"
+            style={{ 
+              color: '#1a1a1a',
+              borderColor: '#d3d3d3'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(211, 211, 211, 0.2)'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           >
             <span className="font-semibold">
-              {selectedMarca ? selectedMarca.nombre : 'Todas las marcas'}
+              {loadingMarcas ? 'Cargando marcas...' : (selectedMarca ? selectedMarca.nombre : 'Todas las marcas')}
             </span>
-            {dropdownOpen ? (
-              <ChevronUpIcon className="h-5 w-5 text-black" />
+            {loadingMarcas ? (
+              <div 
+                className="animate-spin rounded-full h-4 w-4 border-b-2"
+                style={{ borderColor: '#ff7100' }}
+              ></div>
+            ) : dropdownOpen ? (
+              <ChevronUpIcon className="h-5 w-5" style={{ color: '#1a1a1a' }} />
             ) : (
-              <ChevronDownIcon className="h-5 w-5 text-black" />
+              <ChevronDownIcon className="h-5 w-5" style={{ color: '#1a1a1a' }} />
             )}
           </button>
 
-          {dropdownOpen && (
-            <ul className="mt-2 rounded bg-white shadow-lg border">
+          {dropdownOpen && !loadingMarcas && (
+            <ul className="mt-2 rounded bg-white shadow-lg border" style={{ borderColor: '#d3d3d3' }}>
+              {/* Opción "Todas" */}
               <li>
                 <button
                   onClick={() => handleMarcaClick(null)}
                   className={`block w-full text-left px-4 py-2 text-sm transition-colors ${
                     selectedMarca === null 
-                      ? 'text-orange-600 bg-orange-50' 
-                      : 'text-black hover:text-orange-500 hover:bg-gray-50'
+                      ? 'font-semibold' 
+                      : ''
                   }`}
+                  style={{
+                    color: selectedMarca === null ? '#ff7100' : '#1a1a1a',
+                    backgroundColor: selectedMarca === null ? 'rgba(255, 113, 0, 0.1)' : 'transparent'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (selectedMarca !== null) {
+                      e.currentTarget.style.color = '#ff7100';
+                      e.currentTarget.style.backgroundColor = 'rgba(211, 211, 211, 0.1)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (selectedMarca !== null) {
+                      e.currentTarget.style.color = '#1a1a1a';
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                    }
+                  }}
                 >
                   Todas las marcas
                 </button>
               </li>
               
+              {/* Marcas dinámicas */}
               {marcas.map((marca) => (
                 <li key={marca.id}>
                   <button
                     onClick={() => handleMarcaClick(marca)}
                     className={`block w-full text-left px-4 py-2 text-sm transition-colors ${
                       selectedMarca?.id === marca.id 
-                        ? 'text-orange-600 bg-orange-50' 
-                        : 'text-black hover:text-orange-500 hover:bg-gray-50'
+                        ? 'font-semibold' 
+                        : ''
                     }`}
+                    style={{
+                      color: selectedMarca?.id === marca.id ? '#ff7100' : '#1a1a1a',
+                      backgroundColor: selectedMarca?.id === marca.id ? 'rgba(255, 113, 0, 0.1)' : 'transparent'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (selectedMarca?.id !== marca.id) {
+                        e.currentTarget.style.color = '#ff7100';
+                        e.currentTarget.style.backgroundColor = 'rgba(211, 211, 211, 0.1)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (selectedMarca?.id !== marca.id) {
+                        e.currentTarget.style.color = '#1a1a1a';
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }
+                    }}
                   >
                     {marca.nombre}
                   </button>
                 </li>
               ))}
+              
+              {/* Mensaje cuando no hay marcas */}
+              {marcas.length === 0 && (
+                <li className="px-4 py-3 text-center">
+                  <p className="text-sm" style={{ color: '#d3d3d3' }}>
+                    No hay marcas disponibles
+                  </p>
+                </li>
+              )}
             </ul>
           )}
         </div>
@@ -202,7 +308,7 @@ export default function Fundas() {
               
               {categorias.length === 0 && (
                 <div className="text-center py-12">
-                  <p className="text-gray-500 text-lg">
+                  <p style={{ color: '#d3d3d3' }} className="text-lg">
                     {selectedMarca 
                       ? `No hay fundas de ${selectedMarca.nombre} disponibles en este momento.`
                       : 'No hay fundas disponibles en este momento.'
