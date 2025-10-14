@@ -183,8 +183,8 @@ export default function AdminPage() {
         <p className="text-sm sm:text-base text-gray-600 mb-3">
           Tu panel personal
         </p>
-        <div className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-          👤 Cliente
+        <div className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-medium bg-orange-200 text-black">
+          Cliente
         </div>
       </div>
 
@@ -193,7 +193,7 @@ export default function AdminPage() {
           <div
             key={item.id}
             onClick={() => setSelectedSection(item.id as UserSection)}
-            className="bg-white rounded-lg shadow-md p-4 sm:p-6 cursor-pointer hover:shadow-lg transition-all duration-300 transform hover:scale-105 border-l-4 border-blue-500"
+            className="bg-white rounded-lg shadow-md p-4 sm:p-6 cursor-pointer hover:shadow-lg transition-all duration-300 transform hover:scale-105 border-l-4 border-orange-200"
           >
             <div className="flex items-center justify-between mb-3 sm:mb-4">
               <h3 className="text-base sm:text-lg font-semibold text-gray-900">
@@ -205,7 +205,7 @@ export default function AdminPage() {
               {item.description}
             </p>
             <div>
-              <span className="text-blue-600 text-xs sm:text-sm font-medium hover:text-blue-700">
+              <span className="text-orange-600 text-xs sm:text-sm font-medium hover:text-orange-300">
                 Ir a {item.name} →
               </span>
             </div>
@@ -234,7 +234,6 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header con navegación */}
       <div className="bg-white shadow-sm border-b border-gray-200">
         <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
           <nav className="flex space-x-1 py-3 sm:py-4 overflow-x-auto scrollbar-hide">
@@ -246,7 +245,7 @@ export default function AdminPage() {
                   selectedSection === item.id
                     ? isAdmin 
                       ? 'bg-orange-100 text-orange-700 border border-orange-200'
-                      : 'bg-blue-100 text-blue-700 border border-blue-200'
+                      : 'bg-orange-200 text-black border border-orange-700'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                 }`}
               >

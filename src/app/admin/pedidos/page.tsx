@@ -17,17 +17,6 @@ import {
 import { Pedido, ArticuloPedido } from "@/types/types";
 import { PedidoPreliminar } from "@/data/data";
 
-const estadoColors = {
-  'en_proceso': 'bg-blue-100 text-blue-800',
-  'solicitud': 'bg-yellow-100 text-yellow-800',
-  'parcial': 'bg-orange-100 text-orange-800',
-  'armado': 'bg-green-100 text-green-800',
-  'cancelado': 'bg-red-100 text-red-800',
-  'borrador': 'bg-purple-100 text-purple-800',
-  'enviado': 'bg-indigo-100 text-indigo-800',
-  'default': 'bg-gray-100 text-gray-800'
-};
-
 // Tipo combinado para manejar ambos tipos de pedidos
 type PedidoCombinado = (Pedido | PedidoPreliminar) & {
   tipo: 'normal' | 'preliminar';
@@ -157,36 +146,10 @@ export default function PedidosPage() {
     });
   };
 
-  const getEstadoBadge = (estado: string, esPreliminar: boolean = false) => {
-    const colorClass = estadoColors[estado as keyof typeof estadoColors] || estadoColors.default;
-    const label = esPreliminar ? 
-      (estado === 'borrador' ? 'PRELIMINAR' : estado.replace('_', ' ').toUpperCase()) :
-      estado.replace('_', ' ').toUpperCase();
-      
-    return (
-      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${colorClass}`}>
-        {label}
-      </span>
-    );
-  };
-
-  // ✅ Función para formatear precios según si es distribuidor
-  const formatearPrecio = (precio: number) => {
-    if (esDistribuidor) {
-      return (
-        <span className="text-amber-600 font-medium">
-          ${precio.toLocaleString()} 
-          <span className="text-xs ml-1 text-amber-700">(Precio interno)</span>
-        </span>
-      );
-    }
-    return <span className="font-medium text-gray-900">${precio.toLocaleString()}</span>;
-  };
-
   if (authLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2" style={{ borderColor: '#ff7100' }}></div>
       </div>
     );
   }
@@ -194,7 +157,7 @@ export default function PedidosPage() {
   if (!user) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <p className="text-gray-500">Debes iniciar sesión para ver tus pedidos</p>
+        <p style={{ color: '#1a1a1a' }}>Debes iniciar sesión para ver tus pedidos</p>
       </div>
     );
   }
@@ -203,25 +166,28 @@ export default function PedidosPage() {
     <div className="w-full max-w-none">
       {/* ✅ ADVERTENCIA PARA DISTRIBUIDORES */}
       {esDistribuidor && (
-        <div className="mb-4 md:mb-6 bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-amber-400 rounded-lg shadow-sm">
+        <div className="mb-4 md:mb-6 rounded-lg shadow-sm" style={{ 
+          background: 'linear-gradient(to right, rgba(255, 113, 0, 0.1), rgba(255, 1, 86, 0.1))', 
+          borderLeft: '4px solid #ff7100' 
+        }}>
           <div className="p-4">
             <div className="flex items-start gap-3">
-              <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+              <AlertTriangle className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: '#ff7100' }} />
               <div className="flex-1">
-                <h3 className="text-sm font-semibold text-amber-800 mb-1">
+                <h3 className="text-sm font-semibold mb-1" style={{ color: '#1a1a1a' }}>
                   ⚠️ Advertencia - Precios para Distribuidores
                 </h3>
-                <div className="text-sm text-amber-700 space-y-1">
+                <div className="text-sm space-y-1" style={{ color: '#1a1a1a' }}>
                   <p>
                     <strong>Los precios mostrados aquí son precios internos de remitos, no reflejan tu descuento de distribuidor.</strong>
                   </p>
-                  <p className="text-xs">
+                  <p className="text-xs" style={{ color: '#1a1a1a', opacity: 0.8 }}>
                     • En el catálogo y carrito ves precios con 20% de descuento
                   </p>
-                  <p className="text-xs">
+                  <p className="text-xs" style={{ color: '#1a1a1a', opacity: 0.8 }}>
                     • En pedidos/remitos se muestran precios originales del sistema
                   </p>
-                  <p className="text-xs">
+                  <p className="text-xs" style={{ color: '#1a1a1a', opacity: 0.8 }}>
                     • Tu facturación final aplicará el descuento correspondiente
                   </p>
                 </div>
@@ -234,19 +200,22 @@ export default function PedidosPage() {
       {/* Header - Responsive */}
       <div className="mb-4 md:mb-8">
         <div className="flex items-center gap-2 mb-1 md:mb-2">
-          <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-900">
+          <h1 className="text-xl md:text-2xl lg:text-3xl font-bold" style={{ color: '#1a1a1a' }}>
             Mis Pedidos
           </h1>
           {esDistribuidor && (
-            <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full font-medium">
+            <span className="text-xs px-2 py-1 rounded-full font-medium" style={{ 
+              backgroundColor: 'rgba(255, 113, 0, 0.2)', 
+              color: '#ff7100' 
+            }}>
               Distribuidor
             </span>
           )}
         </div>
-        <p className="text-sm md:text-base text-gray-600">
+        <p className="text-sm md:text-base" style={{ color: '#1a1a1a', opacity: 0.7 }}>
           Historial completo de todos tus pedidos
           {esDistribuidor && (
-            <span className="block text-xs text-amber-600 mt-1">
+            <span className="block text-xs mt-1" style={{ color: '#ff7100' }}>
               * Los precios mostrados son precios internos del sistema
             </span>
           )}
@@ -256,13 +225,19 @@ export default function PedidosPage() {
       {/* Búsqueda - Siempre visible */}
       <div className="mb-3 md:mb-4">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4" style={{ color: '#1a1a1a', opacity: 0.5 }} />
           <input
             type="text"
             placeholder="Buscar por ID o vendedor..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 md:py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2.5 md:py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+            style={{ 
+              borderColor: '#d3d3d3',
+              color: '#1a1a1a'
+            }}
+            onFocus={(e) => e.target.style.borderColor = '#ff7100'}
+            onBlur={(e) => e.target.style.borderColor = '#d3d3d3'}
           />
         </div>
       </div>
@@ -272,7 +247,11 @@ export default function PedidosPage() {
         {/* Botón para mostrar filtros en móvil */}
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className="md:hidden flex items-center gap-2 px-3 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg mb-3"
+          className="md:hidden flex items-center gap-2 px-3 py-2 text-sm border rounded-lg mb-3"
+          style={{ 
+            color: '#1a1a1a',
+            borderColor: '#d3d3d3'
+          }}
         >
           <Filter className="h-4 w-4" />
           <span>Filtros</span>
@@ -284,7 +263,13 @@ export default function PedidosPage() {
           <select
             value={filtroTipo}
             onChange={(e) => setFiltroTipo(e.target.value)}
-            className="w-full md:w-auto px-3 py-2.5 md:py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full md:w-auto px-3 py-2.5 md:py-2 text-sm border rounded-lg focus:outline-none focus:ring-2"
+            style={{ 
+              borderColor: '#d3d3d3',
+              color: '#1a1a1a'
+            }}
+            onFocus={(e) => e.target.style.borderColor = '#ff7100'}
+            onBlur={(e) => e.target.style.borderColor = '#d3d3d3'}
           >
             <option value="todos">Todos los tipos</option>
             <option value="preliminar">Preliminares</option>
@@ -294,7 +279,13 @@ export default function PedidosPage() {
           <select
             value={filtroEstado}
             onChange={(e) => setFiltroEstado(e.target.value)}
-            className="w-full md:w-auto px-3 py-2.5 md:py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full md:w-auto px-3 py-2.5 md:py-2 text-sm border rounded-lg focus:outline-none focus:ring-2"
+            style={{ 
+              borderColor: '#d3d3d3',
+              color: '#1a1a1a'
+            }}
+            onFocus={(e) => e.target.style.borderColor = '#ff7100'}
+            onBlur={(e) => e.target.style.borderColor = '#d3d3d3'}
           >
             <option value="todos">Todos los estados</option>
             <option value="borrador">Preliminar</option>
@@ -309,22 +300,22 @@ export default function PedidosPage() {
 
       {/* Estadísticas - Grid responsive */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-6">
-        <div className="bg-white rounded-lg shadow-sm border p-3 md:p-4">
+        <div className="bg-white rounded-lg shadow-sm border p-3 md:p-4" style={{ borderColor: '#d3d3d3' }}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs md:text-sm text-gray-600 mb-1">Total Pedidos</p>
-              <p className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900">{pedidos.length}</p>
+              <p className="text-xs md:text-sm mb-1" style={{ color: '#1a1a1a', opacity: 0.7 }}>Total Pedidos</p>
+              <p className="text-lg md:text-xl lg:text-2xl font-bold" style={{ color: '#1a1a1a' }}>{pedidos.length}</p>
             </div>
-            <Package className="h-5 w-5 md:h-6 md:w-6 lg:h-8 lg:w-8 text-blue-600 flex-shrink-0" />
+            <Package className="h-5 w-5 md:h-6 md:w-6 lg:h-8 lg:w-8 flex-shrink-0" style={{ color: '#ff7100' }} />
           </div>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border p-3 md:p-4">
+        <div className="bg-white rounded-lg shadow-sm border p-3 md:p-4" style={{ borderColor: '#d3d3d3' }}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs md:text-sm text-gray-600 mb-1">Preliminares</p>
-              <p className="text-lg md:text-xl lg:text-2xl font-bold text-purple-600">{pedidosPreliminares.length}</p>
+              <p className="text-xs md:text-sm mb-1" style={{ color: '#1a1a1a', opacity: 0.7 }}>Preliminares</p>
+              <p className="text-lg md:text-xl lg:text-2xl font-bold" style={{ color: '#ff0156' }}>{pedidosPreliminares.length}</p>
             </div>
-            <AlertCircle className="h-5 w-5 md:h-6 md:w-6 lg:h-8 lg:w-8 text-purple-600 flex-shrink-0" />
+            <AlertCircle className="h-5 w-5 md:h-6 md:w-6 lg:h-8 lg:w-8 flex-shrink-0" style={{ color: '#ff0156' }} />
           </div>
         </div>
       </div>
@@ -332,16 +323,21 @@ export default function PedidosPage() {
       {/* Lista de pedidos */}
       <div className="space-y-3 md:space-y-4">
         {filteredPedidos.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-sm border p-6 md:p-8 text-center">
-            <Package className="mx-auto h-10 w-10 md:h-12 md:w-12 text-gray-400 mb-4" />
-            <p className="text-gray-500 text-sm md:text-base">No tienes pedidos registrados</p>
+          <div className="bg-white rounded-lg shadow-sm border p-6 md:p-8 text-center" style={{ borderColor: '#d3d3d3' }}>
+            <Package className="mx-auto h-10 w-10 md:h-12 md:w-12 mb-4" style={{ color: '#d3d3d3' }} />
+            <p className="text-sm md:text-base" style={{ color: '#1a1a1a', opacity: 0.7 }}>No tienes pedidos registrados</p>
           </div>
         ) : (
           filteredPedidos.map((pedido) => (
-            <div key={`${pedido.esPreliminar ? 'preliminar' : 'normal'}-${pedido.id}`} 
-                 className={`bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow ${
-                   pedido.esPreliminar ? 'border-l-4 border-l-purple-500' : ''
-                 } ${esDistribuidor ? 'border-l-4 border-l-amber-400' : ''}`}>
+            <div 
+              key={`${pedido.esPreliminar ? 'preliminar' : 'normal'}-${pedido.id}`} 
+              className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow"
+              style={{ 
+                borderColor: '#d3d3d3',
+                ...(pedido.esPreliminar && { borderLeft: '4px solid #ff0156' }),
+                ...(esDistribuidor && !pedido.esPreliminar && { borderLeft: '4px solid #ff7100' })
+              }}
+            >
               
               {/* Header del pedido */}
               <div className="p-3 md:p-4 lg:p-6">
@@ -349,27 +345,13 @@ export default function PedidosPage() {
                   <div className="flex-1 min-w-0">
                     {/* Título y badges */}
                     <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-3">
-                      <h3 className="text-sm md:text-base lg:text-lg font-semibold text-gray-900 truncate">
+                      <h3 className="text-sm md:text-base lg:text-lg font-semibold truncate" style={{ color: '#1a1a1a' }}>
                         {pedido.esPreliminar ? 'Pedido Preliminar' : 'Pedido'} #{pedido.id}
                       </h3>
-                      <div className="flex flex-wrap items-center gap-2">
-                        {getEstadoBadge(pedido.estado ?? '', pedido.esPreliminar)}
-                        {pedido.esPreliminar && (
-                          <span className="text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded-md font-medium">
-                            Pendiente
-                          </span>
-                        )}
-                        {/* ✅ Badge para distribuidores */}
-                        {esDistribuidor && (
-                          <span className="text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded-md font-medium">
-                            Precios internos
-                          </span>
-                        )}
-                      </div>
                     </div>
                     
                     {/* Información del pedido - Stack en móvil */}
-                    <div className="space-y-2 text-xs md:text-sm text-gray-600">
+                    <div className="space-y-2 text-xs md:text-sm" style={{ color: '#1a1a1a', opacity: 0.7 }}>
                       <div className="flex items-center gap-2">
                         <Calendar className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
                         <span className="truncate">
@@ -394,7 +376,18 @@ export default function PedidosPage() {
                   {/* Botón expandir */}
                   <button
                     onClick={() => togglePedidoExpansion(pedido.id!, pedido.esPreliminar)}
-                    className="p-2 md:p-2.5 text-gray-400 hover:text-gray-600 focus:outline-none flex-shrink-0 rounded-lg hover:bg-gray-100 transition-colors"
+                    className="p-2 md:p-2.5 focus:outline-none flex-shrink-0 rounded-lg transition-colors"
+                    style={{ color: '#1a1a1a', opacity: 0.5 }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = '#1a1a1a';
+                      e.currentTarget.style.opacity = '1';
+                      e.currentTarget.style.backgroundColor = 'rgba(211, 211, 211, 0.2)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = '#1a1a1a';
+                      e.currentTarget.style.opacity = '0.5';
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                    }}
                   >
                     {expandedPedido === `${pedido.esPreliminar ? 'preliminar' : 'normal'}-${pedido.id}` ? (
                       <ChevronUp className="h-4 w-4 md:h-5 md:w-5" />
@@ -407,46 +400,40 @@ export default function PedidosPage() {
 
               {/* Panel expandido */}
               {expandedPedido === `${pedido.esPreliminar ? 'preliminar' : 'normal'}-${pedido.id}` && (
-                <div className="border-t bg-gray-50 px-3 md:px-4 lg:px-6 py-3 md:py-4">
-                  
-                  {/* ✅ ADVERTENCIA ESPECÍFICA PARA ESTE PEDIDO (solo distribuidores) */}
-                  {esDistribuidor && (
-                    <div className="mb-4 bg-amber-50 border border-amber-200 rounded-lg p-3">
-                      <div className="flex items-center gap-2">
-                        <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0" />
-                        <div className="text-sm">
-                          <p className="font-medium text-amber-800">
-                            Los precios de este pedido son precios internos del remito
-                          </p>
-                          <p className="text-amber-700 text-xs mt-1">
-                            No reflejan tu descuento de distribuidor del 20%
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
+                <div 
+                  className="border-t px-3 md:px-4 lg:px-6 py-3 md:py-4" 
+                  style={{ 
+                    borderColor: '#d3d3d3',
+                    backgroundColor: 'rgba(211, 211, 211, 0.05)'
+                  }}
+                >
                   {/* Información adicional - solo para pedidos normales */}
                   {!pedido.esPreliminar && (
                     <div className="mb-4">
-                      <h4 className="font-semibold mb-3 text-sm md:text-base text-gray-900">
+                      <h4 className="font-semibold mb-3 text-sm md:text-base" style={{ color: '#1a1a1a' }}>
                         Información Adicional
                       </h4>
                       <div className="space-y-2 text-xs md:text-sm">
                         {'consolidado_id' in pedido && pedido.consolidado_id && (
-                          <p className="text-gray-600">
-                            <span className="font-medium text-gray-900">Consolidado ID:</span> {pedido.consolidado_id}
+                          <p style={{ color: '#1a1a1a', opacity: 0.7 }}>
+                            <span className="font-medium" style={{ color: '#1a1a1a' }}>Consolidado ID:</span> {pedido.consolidado_id}
                           </p>
                         )}
                         {'categoria_principal_id' in pedido && pedido.categoria_principal_id && (
-                          <p className="text-gray-600">
-                            <span className="font-medium text-gray-900">Categoría Principal:</span> {pedido.categoria_principal_id}
+                          <p style={{ color: '#1a1a1a', opacity: 0.7 }}>
+                            <span className="font-medium" style={{ color: '#1a1a1a' }}>Categoría Principal:</span> {pedido.categoria_principal_id}
                           </p>
                         )}
                         {pedido.observaciones_generales && (
                           <div>
-                            <p className="font-medium text-gray-900 mb-1">Observaciones:</p>
-                            <p className="text-gray-600 bg-white p-2 md:p-3 rounded-lg border text-xs md:text-sm">
+                            <p className="font-medium mb-1" style={{ color: '#1a1a1a' }}>Observaciones:</p>
+                            <p 
+                              className="bg-white p-2 md:p-3 rounded-lg border text-xs md:text-sm"
+                              style={{ 
+                                color: '#1a1a1a',
+                                borderColor: '#d3d3d3'
+                              }}
+                            >
                               {pedido.observaciones_generales}
                             </p>
                           </div>
@@ -457,41 +444,42 @@ export default function PedidosPage() {
 
                   {/* Artículos del pedido */}
                   <div>
-                    <h4 className="font-semibold mb-3 text-sm md:text-base text-gray-900">
+                    <h4 className="font-semibold mb-3 text-sm md:text-base" style={{ color: '#1a1a1a' }}>
                       Artículos del Pedido
-                      {/* ✅ Indicador de precios para distribuidores */}
-                      {esDistribuidor && (
-                        <span className="ml-2 text-xs text-amber-600 font-normal">
-                          (Precios internos)
-                        </span>
-                      )}
                     </h4>
                     
                     {loadingArticulos[`${pedido.esPreliminar ? 'preliminar' : 'normal'}-${pedido.id}`] ? (
                       <div className="flex items-center justify-center py-6 md:py-8">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                        <span className="ml-2 text-sm text-gray-600">Cargando artículos...</span>
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2" style={{ borderColor: '#ff7100' }}></div>
+                        <span className="ml-2 text-sm" style={{ color: '#1a1a1a', opacity: 0.7 }}>Cargando artículos...</span>
                       </div>
                     ) : articulosPedido[`${pedido.esPreliminar ? 'preliminar' : 'normal'}-${pedido.id}`] ? (
-                      <div className="bg-white rounded-lg border overflow-hidden">
+                      <div className="bg-white rounded-lg border overflow-hidden" style={{ borderColor: '#d3d3d3' }}>
                         {/* Vista móvil - Cards */}
                         <div className="md:hidden space-y-3 p-3">
                           {articulosPedido[`${pedido.esPreliminar ? 'preliminar' : 'normal'}-${pedido.id}`].map((articulo, index) => (
-                            <div key={index} className="border rounded-lg p-3 bg-gray-50">
+                            <div 
+                              key={index} 
+                              className="border rounded-lg p-3"
+                              style={{ 
+                                borderColor: '#d3d3d3',
+                                backgroundColor: 'rgba(211, 211, 211, 0.05)'
+                              }}
+                            >
                               <div className="space-y-2">
                                 <div>
-                                  <p className="font-medium text-gray-900 text-sm">{articulo.item_nombre}</p>
-                                  <p className="text-xs text-gray-600">{articulo.modelo}</p>
+                                  <p className="font-medium text-sm" style={{ color: '#1a1a1a' }}>{articulo.item_nombre}</p>
+                                  <p className="text-xs" style={{ color: '#1a1a1a', opacity: 0.7 }}>{articulo.modelo}</p>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                  <span className="text-xs text-gray-600">Cantidad:</span>
-                                  <span className="font-semibold text-sm">{articulo.cantidad}</span>
+                                  <span className="text-xs" style={{ color: '#1a1a1a', opacity: 0.7 }}>Cantidad:</span>
+                                  <span className="font-semibold text-sm" style={{ color: '#1a1a1a' }}>{articulo.cantidad}</span>
                                 </div>
                                 {pedido.esPreliminar && 'precio_unitario' in articulo && (
                                   <div className="flex justify-between items-center">
-                                    <span className="text-xs text-gray-600">Precio:</span>
-                                    <div className="text-right">
-                                      {articulo.precio_unitario?.toLocaleString()}
+                                    <span className="text-xs" style={{ color: '#1a1a1a', opacity: 0.7 }}>Precio:</span>
+                                    <div className="text-right font-medium" style={{ color: '#ff7100' }}>
+                                      ${articulo.precio_unitario?.toLocaleString()}
                                     </div>
                                   </div>
                                 )}
@@ -504,31 +492,38 @@ export default function PedidosPage() {
                         <div className="hidden md:block overflow-x-auto">
                           <table className="w-full text-sm">
                             <thead>
-                              <tr className="border-b bg-gray-100">
-                                <th className="text-left py-3 px-4 font-semibold text-gray-900">Item</th>
-                                <th className="text-left py-3 px-4 font-semibold text-gray-900">Modelo</th>
-                                <th className="text-right py-3 px-4 font-semibold text-gray-900">Cantidad</th>
+                              <tr 
+                                className="border-b"
+                                style={{ 
+                                  borderColor: '#d3d3d3',
+                                  backgroundColor: 'rgba(211, 211, 211, 0.1)'
+                                }}
+                              >
+                                <th className="text-left py-3 px-4 font-semibold" style={{ color: '#1a1a1a' }}>Item</th>
+                                <th className="text-left py-3 px-4 font-semibold" style={{ color: '#1a1a1a' }}>Modelo</th>
+                                <th className="text-right py-3 px-4 font-semibold" style={{ color: '#1a1a1a' }}>Cantidad</th>
                                 {pedido.esPreliminar && (
-                                  <th className="text-right py-3 px-4 font-semibold text-gray-900">
+                                  <th className="text-right py-3 px-4 font-semibold" style={{ color: '#1a1a1a' }}>
                                     Precio Unit.
-                                    {esDistribuidor && (
-                                      <span className="block text-xs font-normal text-amber-600">
-                                        (Interno)
-                                      </span>
-                                    )}
                                   </th>
                                 )}
                               </tr>
                             </thead>
                             <tbody>
                               {articulosPedido[`${pedido.esPreliminar ? 'preliminar' : 'normal'}-${pedido.id}`].map((articulo, index) => (
-                                <tr key={index} className="border-b hover:bg-gray-50 transition-colors">
-                                  <td className="py-3 px-4 text-gray-900">{articulo.item_nombre}</td>
-                                  <td className="py-3 px-4 text-gray-600">{articulo.modelo}</td>
-                                  <td className="py-3 px-4 text-right font-medium text-gray-900">{articulo.cantidad}</td>
+                                <tr 
+                                  key={index} 
+                                  className="border-b transition-colors"
+                                  style={{ borderColor: '#d3d3d3' }}
+                                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(211, 211, 211, 0.05)'}
+                                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                >
+                                  <td className="py-3 px-4" style={{ color: '#1a1a1a' }}>{articulo.item_nombre}</td>
+                                  <td className="py-3 px-4" style={{ color: '#1a1a1a', opacity: 0.7 }}>{articulo.modelo}</td>
+                                  <td className="py-3 px-4 text-right font-medium" style={{ color: '#1a1a1a' }}>{articulo.cantidad}</td>
                                   {pedido.esPreliminar && 'precio_unitario' in articulo && (
-                                    <td className="py-3 px-4 text-right">
-                                      {articulo.precio_unitario?.toLocaleString()}
+                                    <td className="py-3 px-4 text-right font-medium" style={{ color: '#ff7100' }}>
+                                      ${articulo.precio_unitario?.toLocaleString()}
                                     </td>
                                   )}
                                 </tr>
@@ -538,8 +533,8 @@ export default function PedidosPage() {
                         </div>
                       </div>
                     ) : (
-                      <div className="bg-white rounded-lg border p-6 text-center">
-                        <p className="text-gray-500 text-sm">No se pudieron cargar los artículos</p>
+                      <div className="bg-white rounded-lg border p-6 text-center" style={{ borderColor: '#d3d3d3' }}>
+                        <p className="text-sm" style={{ color: '#1a1a1a', opacity: 0.7 }}>No se pudieron cargar los artículos</p>
                       </div>
                     )}
                   </div>
