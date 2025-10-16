@@ -51,7 +51,7 @@ export default function NavBar() {
 
   const totalItems = cart.reduce((sum, item) => sum + item.cantidad, 0);
 
-  // ✅ FUNCIÓN PARA FORMATEAR EL CONTADOR
+  // FUNCIÓN PARA FORMATEAR EL CONTADOR
   const formatCartCount = (count: number) => {
     if (count > 99) {
       return '+99';
@@ -105,15 +105,15 @@ export default function NavBar() {
       )}
 
       <nav className="sticky top-0 flex items-center justify-between p-4 lg:px-6 bg-white z-[9999] shadow-sm border-b border-gray-100">
-        {/* Mobile Menu */}
-        <div className="block md:hidden">
+        {/* ✅ Mobile Menu - Activo hasta 1536px (2xl) */}
+        <div className="block 2xl:hidden">
           <Suspense fallback={null}>
             <MobileMenu menu={menu} />
           </Suspense>
         </div>
 
-        {/* Logo + Desktop Nav - Columna izquierda */}
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 md:static md:translate-x-0 md:translate-y-0 flex items-center md:gap-10 md:flex-1">
+        {/* ✅ Logo + Desktop Nav - Solo visible desde 1536px */}
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 2xl:static 2xl:translate-x-0 2xl:translate-y-0 flex items-center 2xl:gap-10 2xl:flex-1">
           <Link href="/public" className="flex items-center">
             <Image
               src="/logo_orange_on_transparent.png"
@@ -122,13 +122,13 @@ export default function NavBar() {
               alt="logo"
             />
           </Link>
-          {/* Desktop Nav */}
-          <ul className="hidden md:flex items-center gap-6 text-sm">
+          {/* Desktop Nav - Solo visible desde 1536px */}
+          <ul className="hidden 2xl:flex items-center gap-6 text-sm">
             {menu.map((item) => (
               <li key={item.title} className="relative group">
                 <Link
                   href={item.path}
-                  className="text-black underline-offset-4 hover:text-orange-600 hover:underline"
+                  className="text-black underline-offset-4 hover:text-orange-600 hover:underline whitespace-nowrap"
                 >
                   {item.title}
                 </Link>
@@ -150,20 +150,19 @@ export default function NavBar() {
           </ul>
         </div>
 
-        {/* Search - Columna central */}
-        <div className="hidden md:flex md:justify-center md:flex-1">
+        {/* ✅ Search - Solo visible desde 1536px */}
+        <div className="hidden 2xl:flex 2xl:justify-center 2xl:flex-1 2xl:max-w-md 2xl:mx-4">
           <Suspense fallback={<SearchSkeleton />}>
             <Search />
           </Suspense>
         </div>
 
-        {/* User + Cart - Columna derecha */}
-        <div className="flex justify-end items-center gap-4 md:flex-1">
-          {/* ✅ MODIFICAR BOTÓN USUARIO PARA PROSPECTOS */}
+        {/* ✅ User + Cart - Siempre visible */}
+        <div className="flex justify-end items-center gap-4 2xl:flex-1">
           {!isProspectoMode && (
             <button
               onClick={() => router.push('/admin')}
-              className="hidden md:block p-1"
+              className="hidden 2xl:block p-1"
               aria-label="Panel de administración"
             >
               <UserCircleIcon className="w-8 h-8 text-gray-700 hover:text-orange-600 transition" />

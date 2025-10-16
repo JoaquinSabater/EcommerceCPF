@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { XMarkIcon, PhotoIcon, TrashIcon, StarIcon, EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import { CldImage, CldUploadWidget } from 'next-cloudinary';
 
@@ -19,7 +19,7 @@ interface DetalleProducto {
   foto4_url?: string;
   foto_portada?: string;
   destacar?: boolean;
-  activo?: boolean; // ✅ Nuevo campo
+  activo?: boolean;
 }
 
 interface EditProductModalProps {
@@ -48,6 +48,9 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
   const [images, setImages] = useState<ImageData[]>([]);
   const [fotoPortada, setFotoPortada] = useState<ImageData>({ publicId: '', url: '', isNew: false, toDelete: false });
   const [loading, setLoading] = useState(false);
+  // ✅ Referencias para los widgets
+  const portadaWidgetRef = useRef<any>(null);
+  const imageWidgetRefs = useRef<any[]>([]);
 
   useEffect(() => {
     if (isOpen && producto) {
@@ -65,7 +68,7 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
         foto4_url: sanitizeValue(producto.foto4_url),
         foto_portada: sanitizeValue(producto.foto_portada),
         destacar: Boolean(producto.destacar),
-        activo: Boolean(producto.activo) // ✅ Nuevo campo
+        activo: Boolean(producto.activo)
       };
       
       setFormData(sanitizedProducto);
@@ -96,6 +99,8 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
       ];
       
       setImages(initialImages);
+      // ✅ Inicializar array de referencias
+      imageWidgetRefs.current = new Array(4).fill(null);
     }
   }, [isOpen, producto]);
 
@@ -117,71 +122,95 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
   };
 
   const handlePortadaUpload = (result: any) => {
-    if (result.info && typeof result.info === 'object' && 'public_id' in result.info) {
-      const publicId = result.info.public_id as string;
-      const secureUrl = result.info.secure_url as string;
-      
-      //console.log('Nueva foto de portada subida:', { publicId, secureUrl });
-      
-      setFotoPortada({
-        publicId: publicId,
-        url: secureUrl,
-        isNew: true,
-        toDelete: false
-      });
-    }
-  };
-
-  const handleDeletePortada = () => {
-    if (fotoPortada.isNew) {
-      setFotoPortada({ publicId: '', url: '', isNew: false, toDelete: false });
-    } else {
-      setFotoPortada(prev => ({ ...prev, toDelete: true }));
-    }
-  };
-
-  const handleRestorePortada = () => {
-    setFotoPortada(prev => ({ ...prev, toDelete: false }));
-  };
-
-  const handleImageUpload = (result: any, index: number) => {
-    if (result.info && typeof result.info === 'object' && 'public_id' in result.info) {
-      const publicId = result.info.public_id as string;
-      const secureUrl = result.info.secure_url as string;
-
-      // console.log('Nueva imagen subida:', { publicId, secureUrl });
-
-      setImages(prev => {
-        const newImages = [...prev];
-        newImages[index] = {
+    try {
+      if (result?.info && typeof result.info === 'object' && 'public_id' in result.info) {
+        const publicId = result.info.public_id as string;
+        const secureUrl = result.info.secure_url as string;
+        
+        console.log('Nueva foto de portada subida:', { publicId, secureUrl });
+        
+        setFotoPortada({
           publicId: publicId,
           url: secureUrl,
           isNew: true,
           toDelete: false
-        };
-        return newImages;
-      });
+        });
+      }
+    } catch (error) {
+      console.error('Error procesando upload de portada:', error);
+    }
+  };
+
+  const handleDeletePortada = () => {
+    try {
+      if (fotoPortada.isNew) {
+        setFotoPortada({ publicId: '', url: '', isNew: false, toDelete: false });
+      } else {
+        setFotoPortada(prev => ({ ...prev, toDelete: true }));
+      }
+    } catch (error) {
+      console.error('Error eliminando portada:', error);
+    }
+  };
+
+  const handleRestorePortada = () => {
+    try {
+      setFotoPortada(prev => ({ ...prev, toDelete: false }));
+    } catch (error) {
+      console.error('Error restaurando portada:', error);
+    }
+  };
+
+  const handleImageUpload = (result: any, index: number) => {
+    try {
+      if (result?.info && typeof result.info === 'object' && 'public_id' in result.info) {
+        const publicId = result.info.public_id as string;
+        const secureUrl = result.info.secure_url as string;
+
+        console.log('Nueva imagen subida:', { publicId, secureUrl, index });
+
+        setImages(prev => {
+          const newImages = [...prev];
+          newImages[index] = {
+            publicId: publicId,
+            url: secureUrl,
+            isNew: true,
+            toDelete: false
+          };
+          return newImages;
+        });
+      }
+    } catch (error) {
+      console.error('Error procesando upload de imagen:', error);
     }
   };
 
   const handleDeleteImage = (index: number) => {
-    setImages(prev => {
-      const newImages = [...prev];
-      if (newImages[index].isNew) {
-        newImages[index] = { publicId: '', url: '', isNew: false, toDelete: false };
-      } else {
-        newImages[index] = { ...newImages[index], toDelete: true };
-      }
-      return newImages;
-    });
+    try {
+      setImages(prev => {
+        const newImages = [...prev];
+        if (newImages[index].isNew) {
+          newImages[index] = { publicId: '', url: '', isNew: false, toDelete: false };
+        } else {
+          newImages[index] = { ...newImages[index], toDelete: true };
+        }
+        return newImages;
+      });
+    } catch (error) {
+      console.error('Error eliminando imagen:', error);
+    }
   };
 
   const handleRestoreImage = (index: number) => {
-    setImages(prev => {
-      const newImages = [...prev];
-      newImages[index] = { ...newImages[index], toDelete: false };
-      return newImages;
-    });
+    try {
+      setImages(prev => {
+        const newImages = [...prev];
+        newImages[index] = { ...newImages[index], toDelete: false };
+        return newImages;
+      });
+    } catch (error) {
+      console.error('Error restaurando imagen:', error);
+    }
   };
 
   const handleSave = async () => {
@@ -197,13 +226,6 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
         foto4_url: images[3].toDelete ? undefined : (images[3].publicId || '') || undefined,
       };
 
-      // console.log('Datos a enviar al servidor:', {
-      //   item_id: updatedProduct.item_id,
-      //   destacar: updatedProduct.destacar,
-      //   activo: updatedProduct.activo, // ✅ Log del nuevo campo
-      //   foto_portada: updatedProduct.foto_portada
-      // });
-
       const response = await fetch(`/api/actualizar?id=${producto.item_id}`, {
         method: 'PUT',
         headers: {
@@ -218,12 +240,11 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
       }
 
       const result = await response.json();
-      //console.log('Respuesta del servidor:', result);
+      console.log('Respuesta del servidor:', result);
 
       onSave(updatedProduct);
       onClose();
       
-      // ✅ Mensaje mejorado que incluye el estado del detalle
       const statusMessages = [];
       if (updatedProduct.destacar) statusMessages.push('marcado como destacado');
       if (updatedProduct.activo) statusMessages.push('detalle activado');
@@ -240,6 +261,37 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
     }
   };
 
+  // ✅ Función segura para abrir portada
+  const openPortadaWidget = () => {
+    try {
+      if (portadaWidgetRef.current && typeof portadaWidgetRef.current === 'function') {
+        portadaWidgetRef.current();
+      } else {
+        console.error('Widget de portada no inicializado');
+        alert('Error: El selector de imágenes no está listo. Intenta de nuevo en unos segundos.');
+      }
+    } catch (error) {
+      console.error('Error abriendo widget de portada:', error);
+      alert('Error al abrir el selector de imágenes. Refresca la página e inténtalo de nuevo.');
+    }
+  };
+
+  // ✅ Función segura para abrir galería
+  const openImageWidget = (index: number) => {
+    try {
+      if (imageWidgetRefs.current[index] && typeof imageWidgetRefs.current[index] === 'function') {
+        imageWidgetRefs.current[index]();
+      } else {
+        console.error(`Widget de galería ${index} no inicializado`);
+        alert('Error: El selector de imágenes no está listo. Intenta de nuevo en unos segundos.');
+      }
+    } catch (error) {
+      console.error(`Error abriendo widget de galería ${index}:`, error);
+      alert('Error al abrir el selector de imágenes. Refresca la página e inténtalo de nuevo.');
+    }
+  };
+
+  // ✅ Componente mejorado para portada
   const renderPortadaSlot = () => {
     if (fotoPortada.publicId && !fotoPortada.toDelete) {
       return (
@@ -258,6 +310,7 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
             <button
               onClick={handleDeletePortada}
               className="bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
+              type="button"
             >
               <TrashIcon className="w-3 h-3" />
             </button>
@@ -276,6 +329,7 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
           <button
             onClick={handleRestorePortada}
             className="text-xs text-blue-500 hover:text-blue-600"
+            type="button"
           >
             Restaurar
           </button>
@@ -284,38 +338,52 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
     }
 
     return (
-      <CldUploadWidget
-        key={`portada-${producto.item_id}`}
-        uploadPreset="cpf_upload"
-        options={{ 
-          maxFiles: 1,
-          folder: `productos/${producto.item_id}/portada`
-        }}
-        onSuccess={handlePortadaUpload}
-      >
-        {({ open }) => (
-          <div 
-            className="border-2 border-dashed border-yellow-300 rounded-lg p-4 text-center hover:border-yellow-500 hover:bg-yellow-50 transition-colors cursor-pointer"
-            onClick={() => {
-              //console.log('Abriendo widget de portada');
-              if (open) open();
+      <div>
+        {/* ✅ Widget invisible para portada */}
+        <div className="hidden">
+          <CldUploadWidget
+            uploadPreset="cpf_upload"
+            options={{ 
+              maxFiles: 1,
+              folder: `productos/${producto.item_id}/portada`,
+              clientAllowedFormats: ['jpg', 'jpeg', 'png', 'webp'],
+              maxFileSize: 10000000
+            }}
+            onSuccess={handlePortadaUpload}
+            onError={(error) => {
+              console.error('Error en upload de portada:', error);
+              alert('Error al subir la imagen de portada. Inténtalo de nuevo.');
             }}
           >
-            <div className="flex items-center justify-center mb-2">
-              <StarIcon className="w-8 h-8 text-yellow-400" />
-            </div>
-            <p className="text-sm text-gray-500 mb-2">
-              Haz clic para subir imagen de portada
-            </p>
-            <p className="text-xs text-yellow-600 font-semibold">
-              FOTO PRINCIPAL (Se muestra en las cards)
-            </p>
+            {({ open }) => {
+              // ✅ Guardar referencia del widget
+              portadaWidgetRef.current = open;
+              return null;
+            }}
+          </CldUploadWidget>
+        </div>
+        
+        {/* ✅ Botón visible */}
+        <button
+          type="button"
+          className="w-full border-2 border-dashed border-yellow-300 rounded-lg p-4 text-center hover:border-yellow-500 hover:bg-yellow-50 transition-colors"
+          onClick={openPortadaWidget}
+        >
+          <div className="flex items-center justify-center mb-2">
+            <StarIcon className="w-8 h-8 text-yellow-400" />
           </div>
-        )}
-      </CldUploadWidget>
+          <p className="text-sm text-gray-500 mb-2">
+            Haz clic para subir imagen de portada
+          </p>
+          <p className="text-xs text-yellow-600 font-semibold">
+            FOTO PRINCIPAL (Se muestra en las cards)
+          </p>
+        </button>
+      </div>
     );
   };
 
+  // ✅ Componente mejorado para imágenes de galería
   const renderImageSlot = (image: ImageData, index: number) => {
     if (image.publicId && !image.toDelete) {
       return (
@@ -331,6 +399,7 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
             <button
               onClick={() => handleDeleteImage(index)}
               className="bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
+              type="button"
             >
               <TrashIcon className="w-3 h-3" />
             </button>
@@ -346,6 +415,7 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
           <button
             onClick={() => handleRestoreImage(index)}
             className="text-xs text-blue-500 hover:text-blue-600"
+            type="button"
           >
             Restaurar
           </button>
@@ -354,33 +424,46 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
     }
 
     return (
-      <CldUploadWidget
-        key={`galeria-${producto.item_id}-${index}`}
-        uploadPreset="cpf_upload"
-        options={{ 
-          maxFiles: 1,
-          folder: `productos/${producto.item_id}/galeria`
-        }}
-        onSuccess={(result) => handleImageUpload(result, index)}
-      >
-        {({ open }) => (
-          <div 
-            className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-orange-500 hover:bg-orange-50 transition-colors cursor-pointer"
-            onClick={() => {
-              //console.log(`Abriendo widget de galería ${index + 1}`);
-              if (open) open();
+      <div>
+        {/* ✅ Widget invisible para galería */}
+        <div className="hidden">
+          <CldUploadWidget
+            uploadPreset="cpf_upload"
+            options={{ 
+              maxFiles: 1,
+              folder: `productos/${producto.item_id}/galeria`,
+              clientAllowedFormats: ['jpg', 'jpeg', 'png', 'webp'],
+              maxFileSize: 10000000
+            }}
+            onSuccess={(result) => handleImageUpload(result, index)}
+            onError={(error) => {
+              console.error(`Error en upload de imagen ${index + 1}:`, error);
+              alert(`Error al subir la imagen ${index + 1}. Inténtalo de nuevo.`);
             }}
           >
-            <PhotoIcon className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-            <p className="text-sm text-gray-500 mb-2">
-              Haz clic para subir imagen
-            </p>
-            <p className="text-xs text-orange-500">
-              Galería {index + 1}
-            </p>
-          </div>
-        )}
-      </CldUploadWidget>
+            {({ open }) => {
+              // ✅ Guardar referencia del widget
+              imageWidgetRefs.current[index] = open;
+              return null;
+            }}
+          </CldUploadWidget>
+        </div>
+        
+        {/* ✅ Botón visible */}
+        <button
+          type="button"
+          className="w-full border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-orange-500 hover:bg-orange-50 transition-colors"
+          onClick={() => openImageWidget(index)}
+        >
+          <PhotoIcon className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+          <p className="text-sm text-gray-500 mb-2">
+            Haz clic para subir imagen
+          </p>
+          <p className="text-xs text-orange-500">
+            Galería {index + 1}
+          </p>
+        </button>
+      </div>
     );
   };
 
@@ -393,13 +476,13 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
       <div className="relative bg-white rounded-lg shadow-2xl max-w-5xl mx-auto max-h-[95vh] overflow-y-auto w-full">
         <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center z-10">
           <h2 className="text-xl font-semibold">Editar Producto</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600" type="button">
             <XMarkIcon className="w-6 h-6" />
           </button>
         </div>
 
         <div className="p-6 space-y-6">
-          {/* ✅ Sección de controles principales */}
+          {/* Sección de controles principales */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Switch para activar detalle */}
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
@@ -455,7 +538,7 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
             </div>
           </div>
 
-          {/* ✅ Campos de características - solo visible si activo está marcado */}
+          {/* Campos de características - solo visible si activo está marcado */}
           {formData.activo && (
             <div className="border border-blue-200 rounded-lg p-4 bg-blue-50">
               <h3 className="text-lg font-semibold text-blue-800 mb-4 flex items-center">
@@ -532,7 +615,7 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
             </div>
           )}
 
-          {/* ✅ Mensaje cuando las características están desactivadas */}
+          {/* Mensaje cuando las características están desactivadas */}
           {!formData.activo && (
             <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
               <div className="flex items-center text-gray-500">
@@ -609,6 +692,7 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
               onClick={onClose}
               className="px-6 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
               disabled={loading}
+              type="button"
             >
               Cancelar
             </button>
@@ -616,6 +700,7 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
               onClick={handleSave}
               disabled={loading}
               className="px-6 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              type="button"
             >
               {loading && (
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>

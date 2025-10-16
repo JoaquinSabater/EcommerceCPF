@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Carrito",
+  title: "CPF | Ecommerce",
   description: "Carrito de compras cpf",
 };
 

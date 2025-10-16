@@ -26,7 +26,7 @@ export default function MobileMenu({ menu }: { menu: MenuItem[] }) {
 
   const totalItems = cart.reduce((sum, item) => sum + item.cantidad, 0);
 
-  // ✅ FUNCIÓN PARA FORMATEAR EL CONTADOR
+  // FUNCIÓN PARA FORMATEAR EL CONTADOR
   const formatCartCount = (count: number) => {
     if (count > 99) {
       return '+99';
@@ -36,9 +36,10 @@ export default function MobileMenu({ menu }: { menu: MenuItem[] }) {
 
   return (
     <>
+      {/* ✅ Cambio del breakpoint de md:hidden a 2xl:hidden */}
       <button
         onClick={() => setIsOpen(true)}
-        className="block md:hidden p-2 border rounded text-black bg-white"
+        className="block 2xl:hidden p-2 border rounded text-black bg-white"
       >
         <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none">
           <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="2" />
@@ -55,7 +56,7 @@ export default function MobileMenu({ menu }: { menu: MenuItem[] }) {
             
             {/* User + Cart icons */}
             <div className="flex items-center gap-4">
-              {/* ✅ SOLO MOSTRAR USUARIO SI NO ES PROSPECTO */}
+              {/* SOLO MOSTRAR USUARIO SI NO ES PROSPECTO */}
               {!isProspectoMode && (
                 <button
                   onClick={() => {
@@ -69,7 +70,7 @@ export default function MobileMenu({ menu }: { menu: MenuItem[] }) {
                 </button>
               )}
 
-              {/* ✅ CARRITO CON CONTADOR MEJORADO */}
+              {/* CARRITO CON CONTADOR MEJORADO */}
               <button
                 onClick={() => {
                   setIsOpen(false);
