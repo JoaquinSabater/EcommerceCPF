@@ -1,40 +1,94 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { User } from '@/types/types';
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
+    checkAuth();
+  }, []);
+
+  const checkAuth = () => {
+    try {
+      const storedUser = localStorage.getItem('user');
+      
+      if (storedUser) {
         const parsedUser: User = JSON.parse(storedUser);
         
         if (!parsedUser.isAdmin && (parsedUser.id === 2223)) {
           parsedUser.isAdmin = true;
         }
         
-        // ✅ Logging para debugging
-        // console.log('🔍 Usuario cargado desde localStorage:', {
-        //   id: parsedUser.id,
-        //   nombre: parsedUser.nombre,
-        //   Distribuidor: parsedUser.Distribuidor,
-        //   isDistribuidor: parsedUser.Distribuidor === 1
-        // });
-        
         setUser(parsedUser);
         clearProspectoMode();
         
-      } catch (error) {
-        console.error('Error parsing user data:', error);
-        localStorage.removeItem('user');
+        // Establecer cookies para el middleware
+        setCookies(parsedUser);
+        
+      } else {
+        // Rutas públicas que NO requieren autenticación
+        const publicRoutes = [
+          '/',
+          '/auth/forgot-password',
+          '/auth/set-password',
+          '/auth/reset-password'
+        ];
+        
+        // Si no hay usuario y no estamos en una ruta pública, redirigir al login
+        if (!publicRoutes.includes(pathname)) {
+          clearAuthData();
+          router.push('/');
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing user data:', error);
+      clearAuthData();
+      
+      // Rutas públicas que NO requieren autenticación
+      const publicRoutes = [
+        '/',
+        '/auth/forgot-password',
+        '/auth/set-password',
+        '/auth/reset-password'
+      ];
+      
+      if (!publicRoutes.includes(pathname)) {
+        router.push('/');
       }
     }
     setLoading(false);
-  }, []);
+  };
+
+  const setCookies = (userData: User) => {
+    // Generar token simple pero más seguro
+    const token = `${userData.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Establecer cookies con configuración segura
+    const maxAge = 86400; // 24 horas
+    const cookieOptions = `path=/; max-age=${maxAge}; SameSite=Strict; ${
+      typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'Secure;' : ''
+    }`;
+    
+    document.cookie = `auth_user=${encodeURIComponent(JSON.stringify(userData))}; ${cookieOptions}`;
+    document.cookie = `auth_token=${token}; ${cookieOptions}`;
+  };
+
+  const clearAuthData = () => {
+    localStorage.removeItem('user');
+    
+    // Limpiar cookies de forma más robusta
+    const expireDate = 'Thu, 01 Jan 1970 00:00:01 GMT';
+    document.cookie = `auth_user=; path=/; expires=${expireDate}`;
+    document.cookie = `auth_token=; path=/; expires=${expireDate}`;
+    
+    clearProspectoMode();
+  };
 
   const clearProspectoMode = () => {
     localStorage.removeItem('prospecto_mode');
@@ -44,67 +98,37 @@ export function useAuth() {
   };
 
   const logout = () => {
-    localStorage.removeItem('user');
+    clearAuthData();
     setUser(null);
-    window.location.href = '/';
+    router.push('/');
   };
 
   const updateUser = (userData: User) => {
-    // ✅ Logging para debugging
-    // console.log('🔄 Actualizando usuario:', {
-    //   id: userData.id,
-    //   nombre: userData.nombre,
-    //   Distribuidor: userData.Distribuidor,
-    //   isDistribuidor: userData.Distribuidor === 1
-    // });
-    
     setUser(userData);
     localStorage.setItem('user', JSON.stringify(userData));
+    setCookies(userData);
     clearProspectoMode();
   };
 
+  // ✅ MODIFICAR: Login con establecimiento de cookies
   const login = (userData: User) => {
-    // console.log('✅ Usuario autenticando:', {
-    //   id: userData.id,
-    //   nombre: userData.nombre,
-    //   Distribuidor: userData.Distribuidor,
-    //   isDistribuidor: userData.Distribuidor === 1
-    // });
-    
     setUser(userData);
     localStorage.setItem('user', JSON.stringify(userData));
+    setCookies(userData);
     clearProspectoMode();
-    
-    //console.log('✅ Usuario autenticado, modo prospecto limpiado');
   };
 
   const getPrecioConDescuento = (precioOriginal: number): number => {
     const esDistribuidor = user?.Distribuidor === 1;
-    const resultado = esDistribuidor ? precioOriginal * 0.80 : precioOriginal;
-    
-    // console.log('💰 Calculando precio:', {
-    //   precioOriginal,
-    //   userId: user?.id,
-    //   Distribuidor: user?.Distribuidor,
-    //   esDistribuidor,
-    //   precioConDescuento: resultado
-    // });
-    
-    return resultado;
+    if (esDistribuidor) {
+      const precioConDescuento = precioOriginal * 0.80;
+      return Math.ceil(precioConDescuento * 100) / 100;
+    }
+    return precioOriginal;
   };
 
   const isDistribuidor = (): boolean => {
-    const resultado = user?.Distribuidor === 1;
-    
-    // ✅ Logging detallado para debugging
-    // console.log('🏢 Verificando distribuidor:', {
-    //   userId: user?.id,
-    //   nombre: user?.nombre,
-    //   Distribuidor: user?.Distribuidor,
-    //   resultado
-    // });
-    
-    return resultado;
+    return user?.Distribuidor === 1;
   };
 
   return {
@@ -116,6 +140,7 @@ export function useAuth() {
     isAuthenticated: !!user,
     isAdmin: user?.isAdmin || user?.id === 2223,
     getPrecioConDescuento,
-    isDistribuidor
+    isDistribuidor,
+    checkAuth
   };
 }

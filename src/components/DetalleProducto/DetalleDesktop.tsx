@@ -12,7 +12,7 @@ interface ProductoFormateado {
   caracteristicas: any[];
   imagenes?: string[];
   sugerencia?: string;
-  mostrarCaracteristicas?: boolean; // ✅ Nueva prop para controlar características
+  mostrarCaracteristicas?: boolean;
 }
 
 interface DetalleDesktopProps {
@@ -28,21 +28,31 @@ export default function DetalleDesktop({ producto, onSugerenciaChange }: Detalle
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [sugerencia, setSugerencia] = useState(producto.sugerencia || '');
+  const [imageLoading, setImageLoading] = useState(false);
 
   const nextImage = () => {
+    setImageLoading(true);
     setCurrentImageIndex((prev) => 
       prev === todasLasImagenes.length - 1 ? 0 : prev + 1
     );
   };
 
   const prevImage = () => {
+    setImageLoading(true);
     setCurrentImageIndex((prev) => 
       prev === 0 ? todasLasImagenes.length - 1 : prev - 1
     );
   };
 
   const goToImage = (index: number) => {
-    setCurrentImageIndex(index);
+    if (index !== currentImageIndex) {
+      setImageLoading(true);
+      setCurrentImageIndex(index);
+    }
+  };
+
+  const handleImageLoad = () => {
+    setImageLoading(false);
   };
 
   const handleSugerenciaChange = (value: string) => {
@@ -56,12 +66,11 @@ export default function DetalleDesktop({ producto, onSugerenciaChange }: Detalle
     <div className="rounded-lg bg-white shadow-sm">
       <div className="flex w-full items-start p-6">
         <div className="flex-1 flex flex-col justify-start pr-8">
-          {/* ✅ SIEMPRE MOSTRAR: Tipo, nombre y descripción */}
+          {/* ...existing code... */}
           <div className="mb-2 text-xs text-gray-500">Vidrio templado</div>
           <div className="font-bold text-3xl mb-2">{producto.nombre}</div>
           <div className="text-gray-700 mb-4 text-lg">{producto.descripcion}</div>
           
-          {/* ✅ SIEMPRE MOSTRAR: Campo de sugerencias */}
           <div className="mb-4">
             <label className="block text-sm font-bold text-orange-600 mb-2">
               SUGERENCIAS ESPECIALES
@@ -78,7 +87,6 @@ export default function DetalleDesktop({ producto, onSugerenciaChange }: Detalle
             </div>
           </div>
 
-          {/* ✅ SOLO OCULTAR ESTA SECCIÓN: Tabla de características */}
           {producto.mostrarCaracteristicas && (
             <>
               <div className="mb-2 font-bold text-orange-600 text-xl">CARACTERÍSTICAS</div>
@@ -104,26 +112,41 @@ export default function DetalleDesktop({ producto, onSugerenciaChange }: Detalle
             <div className="flex items-center justify-center rounded-lg overflow-hidden">
               {todasLasImagenes.length > 0 ? (
                 <div className="relative w-full h-[500px] flex items-center justify-center">
+                  {/* Loading overlay */}
+                  {imageLoading && (
+                    <div className="absolute inset-0 bg-white flex items-center justify-center z-20 rounded-lg">
+                      <div className="flex flex-col items-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mb-2"></div>
+                        <span className="text-sm text-gray-500">Cargando imagen...</span>
+                      </div>
+                    </div>
+                  )}
+                  
                   <CldImage
                     src={todasLasImagenes[currentImageIndex]}
                     alt={`${producto.nombre} - Imagen ${currentImageIndex + 1}`}
                     width={400}
                     height={500}
-                    className="object-contain max-h-full w-auto rounded-lg"
+                    className={`object-contain max-h-full w-auto rounded-lg transition-opacity duration-200 ${
+                      imageLoading ? 'opacity-0' : 'opacity-100'
+                    }`}
+                    onLoad={handleImageLoad}
                   />
                   
                   {todasLasImagenes.length > 1 && (
                     <>
                       <button
                         onClick={prevImage}
-                        className="absolute left-3 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-20 text-gray-700 p-3 rounded-full hover:bg-opacity-40 transition-all z-10 backdrop-blur-sm"
+                        disabled={imageLoading}
+                        className="absolute left-3 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-20 text-gray-700 p-3 rounded-full hover:bg-opacity-40 transition-all z-10 backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <ChevronLeftIcon className="w-6 h-6" />
                       </button>
                       
                       <button
                         onClick={nextImage}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-20 text-gray-700 p-3 rounded-full hover:bg-opacity-40 transition-all z-10 backdrop-blur-sm"
+                        disabled={imageLoading}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-20 text-gray-700 p-3 rounded-full hover:bg-opacity-40 transition-all z-10 backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <ChevronRightIcon className="w-6 h-6" />
                       </button>
@@ -153,11 +176,12 @@ export default function DetalleDesktop({ producto, onSugerenciaChange }: Detalle
                   <button
                     key={index}
                     onClick={() => goToImage(index)}
-                    className={`w-3 h-3 rounded-full transition-all ${
+                    disabled={imageLoading}
+                    className={`w-3 h-3 rounded-full transition-all disabled:cursor-not-allowed ${
                       index === currentImageIndex 
                         ? 'bg-orange-600' 
                         : 'bg-gray-300 hover:bg-gray-400'
-                    }`}
+                    } ${imageLoading ? 'opacity-50' : ''}`}
                   />
                 ))}
               </div>

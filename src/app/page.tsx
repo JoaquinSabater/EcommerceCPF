@@ -2,12 +2,14 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useAuth } from '@/hooks/useAuth'; // ✅ AGREGAR IMPORT
 import { LoginResponse } from '@/types/types';
 import Link from 'next/link';
 import { EyeIcon, EyeSlashIcon, ExclamationTriangleIcon} from '@heroicons/react/24/outline';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useAuth(); // ✅ USAR EL HOOK
   const [cuil, setCuil] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -19,7 +21,7 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
-    setClienteDeshabilitado(false); // Reset estado
+    setClienteDeshabilitado(false);
 
     try {
       const response = await fetch('/api/auth/login', {
@@ -33,26 +35,37 @@ export default function LoginPage() {
       const data: LoginResponse = await response.json();
 
       if (response.ok && data.success) {
-        //console.log('Usuario logueado:', data.cliente?.nombre);
-        localStorage.setItem('user', JSON.stringify(data.cliente));
-        localStorage.setItem('token', data.token || '');
+        // ✅ USAR EL HOOK PARA ESTABLECER COOKIES Y USUARIO
+        if (data.cliente) {
+          login(data.cliente);
+        } else {
+          // Si la respuesta fue exitosa pero no viene cliente, evitar llamar a login con undefined
+          console.warn('Login succeeded but no cliente returned from API');
+        }
         
+        // ✅ MANEJAR CONFIGURACIÓN DE CONTRASEÑA ANTES DE REDIRIGIR
         if (data.requiresPasswordSetup) {
           const wantsToSetPassword = confirm(
             'Por seguridad, ¿te gustaría configurar una contraseña ahora? (Puedes hacerlo después desde tu perfil)'
           );
           
           if (wantsToSetPassword) {
-            router.push('/auth/set-password');
+            // ✅ DAR TIEMPO PARA COOKIES Y REDIRIGIR
+            setTimeout(() => {
+              window.location.href = '/auth/set-password';
+            }, 200);
             return;
           }
         }
         
-        router.push("/public");
+        // ✅ DAR TIEMPO PARA COOKIES Y REDIRIGIR CON RECARGA COMPLETA
+        setTimeout(() => {
+          window.location.href = '/public';
+        }, 200);
+        
       } else {
         setError(data.message || 'Error al iniciar sesión');
         
-        // ✅ AQUÍ es donde debes verificar si está deshabilitado (DESPUÉS de obtener data)
         if (data.disabled) {
           setClienteDeshabilitado(true);
         }

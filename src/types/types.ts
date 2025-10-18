@@ -31,18 +31,19 @@ export interface User {
   apellido: string;
   email: string;
   telefono: string;
-  domicilio: string;
+  domicilio?: string; // ✅ Hacer opcional si no siempre viene
   cuil: string;
   isAdmin?: boolean;
   hasPassword?: boolean;
   Distribuidor?: number;
+  vendedor_id?: number; // ✅ AGREGAR este campo que viene del login
 }
 
 export interface LoginResponse {
   success: boolean;
   message: string;
   token?: string;
-  cliente?: {  // ✅ Cambié de 'user' a 'cliente'
+  cliente?: {
     id: number;
     cuil: string;
     nombre: string;
@@ -50,9 +51,11 @@ export interface LoginResponse {
     email: string;
     telefono: string;
     vendedor_id: number;
+    Distribuidor?: number; // ✅ AGREGAR este campo también
+    isAdmin?: boolean; // ✅ AGREGAR este campo también
   };
   requiresPasswordSetup?: boolean;
-  disabled?: boolean; // ✅ Agregué esta propiedad
+  disabled?: boolean;
 }
 
 export interface LoginRequest {
