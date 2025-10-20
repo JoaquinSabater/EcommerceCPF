@@ -12,22 +12,34 @@ function LisasContent() {
   const { selectedMarca } = useFilters();
   const [categorias, setCategorias] = useState<categorias[]>([]);
   const [loading, setLoading] = useState(true);
-  const subcategoriaId = 10;
+  // ✅ CAMBIO: Array con múltiples subcategorías
+  const subcategoriasIds = [10, 22]; // Fundas lisas (10) + Protectores r original (22)
 
   useEffect(() => {
     const fetchCategorias = async () => {
       setLoading(true);
       try {
-        const url = selectedMarca 
-          ? `/api/categorias-filtradas?subcategoriaId=${subcategoriaId}&marcaId=${selectedMarca.id}`
-          : `/api/categorias-filtradas?subcategoriaId=${subcategoriaId}`;
-          
-        const response = await fetch(url);
-        const data = await response.json();
+        // ✅ CAMBIO: Hacer múltiples requests para cada subcategoría
+        const promises = subcategoriasIds.map(subcategoriaId => {
+          const url = selectedMarca 
+            ? `/api/categorias-filtradas?subcategoriaId=${subcategoriaId}&marcaId=${selectedMarca.id}`
+            : `/api/categorias-filtradas?subcategoriaId=${subcategoriaId}`;
+          return fetch(url);
+        });
+
+        const responses = await Promise.all(promises);
+        const dataPromises = responses.map(response => response.json());
+        const results = await Promise.all(dataPromises);
         
-        if (data.success) {
-          setCategorias(data.categorias);
-        }
+        // ✅ CAMBIO: Combinar resultados de todas las subcategorías
+        const todasLasCategorias = results.reduce((acc, result) => {
+          if (result.success) {
+            return [...acc, ...result.categorias];
+          }
+          return acc;
+        }, []);
+        
+        setCategorias(todasLasCategorias);
       } catch (error) {
         console.error('Error cargando categorías:', error);
       } finally {
@@ -36,7 +48,7 @@ function LisasContent() {
     };
 
     fetchCategorias();
-  }, [selectedMarca, subcategoriaId]);
+  }, [selectedMarca]); // ✅ CAMBIO: Quité subcategoriaId de las dependencias
 
   return (
     <div className="flex">
@@ -63,8 +75,8 @@ function LisasContent() {
                 <div className="text-center py-12">
                   <p className="text-gray-500 text-lg">
                     {selectedMarca 
-                      ? `No hay fundas lisas de ${selectedMarca.nombre} disponibles en este momento.`
-                      : 'No hay fundas lisas disponibles en este momento.'
+                      ? `No hay productos de ${selectedMarca.nombre} disponibles en este momento.`
+                      : 'No hay productos disponibles en este momento.'
                     }
                   </p>
                 </div>

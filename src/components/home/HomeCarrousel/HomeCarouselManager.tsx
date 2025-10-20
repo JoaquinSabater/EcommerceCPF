@@ -23,6 +23,9 @@ export default function HomeCarouselManager() {
   const [isCreating, setIsCreating] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  // ✅ AGREGAR: Estados para controlar uploads
+  const [uploadingDesktop, setUploadingDesktop] = useState(false);
+  const [uploadingMobile, setUploadingMobile] = useState(false);
   const { isAdmin } = useAuth();
 
   // Cargar slides
@@ -96,7 +99,7 @@ export default function HomeCarouselManager() {
         setIsEditing(false);
         setIsCreating(false);
         setEditingSlide(null);
-        // console.log(`✅ Slide ${isCreating ? 'creada' : 'actualizada'} exitosamente`);
+        console.log(`✅ Slide ${isCreating ? 'creada' : 'actualizada'} exitosamente`);
       } else {
         const error = await response.json();
         alert(error.error || 'Error al guardar la slide');
@@ -119,26 +122,37 @@ export default function HomeCarouselManager() {
 
       if (response.ok) {
         await fetchSlides();
-        //console.log('✅ Slide eliminada');
+        console.log('✅ Slide eliminada');
       }
     } catch (error) {
       console.error('Error deleting slide:', error);
     }
   };
 
+  // ✅ MEJORAR: Función de upload más robusta
   const handleImageUpload = (result: any, isDesktop: boolean) => {
     if (!editingSlide) return;
     
-    // Usar el mismo formato que en EditProductModal
+    console.log('Upload result:', result);
+    
     if (result.info && typeof result.info === 'object' && 'public_id' in result.info) {
       const publicId = result.info.public_id as string;
-      //console.log('Upload successful:', { publicId, isDesktop });
+      console.log(`✅ Upload successful:`, { publicId, isDesktop, currentSlide: editingSlide });
       
-      const field = isDesktop ? 'imagen_desktop' : 'imagen_mobile';
-      setEditingSlide({
-        ...editingSlide,
-        [field]: publicId
+      // ✅ USAR SPREAD OPERATOR para mantener todo el estado
+      setEditingSlide(prevSlide => {
+        if (!prevSlide) return null;
+        
+        const updatedSlide = {
+          ...prevSlide,
+          [isDesktop ? 'imagen_desktop' : 'imagen_mobile']: publicId
+        };
+        
+        console.log('Updated slide:', updatedSlide);
+        return updatedSlide;
       });
+    } else {
+      console.error('Error en upload:', result);
     }
   };
 
@@ -146,6 +160,9 @@ export default function HomeCarouselManager() {
     setIsEditing(false);
     setIsCreating(false);
     setEditingSlide(null);
+    // ✅ LIMPIAR estados de upload
+    setUploadingDesktop(false);
+    setUploadingMobile(false);
   };
 
   if (!isAdmin || loading) return null;
@@ -258,64 +275,109 @@ export default function HomeCarouselManager() {
               />
             </div>
 
-            {/* ✅ Imagen Desktop - Sin key complicada */}
+            {/* ✅ DEBUG: Mostrar valores actuales */}
+            <div className="mb-2 p-2 bg-gray-100 rounded text-xs">
+              <strong>Debug:</strong> Desktop: {editingSlide.imagen_desktop || 'vacío'} | Mobile: {editingSlide.imagen_mobile || 'vacío'}
+            </div>
+
+            {/* ✅ Imagen Desktop - Mejorada */}
             <div className="mb-4">
               <label className="block text-sm font-medium mb-1">Imagen Desktop * (1200x500px recomendado)</label>
               <div className="flex items-center gap-3">
                 <CldUploadWidget
                   uploadPreset="cpf_upload"
-                  onSuccess={(result) => handleImageUpload(result, true)}
+                  onSuccess={(result) => {
+                    setUploadingDesktop(false);
+                    handleImageUpload(result, true);
+                  }}
+                  onError={(error) => {
+                    setUploadingDesktop(false);
+                    console.error('Error upload desktop:', error);
+                  }}
                 >
                   {({ open }) => (
                     <button
                       type="button"
-                      onClick={() => open?.()}
-                      className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                      onClick={() => {
+                        setUploadingDesktop(true);
+                        open?.();
+                      }}
+                      disabled={uploadingDesktop}
+                      className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
                     >
-                      {editingSlide.imagen_desktop ? 'Cambiar' : 'Subir'} Desktop
+                      {uploadingDesktop ? 'Subiendo...' : (editingSlide.imagen_desktop ? 'Cambiar' : 'Subir')} Desktop
                     </button>
                   )}
                 </CldUploadWidget>
                 
                 {editingSlide.imagen_desktop && (
-                  <CldImage
-                    src={editingSlide.imagen_desktop}
-                    alt="Preview desktop"
-                    width={80}
-                    height={50}
-                    className="rounded object-cover"
-                  />
+                  <div className="flex items-center gap-2">
+                    <CldImage
+                      src={editingSlide.imagen_desktop}
+                      alt="Preview desktop"
+                      width={80}
+                      height={50}
+                      className="rounded object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setEditingSlide({ ...editingSlide, imagen_desktop: '' })}
+                      className="text-red-600 hover:text-red-800 text-sm"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
 
-            {/* ✅ Imagen Mobile - Sin key complicada */}
+            {/* ✅ Imagen Mobile - Mejorada */}
             <div className="mb-4">
               <label className="block text-sm font-medium mb-1">Imagen Mobile * (768x250px recomendado)</label>
               <div className="flex items-center gap-3">
                 <CldUploadWidget
                   uploadPreset="cpf_upload"
-                  onSuccess={(result) => handleImageUpload(result, false)}
+                  onSuccess={(result) => {
+                    setUploadingMobile(false);
+                    handleImageUpload(result, false);
+                  }}
+                  onError={(error) => {
+                    setUploadingMobile(false);
+                    console.error('Error upload mobile:', error);
+                  }}
                 >
                   {({ open }) => (
                     <button
                       type="button"
-                      onClick={() => open?.()}
-                      className="px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                      onClick={() => {
+                        setUploadingMobile(true);
+                        open?.();
+                      }}
+                      disabled={uploadingMobile}
+                      className="px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
                     >
-                      {editingSlide.imagen_mobile ? 'Cambiar' : 'Subir'} Mobile
+                      {uploadingMobile ? 'Subiendo...' : (editingSlide.imagen_mobile ? 'Cambiar' : 'Subir')} Mobile
                     </button>
                   )}
                 </CldUploadWidget>
                 
                 {editingSlide.imagen_mobile && (
-                  <CldImage
-                    src={editingSlide.imagen_mobile}
-                    alt="Preview mobile"
-                    width={80}
-                    height={50}
-                    className="rounded object-cover"
-                  />
+                  <div className="flex items-center gap-2">
+                    <CldImage
+                      src={editingSlide.imagen_mobile}
+                      alt="Preview mobile"
+                      width={80}
+                      height={50}
+                      className="rounded object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setEditingSlide({ ...editingSlide, imagen_mobile: '' })}
+                      className="text-red-600 hover:text-red-800 text-sm"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
@@ -353,7 +415,7 @@ export default function HomeCarouselManager() {
               </button>
               <button
                 onClick={handleSave}
-                disabled={saving}
+                disabled={saving || uploadingDesktop || uploadingMobile}
                 className="px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700 disabled:opacity-50"
               >
                 {saving ? 'Guardando...' : (isCreating ? 'Crear' : 'Guardar')}

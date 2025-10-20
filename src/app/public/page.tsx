@@ -22,24 +22,30 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <section className="container mx-auto px-4 py-6 md:py-8">
-        <div className="relative">
+      {/* ✅ CAROUSEL FUERA DEL CONTENEDOR - Edge to edge en mobile */}
+      <section className="relative">
+        {/* Contenedor solo para el botón de admin en desktop */}
+        <div className="container mx-auto px-4 relative z-10">
           {isAdmin && (
             <button
               onClick={() => setShowCarouselAdmin(!showCarouselAdmin)}
-              className="absolute top-4 left-4 z-20 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-all backdrop-blur-sm"
+              className="absolute top-4 left-4 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-all backdrop-blur-sm"
               title="Administrar carousel"
             >
               <CogIcon className="w-5 h-5" />
             </button>
           )}
-          
+        </div>
+        
+        {/* ✅ Carousel sin contenedor - Full width */}
+        <div className="w-full">
           <HomeCarousel />
         </div>
       </section>
 
+      {/* ✅ Admin del carousel con padding normal */}
       {showCarouselAdmin && isAdmin && (
-        <section className="container mx-auto px-4 pb-8">
+        <section className="container mx-auto px-4 py-6">
           <HomeCarouselManager />
           <div className="mt-4 text-center">
             <button

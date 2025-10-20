@@ -24,10 +24,8 @@ export default function NavBar() {
   const router = useRouter();
 
   const menu = [
-    { title: 'Baterias', path: '/public/baterias' },
     { title: 'Cables', path: '/public/cables' },
     { title: 'Vidrios', path: '/public/vidrios' },
-    { title: 'Modulos', path: '/public/pantallas' },
     {
       title: 'Fundas',
       path: '/public/fundas',
@@ -46,7 +44,8 @@ export default function NavBar() {
         { title: 'Aros de luz', path: '/public/accesorios/arosDeLuz' },
         { title: 'Earbuds', path: '/public/accesorios/earbuds' }
       ]
-    }
+    },
+    { title: 'Otros', path: '/public/otros' }
   ];
 
   const totalItems = cart.reduce((sum, item) => sum + item.cantidad, 0);
