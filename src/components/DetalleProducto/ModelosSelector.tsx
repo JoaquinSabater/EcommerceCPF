@@ -26,6 +26,7 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [isSearchFocused, setIsSearchFocused] = useState<boolean>(false);
   const [dolar, setDolar] = useState<number>(1);
+  const [loadingModelos, setLoadingModelos] = useState<boolean>(true);
   
   const [modelosRecomendados, setModelosRecomendados] = useState<string[]>([]);
   const [isEditingRecomendados, setIsEditingRecomendados] = useState<boolean>(false);
@@ -33,51 +34,103 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
   const [modeloSeleccionadoAdmin, setModeloSeleccionadoAdmin] = useState<Articulo | null>(null);
 
   const { addToCart } = useCart();
-  const { isAdmin, getPrecioConDescuento, isDistribuidor } = useAuth(); // ✅ Usar nuevas funciones
+  const { isAdmin, getPrecioConDescuento, isDistribuidor } = useAuth();
+
+  // ✅ NUEVA LÓGICA: Detectar si es categoría "Otros" (electrónica)
+  const subcategoriasElectronica = [18, 19, 20, 21];
+  const esElectronica = subcategoriasElectronica.includes(subcategoriaId);
 
   useEffect(() => {
     //console.log('🟡 ModelosSelector recibió sugerenciaActual:', `"${sugerenciaActual}"`);
   }, [sugerenciaActual]);
 
-  // ✅ Función helper para mostrar marca + modelo + precio CON DESCUENTO
+  // ✅ FUNCIÓN MEJORADA: Manejar precios pesificados + electrónica + no descuento
   const formatModeloDisplay = (articulo: Articulo) => {
     const marcaModelo = articulo.marca_nombre 
       ? `${articulo.marca_nombre} ${articulo.modelo}` 
       : articulo.modelo;
     
     const precioOriginalUsd = Number(articulo.precio_venta || 0);
-    const precioConDescuentoUsd = getPrecioConDescuento(precioOriginalUsd); // ✅ Aplicar descuento
-    const precioArs = Math.round(precioConDescuentoUsd * dolar);
+    
+    // ✅ CAMBIO PRINCIPAL: No aplicar descuento si es electrónica
+    const precioConDescuentoUsd = esElectronica 
+      ? precioOriginalUsd 
+      : getPrecioConDescuento(precioOriginalUsd);
+    
+    // ✅ CAMBIO: Verificar si es pesificado
+    let precioArs: number;
+    let esPesificado = false;
+    
+    if (articulo.es_pesificado === 1 && articulo.precio_pesos && articulo.precio_pesos > 0) {
+      // ✅ Usar precio pesificado de la BD
+      const precioOriginalPesos = Number(articulo.precio_pesos);
+      
+      if (esElectronica) {
+        // ✅ ELECTRÓNICA: No aplicar descuento distribuidor
+        precioArs = Math.round(precioOriginalPesos);
+      } else {
+        // ✅ NORMAL: Aplicar descuento si corresponde
+        const factorDescuento = precioConDescuentoUsd / precioOriginalUsd;
+        precioArs = Math.round(precioOriginalPesos * factorDescuento);
+      }
+      
+      esPesificado = true;
+    } else {
+      // ✅ Calcular precio normal (USD * dolar correspondiente)
+      precioArs = Math.round(precioConDescuentoUsd * dolar);
+    }
     
     return {
-      texto: `${marcaModelo} - $${precioConDescuentoUsd.toFixed(2)} USD ($${precioArs.toLocaleString()} ARS)`,
+      texto: `${marcaModelo} - $${precioConDescuentoUsd.toFixed(2)} USD ($${precioArs.toLocaleString()} ARS${esPesificado ? ' 🏷️' : ''}${esElectronica ? ' ⚡' : ''})`,
       marcaModelo: marcaModelo,
-      precioUsd: precioConDescuentoUsd, // ✅ Precio con descuento para mostrar
-      precioOriginalUsd: precioOriginalUsd, // ✅ Precio original para pedidos
-      precioArs: precioArs
+      precioUsd: precioConDescuentoUsd,
+      precioOriginalUsd: precioOriginalUsd,
+      precioArs: precioArs,
+      esPesificado: esPesificado,
+      esElectronica: esElectronica
     };
   };
 
-  // ✅ Obtener cotización del dólar
+  // ✅ MODIFICADO: Obtener cotización del dólar correspondiente
   useEffect(() => {
     async function fetchDolar() {
       try {
-        const res = await fetch('/api/dolar');
+        // ✅ Usar API correspondiente según tipo de producto
+        const endpoint = esElectronica ? '/api/dolar-electronica' : '/api/dolar';
+        const res = await fetch(endpoint);
         const data = await res.json();
         setDolar(data.dolar || 1);
+        
+        console.log(`🟡 Cotización cargada para ${esElectronica ? 'electrónica' : 'general'}:`, data.dolar);
       } catch (e) {
+        console.error('Error cargando cotización:', e);
         setDolar(1);
       }
     }
     fetchDolar();
-  }, []);
+  }, [esElectronica]); // ✅ Recargar si cambia el tipo
 
   useEffect(() => {
+    setLoadingModelos(true);
+    
     // Cargar modelos de la subcategoría
     fetch(`/api/articulosPorSubcategoria?subcategoriaId=${subcategoriaId}`)
       .then(res => res.json())
       .then(data => {
+        console.log('🟡 Artículos cargados:', data.articulos?.slice(0, 3).map((a: Articulo) => ({
+          modelo: a.modelo,
+          es_pesificado: a.es_pesificado,
+          precio_pesos: a.precio_pesos,
+          precio_venta: a.precio_venta
+        })));
         setModelos(data.articulos || []);
+      })
+      .catch(error => {
+        console.error('Error cargando modelos:', error);
+        setModelos([]);
+      })
+      .finally(() => {
+        setLoadingModelos(false);
       });
 
     // Cargar recomendaciones desde la BD usando subcategoriaId como itemId
@@ -125,11 +178,6 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
 
   // ✅ Función modificada para agregar al carrito CON PRECIO ORIGINAL
   const handleAddToCart = () => {
-    //console.log('🟢 === AGREGANDO AL CARRITO DESDE MODELOSSELECTOR ===');
-    // console.log('Sugerencia a aplicar:', `"${sugerenciaActual}"`);
-    // console.log('Modelos seleccionados:', seleccionados.length);
-    // console.log('Es distribuidor:', isDistribuidor());
-
     seleccionados.forEach(({ articulo, cantidad }) => {
       if (!articulo.precio_venta || isNaN(Number(articulo.precio_venta))) {
         console.warn(`Artículo sin precio válido: ${articulo.modelo}`);
@@ -142,19 +190,30 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
         precio_venta: Number(articulo.precio_venta)
       };
       
-      //console.log(`🟡 Agregando ${articulo.modelo} - Precio original: $${articulo.precio_venta} USD`);
-      
       addToCart(articuloConCantidad, articulo.modelo, cantidad, sugerenciaActual);
     });
     
     const totalOriginalUsd = seleccionados.reduce((sum, { articulo, cantidad }) => 
       sum + (Number(articulo.precio_venta || 0) * cantidad), 0);
-    const totalConDescuentoUsd = getPrecioConDescuento(totalOriginalUsd);
-    const totalPesos = totalConDescuentoUsd * dolar;
-      
+    
+    // ✅ CAMBIO: No aplicar descuento si es electrónica
+    const totalConDescuentoUsd = esElectronica 
+      ? totalOriginalUsd 
+      : getPrecioConDescuento(totalOriginalUsd);
+    
+    // ✅ CALCULAR TOTAL EN PESOS CON PESIFICADOS + ELECTRÓNICA
+    const totalPesos = seleccionados.reduce((sum, { articulo, cantidad }) => {
+      const displayInfo = formatModeloDisplay(articulo);
+      return sum + (displayInfo.precioArs * cantidad);
+    }, 0);
+    
+    // ✅ MENSAJE MODIFICADO: Sin descuento para electrónica
+    const tieneDescuento = !esElectronica && isDistribuidor();
+    const tipoProducto = esElectronica ? ' (Electrónica)' : '';
+    
     const mensajeConSugerencia = sugerenciaActual 
-      ? `Se agregaron ${seleccionados.length} modelo(s) al carrito con sugerencias especiales. Total: $${Math.round(totalPesos).toLocaleString()} ARS${isDistribuidor() ? ' (con descuento distribuidor)' : ''}`
-      : `Se agregaron ${seleccionados.length} modelo(s) al carrito. Total: $${Math.round(totalPesos).toLocaleString()} ARS${isDistribuidor() ? ' (con descuento distribuidor)' : ''}`;
+      ? `Se agregaron ${seleccionados.length} modelo(s) al carrito con sugerencias especiales${tipoProducto}. Total: $${Math.round(totalPesos).toLocaleString()} ARS${tieneDescuento ? ' (con descuento distribuidor)' : ''}`
+      : `Se agregaron ${seleccionados.length} modelo(s) al carrito${tipoProducto}. Total: $${Math.round(totalPesos).toLocaleString()} ARS${tieneDescuento ? ' (con descuento distribuidor)' : ''}`;
       
     alert(mensajeConSugerencia);
     setSeleccionados([]);
@@ -261,10 +320,16 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
     <div className="w-full mt-4 rounded-lg bg-white shadow-sm p-4">
       <h3 className="text-lg font-bold mb-3 text-gray-800">
         Selección de modelos
-        {/* ✅ Mostrar badge de descuento distribuidor */}
-        {isDistribuidor() && (
+        {/* ✅ CAMBIO: No mostrar descuento distribuidor si es electrónica */}
+        {!esElectronica && isDistribuidor() && (
           <span className="ml-2 text-sm bg-green-100 text-green-800 px-2 py-1 rounded-full">
             20% OFF Distribuidor 🎉
+          </span>
+        )}
+        {/* ✅ NUEVO: Indicador de electrónica */}
+        {esElectronica && (
+          <span className="ml-2 text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+            Electrónica ⚡
           </span>
         )}
         {sugerenciaActual && (
@@ -307,15 +372,18 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
                         ? 'bg-gray-100 text-gray-600 cursor-default' 
                         : 'bg-pink-50 text-pink-700 hover:bg-pink-100 border border-pink-200'
                     }`}
-                    title={displayInfo ? `$${displayInfo.precioUsd} USD - $${displayInfo.precioArs.toLocaleString()} ARS${isDistribuidor() ? ' (con descuento)' : ''}` : ''}
+                    title={displayInfo ? `$${displayInfo.precioUsd} USD - $${displayInfo.precioArs.toLocaleString()} ARS${displayInfo.esPesificado ? ' (Precio especial)' : ''}${displayInfo.esElectronica ? ' (Electrónica)' : ''}${!esElectronica && isDistribuidor() ? ' (con descuento)' : ''}` : ''}
                   >
                     <div className="flex flex-col items-start">
-                      <span className="font-medium">{modeloNombre}</span>
+                      <span className="font-medium">
+                        {modeloNombre}
+                        {displayInfo?.esPesificado && <span className="ml-1">🏷️</span>}
+                        {displayInfo?.esElectronica && <span className="ml-1">⚡</span>}
+                      </span>
                       {displayInfo && !isEditingRecomendados && (
                         <span className="text-xs text-pink-600">
                           ${displayInfo.precioUsd} USD
-                          {/* ✅ Mostrar descuento si aplica */}
-                          {isDistribuidor() && (
+                          {!esElectronica && isDistribuidor() && (
                             <span className="ml-1 text-green-600">(-20%)</span>
                           )}
                         </span>
@@ -335,7 +403,7 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
             })}
           </div>
 
-          {/* Panel de edición para admin (mantener igual pero con precios con descuento en UI) */}
+          {/* Panel de edición para admin */}
           {isEditingRecomendados && (
             <div className="mt-4 pt-4 border-t border-gray-200">
               <div className="flex items-center justify-between mb-3">
@@ -364,7 +432,11 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
                         </span>
                       </Listbox.Button>
                       <Listbox.Options className="absolute z-30 top-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg w-full max-h-60 overflow-auto focus:outline-none">
-                        {modelos.length > 0 ? (
+                        {loadingModelos ? (
+                          <div className="px-4 py-2 text-gray-500 text-sm italic">
+                            Cargando modelos...
+                          </div>
+                        ) : modelos.length > 0 ? (
                           <div className="grid grid-cols-1 gap-1">
                             {modelos.map((m) => {
                               const displayInfo = formatModeloDisplay(m);
@@ -383,6 +455,8 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
                                     <div className="flex flex-col">
                                       <span className="font-medium">
                                         {displayInfo.marcaModelo}
+                                        {displayInfo.esPesificado && <span className="ml-1">🏷️</span>}
+                                        {displayInfo.esElectronica && <span className="ml-1">⚡</span>}
                                       </span>
                                       <span className="text-sm text-gray-500">
                                         {m.modelo}
@@ -394,12 +468,18 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
                                     <div className="text-right">
                                       <div className="text-sm font-medium text-green-600">
                                         ${displayInfo.precioUsd} USD
-                                        {isDistribuidor() && (
+                                        {!esElectronica && isDistribuidor() && (
                                           <span className="ml-1 text-xs text-green-700">(-20%)</span>
                                         )}
                                       </div>
                                       <div className="text-xs text-gray-500">
                                         ${displayInfo.precioArs.toLocaleString()} ARS
+                                        {displayInfo.esPesificado && (
+                                          <span className="ml-1 text-orange-600">🏷️</span>
+                                        )}
+                                        {displayInfo.esElectronica && (
+                                          <span className="ml-1 text-blue-600">⚡</span>
+                                        )}
                                       </div>
                                     </div>
                                   </div>
@@ -433,7 +513,7 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
                 </div>
               )}
 
-              {tempRecomendados.length < 5 && (
+              {tempRecomendados.length < 5 && !loadingModelos && (
                 <div className="flex flex-wrap gap-2 mb-4">
                   {modelos.slice(0, 10).map((modelo) => {
                     const displayInfo = formatModeloDisplay(modelo);
@@ -443,9 +523,11 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
                         onClick={() => handleAddToRecomendados(modelo.modelo)}
                         disabled={tempRecomendados.includes(modelo.modelo) || tempRecomendados.length >= 5}
                         className="px-2 py-1 text-xs bg-gray-100 border border-gray-300 text-gray-700 rounded hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        title={`$${displayInfo.precioUsd} USD - $${displayInfo.precioArs.toLocaleString()} ARS${isDistribuidor() ? ' (con descuento)' : ''}`}
+                        title={`$${displayInfo.precioUsd} USD - $${displayInfo.precioArs.toLocaleString()} ARS${displayInfo.esPesificado ? ' (Precio especial)' : ''}${displayInfo.esElectronica ? ' (Electrónica)' : ''}${!esElectronica && isDistribuidor() ? ' (con descuento)' : ''}`}
                       >
                         + {displayInfo.marcaModelo} (${displayInfo.precioUsd})
+                        {displayInfo.esPesificado && <span className="ml-1">🏷️</span>}
+                        {displayInfo.esElectronica && <span className="ml-1">⚡</span>}
                       </button>
                     );
                   })}
@@ -498,7 +580,11 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
         {/* Resultados de búsqueda */}
         {isSearchFocused && searchTerm && (
           <div className="absolute z-20 bottom-full left-0 right-0 mb-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
-            {modelosFiltrados.length > 0 ? (
+            {loadingModelos ? (
+              <div className="px-4 py-2 text-gray-500 text-sm italic">
+                Cargando modelos...
+              </div>
+            ) : modelosFiltrados.length > 0 ? (
               <div className="grid grid-cols-1 gap-1 py-1">
                 {modelosFiltrados.slice(0, 20).map((modelo) => {
                   const displayInfo = formatModeloDisplay(modelo);
@@ -512,6 +598,8 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
                         <div className="flex flex-col">
                           <span className="font-medium text-gray-900">
                             {displayInfo.marcaModelo}
+                            {displayInfo.esPesificado && <span className="ml-1">🏷️</span>}
+                            {displayInfo.esElectronica && <span className="ml-1">⚡</span>}
                           </span>
                           <span className="text-sm text-gray-500">
                             {modelo.modelo}
@@ -520,12 +608,18 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
                         <div className="text-right">
                           <div className="text-sm font-medium text-green-600">
                             ${displayInfo.precioUsd} USD
-                            {isDistribuidor() && (
+                            {!esElectronica && isDistribuidor() && (
                               <span className="ml-1 text-xs text-green-700">(-20%)</span>
                             )}
                           </div>
                           <div className="text-xs text-gray-500">
                             ${displayInfo.precioArs.toLocaleString()} ARS
+                            {displayInfo.esPesificado && (
+                              <span className="ml-1 text-orange-600">🏷️</span>
+                            )}
+                            {displayInfo.esElectronica && (
+                              <span className="ml-1 text-blue-600">⚡</span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -562,7 +656,11 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
               </span>
             </Listbox.Button>
             <Listbox.Options className="absolute z-10 bottom-full mb-1 bg-white border border-gray-200 rounded-md shadow-lg w-full max-h-60 overflow-auto focus:outline-none">
-              {modelosFiltrados.length > 0 ? (
+              {loadingModelos ? (
+                <div className="px-4 py-2 text-gray-500 text-sm italic">
+                  Cargando modelos...
+                </div>
+              ) : modelosFiltrados.length > 0 ? (
                 <div className="grid grid-cols-1 gap-1">
                   {modelosChunks.map((chunk, chunkIndex) => (
                     <div key={chunkIndex} className="flex flex-col">
@@ -581,6 +679,8 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
                               <div className="flex flex-col">
                                 <span className="font-medium">
                                   {displayInfo.marcaModelo}
+                                  {displayInfo.esPesificado && <span className="ml-1">🏷️</span>}
+                                  {displayInfo.esElectronica && <span className="ml-1">⚡</span>}
                                 </span>
                                 <span className="text-sm text-gray-500">
                                   {m.modelo}
@@ -589,12 +689,18 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
                               <div className="text-right">
                                 <div className="text-sm font-medium text-green-600">
                                   ${displayInfo.precioUsd} USD
-                                  {isDistribuidor() && (
+                                  {!esElectronica && isDistribuidor() && (
                                     <span className="ml-1 text-xs text-green-700">(-20%)</span>
                                   )}
                                 </div>
                                 <div className="text-xs text-gray-500">
                                   ${displayInfo.precioArs.toLocaleString()} ARS
+                                  {displayInfo.esPesificado && (
+                                    <span className="ml-1 text-orange-600">🏷️</span>
+                                  )}
+                                  {displayInfo.esElectronica && (
+                                    <span className="ml-1 text-blue-600">⚡</span>
+                                  )}
                                 </div>
                               </div>
                             </div>
@@ -606,7 +712,7 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
                 </div>
               ) : (
                 <div className="px-4 py-2 text-gray-500 text-sm italic">
-                  {searchTerm ? 'No hay modelos que coincidan' : 'No hay más modelos'}
+                  {searchTerm ? 'No hay modelos que coincidan' : 'No hay modelos disponibles'}
                 </div>
               )}
             </Listbox.Options>
@@ -636,15 +742,14 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
         )}
       </div>
 
-      {/* Lista de modelos seleccionados con precios CON DESCUENTO VISUAL */}
+      {/* Lista de modelos seleccionados */}
       {seleccionados.length > 0 && (
         <div className="mb-4">
           <h4 className="font-medium text-gray-700 mb-2">Modelos seleccionados:</h4>
           <div className={`flex flex-col gap-2 ${seleccionados.length > 3 ? "max-h-48 overflow-y-auto pr-1" : ""}`}>
             {seleccionados.map((s) => {
               const displayInfo = formatModeloDisplay(s.articulo);
-              const subtotalUsd = displayInfo.precioUsd * s.cantidad; // ✅ Usar precio con descuento para mostrar
-              const subtotalArs = subtotalUsd * dolar;
+              const subtotalArs = displayInfo.precioArs * s.cantidad;
               
               return (
                 <div key={s.articulo.codigo_interno} className="flex items-center gap-3 border border-gray-200 rounded px-3 py-2 bg-gray-50 hover:bg-gray-100">
@@ -653,23 +758,37 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
                       <div>
                         <span className="font-medium text-gray-800">
                           {displayInfo.marcaModelo}
+                          {displayInfo.esPesificado && <span className="ml-1">🏷️</span>}
+                          {displayInfo.esElectronica && <span className="ml-1">⚡</span>}
                         </span>
                         <div className="text-sm text-gray-600">
                           Cantidad: {s.cantidad} x ${displayInfo.precioUsd} USD
-                          {isDistribuidor() && (
+                          {!esElectronica && isDistribuidor() && (
                             <span className="ml-1 text-green-600 text-xs">(-20%)</span>
+                          )}
+                          {displayInfo.esPesificado && (
+                            <span className="ml-1 text-orange-600 text-xs">(Precio especial)</span>
+                          )}
+                          {displayInfo.esElectronica && (
+                            <span className="ml-1 text-blue-600 text-xs">(Electrónica)</span>
                           )}
                         </div>
                       </div>
                       <div className="text-right">
                         <div className="text-sm font-medium text-green-600">
-                          ${subtotalUsd.toFixed(2)} USD
-                          {isDistribuidor() && (
+                          ${(displayInfo.precioUsd * s.cantidad).toFixed(2)} USD
+                          {!esElectronica && isDistribuidor() && (
                             <span className="ml-1 text-xs text-green-700">(-20%)</span>
                           )}
                         </div>
                         <div className="text-xs text-gray-500">
                           ${Math.round(subtotalArs).toLocaleString()} ARS
+                          {displayInfo.esPesificado && (
+                            <span className="ml-1 text-orange-600">🏷️</span>
+                          )}
+                          {displayInfo.esElectronica && (
+                            <span className="ml-1 text-blue-600">⚡</span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -685,7 +804,7 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
             })}
           </div>
           
-          {/* Total de seleccionados CON DESCUENTO VISUAL */}
+          {/* Total de seleccionados */}
           <div className="mt-2 pt-2 border-t border-gray-200">
             <div className="flex justify-between items-center">
               <span className="font-medium text-gray-700">Total:</span>
@@ -695,15 +814,21 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
                     const displayInfo = formatModeloDisplay(s.articulo);
                     return sum + (displayInfo.precioUsd * s.cantidad);
                   }, 0).toFixed(2)} USD
-                  {isDistribuidor() && (
+                  {!esElectronica && isDistribuidor() && (
                     <span className="ml-1 text-xs text-green-700">(-20%)</span>
                   )}
                 </div>
                 <div className="text-sm text-gray-500">
                   ${Math.round(seleccionados.reduce((sum, s) => {
                     const displayInfo = formatModeloDisplay(s.articulo);
-                    return sum + (displayInfo.precioUsd * s.cantidad);
-                  }, 0) * dolar).toLocaleString()} ARS
+                    return sum + (displayInfo.precioArs * s.cantidad);
+                  }, 0)).toLocaleString()} ARS
+                  {seleccionados.some(s => formatModeloDisplay(s.articulo).esPesificado) && (
+                    <span className="ml-1 text-orange-600">🏷️</span>
+                  )}
+                  {esElectronica && (
+                    <span className="ml-1 text-blue-600">⚡</span>
+                  )}
                 </div>
               </div>
             </div>
@@ -718,7 +843,7 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
         onClick={handleAddToCart}
       >
         {seleccionados.length > 0 
-          ? `Añadir ${seleccionados.length} modelo(s) al carrito${sugerenciaActual ? ' con sugerencias ✨' : ''}${isDistribuidor() ? ' (20% OFF)' : ''}` 
+          ? `Añadir ${seleccionados.length} modelo(s) al carrito${esElectronica ? ' (Electrónica)' : ''}${sugerenciaActual ? ' con sugerencias ✨' : ''}${!esElectronica && isDistribuidor() ? ' (20% OFF)' : ''}` 
           : 'Añadir al carrito'
         }
       </button>

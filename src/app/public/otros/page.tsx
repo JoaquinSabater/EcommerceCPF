@@ -5,10 +5,10 @@ export const dynamic = 'force-dynamic';
 
 export default async function Otros() {
   const subcategoriasOtros = [
-    18, // Pavas
-    19, // Sillas
-    20, // Auriculares
-    21  // Teléfonos
+    18,
+    19,
+    20,
+    21
   ];
   
   try {

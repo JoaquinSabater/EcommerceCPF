@@ -12,7 +12,9 @@ export async function getArticulosPorSubcategoria(subcategoriaId: number): Promi
               COALESCE(a.precio_venta, 0) as precio_venta, a.ubicacion, a.stock_actual,
               calcular_stock_fisico(a.codigo_interno) - calcular_stock_comprometido(a.codigo_interno) AS stock_real,
               i.nombre AS item_nombre,
-              m.nombre AS marca_nombre
+              m.nombre AS marca_nombre,
+              a.es_pesificado,
+              COALESCE(a.precio_pesos, 0) as precio_pesos
       FROM articulos a
       JOIN items i ON a.item_id = i.id
       LEFT JOIN marcas m ON a.marca_id = m.id
@@ -216,6 +218,19 @@ export async function getDolar(): Promise<number> {
   const [rows]: any = await db.query(
     `SELECT valor 
      FROM cotizaciones 
+     WHERE tipo = 'general'
+     ORDER BY fecha_creacion DESC 
+     LIMIT 1`
+  );
+
+  return parseInt(rows[0].valor);
+}
+
+export async function getDolarElectronica(): Promise<number> {
+  const [rows]: any = await db.query(
+    `SELECT valor 
+     FROM cotizaciones 
+     WHERE tipo = 'electronica'
      ORDER BY fecha_creacion DESC 
      LIMIT 1`
   );

@@ -132,7 +132,8 @@ export default function Search() {
 
   return (
     <>
-      <div ref={searchRef} className="relative w-full max-w-[400px]">
+      {/* ✅ CORREGIDO: Sin max-width, ancho completo siempre */}
+      <div ref={searchRef} className="relative w-full">
         <form onSubmit={handleSubmit} className="relative">
           <input
             type="text"
@@ -181,7 +182,7 @@ export default function Search() {
           </div>
         </form>
 
-        {/* ✅ Solo mostrar resultados si no hay helper text visible */}
+        {/* ✅ CORREGIDO: Resultados ocupan todo el ancho */}
         {showResults && !showHelper && (
           <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
             <SearchResults
@@ -211,6 +212,6 @@ export default function Search() {
 
 export function SearchSkeleton() {
   return (
-    <div className="w-full max-w-[400px] h-10 bg-gray-200 animate-pulse rounded-lg" />
+    <div className="w-full h-10 bg-gray-200 animate-pulse rounded-lg" />
   );
 }

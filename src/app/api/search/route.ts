@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
       INNER JOIN items i ON a.item_id = i.id
       INNER JOIN marcas m ON a.marca_id = m.id
       LEFT JOIN item_detalle d ON a.item_id = d.item_id
-      WHERE ${whereClause}
+      WHERE ${whereClause} AND i.disponible = 1
       HAVING stock_real > 0
       ORDER BY i.nombre, m.nombre, a.modelo
       LIMIT 50

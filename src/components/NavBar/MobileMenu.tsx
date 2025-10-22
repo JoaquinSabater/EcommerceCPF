@@ -92,7 +92,8 @@ export default function MobileMenu({ menu }: { menu: MenuItem[] }) {
             </div>
           </div>
 
-          <div className="mt-6 px-2">
+          {/* ✅ CORREGIDO: Sin padding lateral, ancho completo real */}
+          <div className="w-full -mx-4 px-4">
             <Search />
           </div>
 

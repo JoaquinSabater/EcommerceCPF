@@ -15,8 +15,10 @@ export interface Articulo {
   ubicacion: string;
   stock_actual: number;
   item_nombre?: string;
-  marca_nombre?: string; // ✅ Nueva propiedad
+  marca_nombre?: string;
   cantidad?: number;
+  es_pesificado?: number; // 0 o 1
+  precio_pesos?: number;
 }
 
 export type categorias = {
