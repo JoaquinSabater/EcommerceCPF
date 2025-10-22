@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { XMarkIcon, ChevronDownIcon, ChevronUpIcon, UserCircleIcon } from '@heroicons/react/24/outline';
@@ -19,6 +19,7 @@ export default function MobileMenu({ menu }: { menu: MenuItem[] }) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const { cart } = useCart();
   const { isProspectoMode } = useProspectoMode();
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const toggleSubmenu = (title: string) => {
     setExpanded((prev) => (prev === title ? null : title));
@@ -34,9 +35,36 @@ export default function MobileMenu({ menu }: { menu: MenuItem[] }) {
     return count.toString();
   };
 
+  // ✅ NUEVO: Click fuera para cerrar (solo en desktop)
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(event.target as Node) &&
+        window.innerWidth >= 768 // Solo en desktop
+      ) {
+        setIsOpen(false);
+      }
+    }
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      // ✅ Prevenir scroll del body cuando está abierto
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
   return (
     <>
-      {/* ✅ Cambio del breakpoint de md:hidden a 2xl:hidden */}
+      {/* ✅ Botón del menú */}
       <button
         onClick={() => setIsOpen(true)}
         className="block 2xl:hidden p-2 border rounded text-black bg-white"
@@ -46,101 +74,108 @@ export default function MobileMenu({ menu }: { menu: MenuItem[] }) {
         </svg>
       </button>
 
+      {/* ✅ OVERLAY + MENÚ LATERAL (como CartSidebar) */}
       {isOpen && (
-        <div className="fixed inset-0 z-50 bg-white p-4 space-y-6 overflow-y-auto">
-          {/* Top bar: Close + User + Cart */}
-          <div className="flex justify-between items-center">
-            <button onClick={() => setIsOpen(false)} className="p-2 border rounded text-black bg-white">
-              <XMarkIcon className="h-6 w-6" />
-            </button>
-            
-            {/* User + Cart icons */}
-            <div className="flex items-center gap-4">
-              {/* SOLO MOSTRAR USUARIO SI NO ES PROSPECTO */}
-              {!isProspectoMode && (
-                <button
-                  onClick={() => {
-                    setIsOpen(false);
-                    window.location.href = '/admin';
-                  }}
-                  className="p-1"
-                  aria-label="Panel de administración"
-                >
-                  <UserCircleIcon className="h-8 w-8 text-gray-700 hover:text-orange-600 transition" />
-                </button>
-              )}
+        <>
+          {/* ✅ Overlay con backdrop blur */}
+          <div 
+            className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm transition-opacity duration-300"
+            onClick={() => setIsOpen(false)}
+          />
 
-              {/* CARRITO CON CONTADOR MEJORADO */}
-              <button
-                onClick={() => {
-                  setIsOpen(false);
-                  // Aquí podrías abrir el CartSidebar si lo necesitas
-                  window.location.href = '/public/carrito';
-                }}
-                className="relative"
-              >
-                <Image
-                  src="/cart.svg"
-                  width={30}
-                  height={30}
-                  alt="shopping cart icon"
-                />
-                <div className="rounded-full flex justify-center items-center bg-orange-600 text-xs text-white absolute w-5 h-5 -top-2 -right-2">
-                  {formatCartCount(totalItems)}
-                </div>
-              </button>
-            </div>
-          </div>
-
-          {/* ✅ CORREGIDO: Sin padding lateral, ancho completo real */}
-          <div className="w-full -mx-4 px-4">
-            <Search />
-          </div>
-
-          {/* Navigation */}
-          <nav className="flex flex-col space-y-4 px-2">
-            {menu.map((item) => (
-              <div key={item.title}>
-                <div className="flex items-center justify-between">
-                  <Link
-                    href={item.path}
+          {/* ✅ Panel lateral del menú */}
+          <div
+            ref={menuRef}
+            className={`fixed top-0 left-0 z-50 h-full bg-white text-black shadow-2xl transition-transform duration-300 overflow-y-auto
+              ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+              w-full max-w-sm md:w-96 md:max-w-md
+            `}
+          >
+            {/* ✅ Header del menú */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-orange-50 to-orange-100 sticky top-0">
+              <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                📱 Menú
+              </h2>
+              
+              <div className="flex items-center gap-3">
+                {/* SOLO MOSTRAR USUARIO SI NO ES PROSPECTO */}
+                {!isProspectoMode && (
+                  <button
                     onClick={() => {
-                      if (!item.submenu) setIsOpen(false);
+                      setIsOpen(false);
+                      window.location.href = '/admin';
                     }}
-                    className="text-black text-xl transition-all duration-200 hover:underline hover:decoration-black hover:underline-offset-4 hover:decoration-2"
+                    className="p-1 hover:bg-white rounded-full transition-colors"
+                    aria-label="Panel de administración"
                   >
-                    {item.title}
-                  </Link>
+                    <UserCircleIcon className="h-6 w-6 text-gray-700 hover:text-orange-600 transition" />
+                  </button>
+                )}
+                {/* Botón cerrar */}
+                <button 
+                  onClick={() => setIsOpen(false)}
+                  className="p-1 hover:bg-white rounded-full transition-colors"
+                >
+                  <XMarkIcon className="h-6 w-6 text-gray-600" />
+                </button>
+              </div>
+            </div>
+
+            {/* ✅ BÚSQUEDA con ancho completo */}
+            <div className="p-4 border-b border-gray-100">
+              <Search />
+            </div>
+
+            {/* ✅ Navegación */}
+            <nav className="flex flex-col p-4 space-y-4">
+              {menu.map((item) => (
+                <div key={item.title}>
+                  <div className="flex items-center justify-between">
+                    <Link
+                      href={item.path}
+                      onClick={() => {
+                        if (!item.submenu) setIsOpen(false);
+                      }}
+                      className="text-black text-lg font-medium transition-all duration-200 hover:text-orange-600 hover:underline hover:decoration-orange-600 hover:underline-offset-4 hover:decoration-2"
+                    >
+                      {item.title}
+                    </Link>
+                    {item.submenu && (
+                      <button 
+                        onClick={() => toggleSubmenu(item.title)} 
+                        className="text-gray-600 hover:text-orange-600 transition-colors p-1"
+                      >
+                        {expanded === item.title ? (
+                          <ChevronUpIcon className="h-5 w-5" />
+                        ) : (
+                          <ChevronDownIcon className="h-5 w-5" />
+                        )}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* ✅ Submenu con animación */}
                   {item.submenu && (
-                    <button onClick={() => toggleSubmenu(item.title)} className="text-black ml-2">
-                      {expanded === item.title ? (
-                        <ChevronUpIcon className="h-5 w-5" />
-                      ) : (
-                        <ChevronDownIcon className="h-5 w-5" />
-                      )}
-                    </button>
+                    <div className={`ml-4 mt-3 space-y-3 transition-all duration-300 overflow-hidden ${
+                      expanded === item.title ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                    }`}>
+                      {item.submenu.map((subItem) => (
+                        <Link
+                          key={subItem.title}
+                          href={subItem.path}
+                          onClick={() => setIsOpen(false)}
+                          className="block text-gray-600 hover:text-orange-600 transition-colors py-1 border-l-2 border-transparent hover:border-orange-600 pl-3"
+                        >
+                          {subItem.title}
+                        </Link>
+                      ))}
+                    </div>
                   )}
                 </div>
-
-                {/* Submenu */}
-                {item.submenu && expanded === item.title && (
-                  <div className="ml-4 mt-3 flex flex-col space-y-3">
-                    {item.submenu.map((subItem) => (
-                      <Link
-                        key={subItem.title}
-                        href={subItem.path}
-                        onClick={() => setIsOpen(false)}
-                        className="text-neutral-700 text-base hover:text-black"
-                      >
-                        {subItem.title}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </nav>
-        </div>
+              ))}
+            </nav>
+          </div>
+        </>
       )}
     </>
   );

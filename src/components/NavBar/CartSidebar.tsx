@@ -120,6 +120,7 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
     }
   };
 
+  // ✅ MEJORADO: Manejo de eventos con prevención de scroll
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -133,20 +134,33 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
 
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
+      // ✅ Prevenir scroll del body cuando está abierto
+      document.body.style.overflow = 'hidden';
     } else {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.body.style.overflow = 'unset';
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.body.style.overflow = 'unset';
     };
   }, [isOpen, onClose]);
 
   return (
     <>
+      {/* ✅ NUEVO: Overlay con backdrop blur (igual que MobileMenu) */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm transition-opacity duration-300"
+          onClick={onClose}
+        />
+      )}
+
+      {/* ✅ Panel del carrito (z-index actualizado) */}
       <div
         ref={sidebarRef}
-        className={`fixed top-0 right-0 z-50 h-full w-96 max-w-full bg-white text-black shadow-xl transition-transform duration-300 ${
+        className={`fixed top-0 right-0 z-50 h-full w-96 max-w-full bg-white text-black shadow-2xl transition-transform duration-300 ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
