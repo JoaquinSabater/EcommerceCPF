@@ -21,6 +21,11 @@ export default function MobileMenu({ menu }: { menu: MenuItem[] }) {
   const { isProspectoMode } = useProspectoMode();
   const menuRef = useRef<HTMLDivElement>(null);
 
+  // ✅ NUEVO: Estados para swipe
+  const [touchStart, setTouchStart] = useState(0);
+  const [touchEnd, setTouchEnd] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+
   const toggleSubmenu = (title: string) => {
     setExpanded((prev) => (prev === title ? null : title));
   };
@@ -35,7 +40,38 @@ export default function MobileMenu({ menu }: { menu: MenuItem[] }) {
     return count.toString();
   };
 
-  // ✅ NUEVO: Click fuera para cerrar (solo en desktop)
+  // ✅ NUEVO: Funciones para manejar swipe
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.targetTouches[0].clientX);
+    setIsDragging(true);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging) return;
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd || !isDragging) {
+      setIsDragging(false);
+      return;
+    }
+
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50; // Swipe hacia la izquierda (hacia el contenido)
+    const isRightSwipe = distance < -50; // Swipe hacia la derecha
+
+    // ✅ Solo cerrar con swipe hacia la izquierda (hacia el contenido desenfocado)
+    if (isLeftSwipe) {
+      setIsOpen(false);
+    }
+
+    setIsDragging(false);
+    setTouchStart(0);
+    setTouchEnd(0);
+  };
+
+  // ✅ Click fuera para cerrar (solo en desktop)
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -83,13 +119,16 @@ export default function MobileMenu({ menu }: { menu: MenuItem[] }) {
             onClick={() => setIsOpen(false)}
           />
 
-          {/* ✅ Panel lateral del menú */}
+          {/* ✅ Panel lateral del menú CON SWIPE */}
           <div
             ref={menuRef}
             className={`fixed top-0 left-0 z-50 h-full bg-white text-black shadow-2xl transition-transform duration-300 overflow-y-auto
               ${isOpen ? 'translate-x-0' : '-translate-x-full'}
               w-full max-w-sm md:w-96 md:max-w-md
             `}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
           >
             {/* ✅ Header del menú */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-orange-50 to-orange-100 sticky top-0">

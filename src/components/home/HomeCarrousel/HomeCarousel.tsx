@@ -124,15 +124,14 @@ export default function HomeCarousel() {
 
   if (loading) {
     return (
-      <div className="w-full h-[450px] md:h-[400px] lg:h-[500px] bg-gray-200 animate-pulse"></div>
+      <div className="w-full h-[600px] md:h-[400px] lg:h-[500px] bg-gray-200 animate-pulse"></div>
     );
   }
 
   return (
     <>
       {slides.length === 0 ? (
-        // ✅ CAMBIO: Quitar rounded-xl tanto en mobile como desktop
-        <div className="w-full h-[450px] md:h-[400px] lg:h-[500px] bg-gradient-to-r from-orange-100 to-orange-200 flex items-center justify-center">
+        <div className="w-full h-[600px] md:h-[400px] lg:h-[500px] bg-gradient-to-r from-orange-100 to-orange-200 flex items-center justify-center">
           <div className="text-center">
             <div className="text-6xl mb-4">📱</div>
             <h2 className="text-2xl font-bold text-orange-800 mb-2">CPF - Accesorios</h2>
@@ -140,8 +139,7 @@ export default function HomeCarousel() {
           </div>
         </div>
       ) : (
-        // ✅ CAMBIO PRINCIPAL: Quitar rounded-xl - Sin esquinas redondeadas en ningún tamaño
-        <div className="relative w-full h-[450px] md:h-[400px] lg:h-[500px] overflow-hidden shadow-xl">
+        <div className="relative w-full h-[600px] md:h-[400px] lg:h-[500px] overflow-hidden shadow-xl">
           {/* Slides Container */}
           <div 
             className="relative w-full h-full"

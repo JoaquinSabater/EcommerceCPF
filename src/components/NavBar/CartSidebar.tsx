@@ -12,12 +12,17 @@ import { useProspectoMode } from '@/hooks/useProspectoMode';
 export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const sidebarRef = useRef<HTMLDivElement>(null);
   const { cart, changeQuantity, clearCart } = useCart();
-  const { user, getPrecioConDescuento, isDistribuidor } = useAuth(); // ✅ Usar nuevas funciones
+  const { user, getPrecioConDescuento, isDistribuidor } = useAuth();
   const { isProspectoMode, prospectoData } = useProspectoMode();
   const router = useRouter();
 
   const [dolar, setDolar] = useState<number>(1);
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
+
+  // ✅ NUEVO: Estados para swipe
+  const [touchStart, setTouchStart] = useState(0);
+  const [touchEnd, setTouchEnd] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
     async function fetchDolar() {
@@ -31,6 +36,37 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
     }
     fetchDolar();
   }, []);
+
+  // ✅ NUEVO: Funciones para manejar swipe
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.targetTouches[0].clientX);
+    setIsDragging(true);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging) return;
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd || !isDragging) {
+      setIsDragging(false);
+      return;
+    }
+
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50; // Swipe hacia la izquierda
+    const isRightSwipe = distance < -50; // Swipe hacia la derecha (hacia el contenido)
+
+    // ✅ Solo cerrar con swipe hacia la derecha (hacia el contenido desenfocado)
+    if (isRightSwipe) {
+      onClose();
+    }
+
+    setIsDragging(false);
+    setTouchStart(0);
+    setTouchEnd(0);
+  };
 
   // ✅ Calcular total VISUAL (con descuento) pero mantener precios originales en cart
   const totalEnPesos = cart.reduce(
@@ -157,12 +193,15 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
         />
       )}
 
-      {/* ✅ Panel del carrito (z-index actualizado) */}
+      {/* ✅ Panel del carrito CON SWIPE */}
       <div
         ref={sidebarRef}
         className={`fixed top-0 right-0 z-50 h-full w-96 max-w-full bg-white text-black shadow-2xl transition-transform duration-300 ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
         {/* ✅ HEADER CON BADGE DISTRIBUIDOR */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-orange-50 to-orange-100">
@@ -174,6 +213,8 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
                 20% OFF
               </span>
             )}
+            {/* ✅ NUEVO: Indicador de swipe */}
+            <span className="text-xs text-gray-500 ml-2">Desliza para cerrar →</span>
           </h2>
           <button 
             onClick={onClose}
