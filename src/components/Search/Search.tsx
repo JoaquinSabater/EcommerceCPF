@@ -132,7 +132,6 @@ export default function Search() {
 
   return (
     <>
-      {/* ✅ CORREGIDO: Sin max-width, ancho completo siempre */}
       <div ref={searchRef} className="relative w-full">
         <form onSubmit={handleSubmit} className="relative">
           <input
@@ -153,7 +152,8 @@ export default function Search() {
             </div>
           )}
           
-          <div className="absolute right-2 top-2 flex items-center gap-1">
+          {/* ✅ CORREGIDO: Centrar verticalmente los botones */}
+          <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
             {search && (
               <button
                 type="button"

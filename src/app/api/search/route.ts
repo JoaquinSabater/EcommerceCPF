@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
     const url = new URL(request.url);
     const query = url.searchParams.get('q');
 
-    // ✅ Cambiar validación de 2 a 4 caracteres
+    // ✅ Cambiar validación de 2 a 3 caracteres
     if (!query || query.trim().length < 3) {
       return NextResponse.json({ 
         success: false,
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // ✅ Validar que cada palabra tenga al menos 3 caracteres (opcional)
+    // ✅ Validar que cada palabra tenga al menos 2 caracteres
     const palabrasValidas = palabrasClave.filter(palabra => palabra.length >= 2);
     
     if (palabrasValidas.length === 0) {
@@ -44,9 +44,17 @@ export async function GET(request: NextRequest) {
         a.codigo_interno LIKE ? OR 
         i.nombre LIKE ? OR 
         m.nombre LIKE ? OR 
-        a.modelo LIKE ?
+        a.modelo LIKE ? OR
+        d.descripcion LIKE ?
       )`);
-      parametros.push(`%${palabra}%`, `%${palabra}%`, `%${palabra}%`, `%${palabra}%`);
+      // ✅ NUEVO: Agregamos la descripción a los parámetros
+      parametros.push(
+        `%${palabra}%`, // codigo_interno
+        `%${palabra}%`, // item nombre
+        `%${palabra}%`, // marca nombre
+        `%${palabra}%`, // modelo
+        `%${palabra}%`  // descripcion (NUEVO)
+      );
     });
 
     const whereClause = condiciones.join(' AND ');
@@ -57,8 +65,9 @@ export async function GET(request: NextRequest) {
         CONCAT(
           IFNULL(i.nombre, ''), ' ', 
           IFNULL(m.nombre, ''), ' ', 
-          IFNULL(a.modelo, '')
-        ) AS descripcion,
+          IFNULL(a.modelo, ''), ' ',
+          IFNULL(d.descripcion, '')
+        ) AS descripcion_completa,
         i.id as item_id,
         i.nombre AS item,
         a.modelo,
@@ -68,6 +77,7 @@ export async function GET(request: NextRequest) {
         a.ubicacion,
         d.foto1_url,
         d.foto_portada,
+        d.descripcion,
         CONCAT(m.nombre, ' ', a.modelo) AS marca_modelo_completo
       FROM articulos a
       INNER JOIN items i ON a.item_id = i.id
@@ -75,11 +85,29 @@ export async function GET(request: NextRequest) {
       LEFT JOIN item_detalle d ON a.item_id = d.item_id
       WHERE ${whereClause} AND i.disponible = 1
       HAVING stock_real > 0
-      ORDER BY i.nombre, m.nombre, a.modelo
+      ORDER BY 
+        CASE 
+          WHEN i.nombre LIKE ? THEN 1
+          WHEN m.nombre LIKE ? THEN 2
+          WHEN a.modelo LIKE ? THEN 3
+          WHEN d.descripcion LIKE ? THEN 4
+          ELSE 5
+        END,
+        i.nombre, m.nombre, a.modelo
       LIMIT 50
     `;
 
-    const [rows]: any = await db.query(sqlMain, parametros);
+    // ✅ NUEVO: Agregar parámetros para el ORDER BY (priorizar resultados más relevantes)
+    const primerapalabra = `%${palabrasValidas[0]}%`;
+    const parametrosCompletos = [
+      ...parametros,
+      primerapalabra, // para ORDER BY - item nombre
+      primerapalabra, // para ORDER BY - marca nombre  
+      primerapalabra, // para ORDER BY - modelo
+      primerapalabra  // para ORDER BY - descripcion
+    ];
+
+    const [rows]: any = await db.query(sqlMain, parametrosCompletos);
 
     return NextResponse.json({ 
       success: true,
