@@ -6,16 +6,24 @@ import CategoriaCardSkeleton from "@/components/Skeletons/CategoriaCardSkeleton"
 export const dynamic = 'force-dynamic';
 
 export default async function earbuds() {
-  const subcategoriaId = 6;
+  const subcategoriasEarbuds = [
+    23   
+  ];
   
   try {
-    const categorias = await getCategorias(subcategoriaId);
+    const promesasCategorias = subcategoriasEarbuds.map(subcategoriaId => 
+      getCategorias(subcategoriaId)
+    );
+    
+    const resultadosCategorias = await Promise.all(promesasCategorias);
+    
+    const todasLasCategorias = resultadosCategorias.flat();
 
     return (
       <div className="flex">
         <main className="flex-1">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-4">
-            {categorias.map((cat) => (
+            {todasLasCategorias.map((cat) => (
               <CategoriaCard key={cat.id} categoria={cat} />
             ))}
           </div>

@@ -42,10 +42,9 @@ export default function NavBar() {
       submenu: [
         { title: 'Popsockets', path: '/public/accesorios/popsockets' },
         { title: 'Aros de luz', path: '/public/accesorios/arosDeLuz' },
-        { title: 'Earbuds', path: '/public/accesorios/earbuds' }
+        { title: 'Auriculares', path: '/public/accesorios/earbuds' }
       ]
-    },
-    { title: 'Otros', path: '/public/otros' }
+    }
   ];
 
   const totalItems = cart.reduce((sum, item) => sum + item.cantidad, 0);
