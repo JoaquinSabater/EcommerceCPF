@@ -19,6 +19,7 @@ export interface Articulo {
   cantidad?: number;
   es_pesificado?: number; // 0 o 1
   precio_pesos?: number;
+  stock_real?: number; // ✅ Agregado para reflejar stock real calculado
 }
 
 export type categorias = {

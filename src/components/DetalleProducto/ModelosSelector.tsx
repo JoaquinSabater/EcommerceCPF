@@ -41,10 +41,9 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
   const esElectronica = subcategoriasElectronica.includes(subcategoriaId);
 
   useEffect(() => {
-    //console.log('🟡 ModelosSelector recibió sugerenciaActual:', `"${sugerenciaActual}"`);
   }, [sugerenciaActual]);
 
-  // ✅ FUNCIÓN MEJORADA: Manejar precios pesificados + electrónica + no descuento
+  // ✅ FUNCIÓN MEJORADA: Manejar precios pesificados + electrónica + no descuento + STOCK
   const formatModeloDisplay = (articulo: Articulo) => {
     const marcaModelo = articulo.marca_nombre 
       ? `${articulo.marca_nombre} ${articulo.modelo}` 
@@ -79,16 +78,32 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
       // ✅ Calcular precio normal (USD * dolar correspondiente)
       precioArs = Math.round(precioConDescuentoUsd * dolar);
     }
+
+    // ✅ NUEVO: Obtener stock real
+    const stockReal = Number(articulo.stock_real || 0);
+    const stockDisplay = stockReal > 0 ? `Stock: ${stockReal}` : 'Sin stock';
+    const stockColor = stockReal > 10 ? 'text-green-600' : stockReal > 0 ? 'text-yellow-600' : 'text-red-600';
     
     return {
-      texto: `${marcaModelo} - $${precioConDescuentoUsd.toFixed(2)} USD ($${precioArs.toLocaleString()} ARS${esPesificado ? ' 🏷️' : ''}${esElectronica ? ' ⚡' : ''})`,
+      texto: `${marcaModelo} - $${precioConDescuentoUsd.toFixed(2)} USD ($${precioArs.toLocaleString()} ARS${esPesificado ? ' 🏷️' : ''}${esElectronica ? ' ⚡' : ''}) - ${stockDisplay}`,
       marcaModelo: marcaModelo,
       precioUsd: precioConDescuentoUsd,
       precioOriginalUsd: precioOriginalUsd,
       precioArs: precioArs,
       esPesificado: esPesificado,
-      esElectronica: esElectronica
+      esElectronica: esElectronica,
+      stockReal: stockReal,
+      stockDisplay: stockDisplay,
+      stockColor: stockColor
     };
+  };
+
+  // ✅ NUEVA FUNCIÓN: Obtener stock disponible considerando los ya seleccionados
+  const getStockDisponible = (articulo: Articulo) => {
+    const stockTotal = Number(articulo.stock_real || 0);
+    const yaSeleccionado = seleccionados.find(s => s.articulo.codigo_interno === articulo.codigo_interno);
+    const cantidadSeleccionada = yaSeleccionado ? yaSeleccionado.cantidad : 0;
+    return Math.max(0, stockTotal - cantidadSeleccionada);
   };
 
   // ✅ MODIFICADO: Obtener cotización del dólar correspondiente
@@ -117,8 +132,9 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
     fetch(`/api/articulosPorSubcategoria?subcategoriaId=${subcategoriaId}`)
       .then(res => res.json())
       .then(data => {
-        console.log('🟡 Artículos cargados:', data.articulos?.slice(0, 3).map((a: Articulo) => ({
+        console.log('🟡 Artículos cargados con stock:', data.articulos?.slice(0, 3).map((a: Articulo) => ({
           modelo: a.modelo,
+          stock_real: a.stock_real,
           es_pesificado: a.es_pesificado,
           precio_pesos: a.precio_pesos,
           precio_venta: a.precio_venta
@@ -150,7 +166,7 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
   }, [subcategoriaId]);
 
   const modelosDisponibles = modelos.filter(
-    (m) => !seleccionados.some((s) => s.articulo.modelo === m.modelo)
+    (m) => !seleccionados.some((s) => s.articulo.modelo === m.modelo) && Number(m.stock_real || 0) > 0
   );
 
   // ✅ Buscar tanto en modelo como en marca
@@ -161,7 +177,19 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
 
   const handleAddModelo = () => {
     if (modeloActual && cantidadActual > 0) {
-      setSeleccionados([...seleccionados, { articulo: modeloActual, cantidad: cantidadActual }]);
+      const stockDisponible = getStockDisponible(modeloActual);
+      const cantidadFinal = Math.min(cantidadActual, stockDisponible);
+      
+      if (cantidadFinal <= 0) {
+        alert(`No hay stock suficiente para ${modeloActual.modelo}. Stock disponible: ${stockDisponible}`);
+        return;
+      }
+      
+      if (cantidadFinal < cantidadActual) {
+        alert(`Solo se pueden agregar ${cantidadFinal} unidades de ${modeloActual.modelo} (stock disponible limitado)`);
+      }
+      
+      setSeleccionados([...seleccionados, { articulo: modeloActual, cantidad: cantidadFinal }]);
       setModeloActual(null);
       setCantidadActual(1);
       setSearchTerm("");
@@ -169,15 +197,34 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
   };
 
   const handleCantidadChange = (value: number) => {
-    setCantidadActual(value);
+    if (modeloActual) {
+      const stockDisponible = getStockDisponible(modeloActual);
+      const cantidadMaxima = Math.min(value, stockDisponible);
+      setCantidadActual(cantidadMaxima);
+      
+      if (value > stockDisponible) {
+        console.warn(`Cantidad limitada por stock disponible: ${stockDisponible}`);
+      }
+    } else {
+      setCantidadActual(value);
+    }
   };
 
   const handleRemoveSeleccionado = (modelo: string) => {
     setSeleccionados(seleccionados.filter((s) => s.articulo.modelo !== modelo));
   };
 
-  // ✅ Función modificada para agregar al carrito CON PRECIO ORIGINAL
+  // ✅ Función modificada para agregar al carrito CON PRECIO ORIGINAL Y VALIDACIÓN DE STOCK
   const handleAddToCart = () => {
+    // ✅ VALIDAR STOCK ANTES DE AGREGAR
+    for (const { articulo, cantidad } of seleccionados) {
+      const stockActual = Number(articulo.stock_real || 0);
+      if (cantidad > stockActual) {
+        alert(`Error: ${articulo.modelo} tiene solo ${stockActual} unidades en stock, pero intentas agregar ${cantidad}.`);
+        return;
+      }
+    }
+
     seleccionados.forEach(({ articulo, cantidad }) => {
       if (!articulo.precio_venta || isNaN(Number(articulo.precio_venta))) {
         console.warn(`Artículo sin precio válido: ${articulo.modelo}`);
@@ -223,14 +270,24 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
     setModeloActual(modelo);
     setSearchTerm("");
     setIsSearchFocused(false);
+    // ✅ NUEVO: Ajustar cantidad si excede el stock
+    const stockDisponible = getStockDisponible(modelo);
+    if (cantidadActual > stockDisponible) {
+      setCantidadActual(Math.max(1, stockDisponible));
+    }
   };
 
   // Función para seleccionar modelo recomendado
   const handleRecomendadoSelect = (modeloNombre: string) => {
     const modeloEncontrado = modelos.find(m => m.modelo === modeloNombre);
     if (modeloEncontrado) {
-      setModeloActual(modeloEncontrado);
-      setCantidadActual(1);
+      const stockDisponible = getStockDisponible(modeloEncontrado);
+      if (stockDisponible > 0) {
+        setModeloActual(modeloEncontrado);
+        setCantidadActual(1);
+      } else {
+        alert(`${modeloNombre} no tiene stock disponible`);
+      }
     }
   };
 
@@ -361,18 +418,21 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
             {(isEditingRecomendados ? tempRecomendados : modelosRecomendados).map((modeloNombre, index) => {
               const modeloCompleto = modelos.find(m => m.modelo === modeloNombre);
               const displayInfo = modeloCompleto ? formatModeloDisplay(modeloCompleto) : null;
+              const stockDisponible = modeloCompleto ? getStockDisponible(modeloCompleto) : 0;
               
               return (
                 <div key={index} className="relative">
                   <button
                     onClick={() => handleRecomendadoSelect(modeloNombre)}
-                    disabled={isEditingRecomendados}
+                    disabled={isEditingRecomendados || stockDisponible <= 0}
                     className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
                       isEditingRecomendados 
                         ? 'bg-gray-100 text-gray-600 cursor-default' 
-                        : 'bg-pink-50 text-pink-700 hover:bg-pink-100 border border-pink-200'
+                        : stockDisponible <= 0
+                          ? 'bg-red-50 text-red-400 cursor-not-allowed opacity-50'
+                          : 'bg-pink-50 text-pink-700 hover:bg-pink-100 border border-pink-200'
                     }`}
-                    title={displayInfo ? `$${displayInfo.precioUsd} USD - $${displayInfo.precioArs.toLocaleString()} ARS${displayInfo.esPesificado ? ' (Precio especial)' : ''}${displayInfo.esElectronica ? ' (Electrónica)' : ''}${!esElectronica && isDistribuidor() ? ' (con descuento)' : ''}` : ''}
+                    title={displayInfo ? `$${displayInfo.precioUsd} USD - $${displayInfo.precioArs.toLocaleString()} ARS - Stock: ${stockDisponible}${displayInfo.esPesificado ? ' (Precio especial)' : ''}${displayInfo.esElectronica ? ' (Electrónica)' : ''}${!esElectronica && isDistribuidor() ? ' (con descuento)' : ''}` : ''}
                   >
                     <div className="flex flex-col items-start">
                       <span className="font-medium">
@@ -381,12 +441,17 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
                         {displayInfo?.esElectronica && <span className="ml-1">⚡</span>}
                       </span>
                       {displayInfo && !isEditingRecomendados && (
-                        <span className="text-xs text-pink-600">
-                          ${displayInfo.precioUsd} USD
-                          {!esElectronica && isDistribuidor() && (
-                            <span className="ml-1 text-green-600">(-20%)</span>
-                          )}
-                        </span>
+                        <div className="flex flex-col text-xs">
+                          <span className="text-pink-600">
+                            ${displayInfo.precioUsd} USD
+                            {!esElectronica && isDistribuidor() && (
+                              <span className="ml-1 text-green-600">(-20%)</span>
+                            )}
+                          </span>
+                          <span className={`${displayInfo.stockColor}`}>
+                            Stock: {stockDisponible}
+                          </span>
+                        </div>
                       )}
                     </div>
                   </button>
@@ -440,6 +505,7 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
                           <div className="grid grid-cols-1 gap-1">
                             {modelos.map((m) => {
                               const displayInfo = formatModeloDisplay(m);
+                              const stockDisponible = getStockDisponible(m);
                               return (
                                 <Listbox.Option 
                                   key={m.codigo_interno} 
@@ -448,6 +514,7 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
                                     cursor-pointer select-none relative py-2 px-4
                                     ${active ? 'bg-orange-100 text-orange-900' : 'text-gray-900'}
                                     ${tempRecomendados.includes(m.modelo) ? 'opacity-50' : ''}
+                                    ${stockDisponible <= 0 ? 'opacity-30' : ''}
                                   `}
                                   disabled={tempRecomendados.includes(m.modelo)}
                                 >
@@ -463,6 +530,9 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
                                       </span>
                                       {tempRecomendados.includes(m.modelo) && (
                                         <span className="text-xs text-green-600">Ya agregado</span>
+                                      )}
+                                      {stockDisponible <= 0 && (
+                                        <span className="text-xs text-red-600">Sin stock</span>
                                       )}
                                     </div>
                                     <div className="text-right">
@@ -480,6 +550,9 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
                                         {displayInfo.esElectronica && (
                                           <span className="ml-1 text-blue-600">⚡</span>
                                         )}
+                                      </div>
+                                      <div className={`text-xs ${displayInfo.stockColor}`}>
+                                        Stock: {stockDisponible}
                                       </div>
                                     </div>
                                   </div>
@@ -517,15 +590,16 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
                 <div className="flex flex-wrap gap-2 mb-4">
                   {modelos.slice(0, 10).map((modelo) => {
                     const displayInfo = formatModeloDisplay(modelo);
+                    const stockDisponible = getStockDisponible(modelo);
                     return (
                       <button
                         key={modelo.codigo_interno}
                         onClick={() => handleAddToRecomendados(modelo.modelo)}
-                        disabled={tempRecomendados.includes(modelo.modelo) || tempRecomendados.length >= 5}
+                        disabled={tempRecomendados.includes(modelo.modelo) || tempRecomendados.length >= 5 || stockDisponible <= 0}
                         className="px-2 py-1 text-xs bg-gray-100 border border-gray-300 text-gray-700 rounded hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        title={`$${displayInfo.precioUsd} USD - $${displayInfo.precioArs.toLocaleString()} ARS${displayInfo.esPesificado ? ' (Precio especial)' : ''}${displayInfo.esElectronica ? ' (Electrónica)' : ''}${!esElectronica && isDistribuidor() ? ' (con descuento)' : ''}`}
+                        title={`$${displayInfo.precioUsd} USD - $${displayInfo.precioArs.toLocaleString()} ARS - Stock: ${stockDisponible}${displayInfo.esPesificado ? ' (Precio especial)' : ''}${displayInfo.esElectronica ? ' (Electrónica)' : ''}${!esElectronica && isDistribuidor() ? ' (con descuento)' : ''}`}
                       >
-                        + {displayInfo.marcaModelo} (${displayInfo.precioUsd})
+                        + {displayInfo.marcaModelo} (${displayInfo.precioUsd}) Stock: {stockDisponible}
                         {displayInfo.esPesificado && <span className="ml-1">🏷️</span>}
                         {displayInfo.esElectronica && <span className="ml-1">⚡</span>}
                       </button>
@@ -588,11 +662,13 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
               <div className="grid grid-cols-1 gap-1 py-1">
                 {modelosFiltrados.slice(0, 20).map((modelo) => {
                   const displayInfo = formatModeloDisplay(modelo);
+                  const stockDisponible = getStockDisponible(modelo);
                   return (
                     <button
                       key={modelo.codigo_interno}
                       onClick={() => handleSearchSelect(modelo)}
-                      className="cursor-pointer select-none relative py-2 px-4 hover:bg-orange-100 hover:text-orange-900 transition-colors text-left"
+                      disabled={stockDisponible <= 0}
+                      className={`cursor-pointer select-none relative py-2 px-4 hover:bg-orange-100 hover:text-orange-900 transition-colors text-left ${stockDisponible <= 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       <div className="flex justify-between items-center">
                         <div className="flex flex-col">
@@ -620,6 +696,9 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
                             {displayInfo.esElectronica && (
                               <span className="ml-1 text-blue-600">⚡</span>
                             )}
+                          </div>
+                          <div className={`text-xs ${displayInfo.stockColor}`}>
+                            Stock: {stockDisponible}
                           </div>
                         </div>
                       </div>
@@ -666,13 +745,16 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
                     <div key={chunkIndex} className="flex flex-col">
                       {chunk.map((m) => {
                         const displayInfo = formatModeloDisplay(m);
+                        const stockDisponible = getStockDisponible(m);
                         return (
                           <Listbox.Option 
                             key={m.codigo_interno} 
                             value={m} 
+                            disabled={stockDisponible <= 0}
                             className={({ active }) => `
                               cursor-pointer select-none relative py-2 px-4
                               ${active ? 'bg-orange-100 text-orange-900' : 'text-gray-900'}
+                              ${stockDisponible <= 0 ? 'opacity-50 cursor-not-allowed' : ''}
                             `}
                           >
                             <div className="flex justify-between items-center">
@@ -702,6 +784,9 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
                                     <span className="ml-1 text-blue-600">⚡</span>
                                   )}
                                 </div>
+                                <div className={`text-xs ${displayInfo.stockColor}`}>
+                                  Stock: {stockDisponible}
+                                </div>
                               </div>
                             </div>
                           </Listbox.Option>
@@ -724,19 +809,26 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
             <div className="flex-1">
               <QuantityButton
                 value={cantidadActual}
-                onAdd={() => setCantidadActual(cantidadActual + 1)}
+                onAdd={() => {
+                  const stockDisponible = getStockDisponible(modeloActual);
+                  if (cantidadActual < stockDisponible) {
+                    setCantidadActual(cantidadActual + 1);
+                  }
+                }}
                 onRemove={() => setCantidadActual(Math.max(1, cantidadActual - 1))}
                 onSet={handleCantidadChange}
                 modelo={modeloActual.modelo}
                 hideModelo={true}
                 size="normal"
+                maxStock={getStockDisponible(modeloActual)} // ✅ NUEVO: Pasar stock máximo
               />
             </div>
             <button
-              className="flex-1 bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded font-semibold transition-colors"
+              className="flex-1 bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={handleAddModelo}
+              disabled={getStockDisponible(modeloActual) <= 0}
             >
-              Añadir modelo
+              {getStockDisponible(modeloActual) <= 0 ? 'Sin stock' : 'Añadir modelo'}
             </button>
           </div>
         )}
@@ -750,6 +842,7 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
             {seleccionados.map((s) => {
               const displayInfo = formatModeloDisplay(s.articulo);
               const subtotalArs = displayInfo.precioArs * s.cantidad;
+              const stockDisponible = getStockDisponible(s.articulo);
               
               return (
                 <div key={s.articulo.codigo_interno} className="flex items-center gap-3 border border-gray-200 rounded px-3 py-2 bg-gray-50 hover:bg-gray-100">
@@ -772,6 +865,9 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
                           {displayInfo.esElectronica && (
                             <span className="ml-1 text-blue-600 text-xs">(Electrónica)</span>
                           )}
+                        </div>
+                        <div className={`text-xs ${displayInfo.stockColor}`}>
+                          Stock disponible: {stockDisponible + s.cantidad} (seleccionado: {s.cantidad})
                         </div>
                       </div>
                       <div className="text-right">

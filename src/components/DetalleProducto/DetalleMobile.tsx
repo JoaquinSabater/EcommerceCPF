@@ -217,7 +217,6 @@ export default function DetalleMobile({ producto, onSugerenciaChange }: DetalleM
       </div>
 
       {/* ...existing code... */}
-      <div className="mb-2 text-xs text-gray-500">Vidrio templado</div>
       <div className="font-bold text-xl mb-1">{producto.nombre}</div>
       <div className="text-gray-700 mb-2">{producto.descripcion}</div>
 

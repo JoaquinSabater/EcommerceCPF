@@ -67,7 +67,6 @@ export default function DetalleDesktop({ producto, onSugerenciaChange }: Detalle
       <div className="flex w-full items-start p-6">
         <div className="flex-1 flex flex-col justify-start pr-8">
           {/* ...existing code... */}
-          <div className="mb-2 text-xs text-gray-500">Vidrio templado</div>
           <div className="font-bold text-3xl mb-2">{producto.nombre}</div>
           <div className="text-gray-700 mb-4 text-lg">{producto.descripcion}</div>
           
