@@ -42,10 +42,9 @@ export default function SearchQuantityButton({
     }
   };
 
-  // ✅ FIX 1: Validar que no supere el stock máximo
   const handleSet = (value: number) => {
     if (value > maxStock) {
-      setQuantity(maxStock); // Limitar al stock máximo
+      setQuantity(maxStock);
     } else if (value >= 0) {
       setQuantity(value);
     }
@@ -57,19 +56,28 @@ export default function SearchQuantityButton({
     setIsAdding(true);
     
     try {
+      // ✅ CORREGIDO: Crear objeto con la estructura correcta que espera CartContext
       const articulo = {
         codigo_interno: codigoInterno,
         item_id: itemId,
         marca_id: 0,
         modelo: modelo,
         code: '',
-        precio_venta: precio,
+        precio_venta: Number(precio), // ✅ Asegurar que sea número
         ubicacion: '',
         stock_actual: maxStock,
+        stock_real: maxStock, // ✅ IMPORTANTE: CartContext usa stock_real
         item_nombre: itemName
       };
 
-      addToCart(articulo, itemName, quantity);
+      console.log('🛒 Agregando al carrito desde búsqueda:', {
+        articulo,
+        nombre: itemName,
+        cantidad: quantity
+      });
+
+      // ✅ CORREGIDO: Pasar parámetros en el orden correcto
+      addToCart(articulo, itemName, quantity, ''); // (articulo, nombre, cantidad, sugerencia)
 
       if (onAddToCart) {
         const cartItem = {
@@ -84,12 +92,13 @@ export default function SearchQuantityButton({
         onAddToCart(cartItem);
       }
 
-      alert(`${quantity} ${itemName} agregado al carrito`);
+      // ✅ CORREGIDO: Mensaje más específico
+      alert(`✅ ${quantity} x ${modelo} agregado al carrito`);
       setQuantity(0);
       
     } catch (error) {
-      console.error('Error al agregar al carrito:', error);
-      alert('Error al agregar al carrito');
+      console.error('❌ Error al agregar al carrito:', error);
+      alert('❌ Error al agregar al carrito. Intenta nuevamente.');
     } finally {
       setIsAdding(false);
     }
@@ -97,7 +106,6 @@ export default function SearchQuantityButton({
 
   return (
     <div className={`flex flex-col gap-3 min-w-[120px] ${className}`}>
-      {/* ✅ FIX 2: Botón de cantidad más grande */}
       <div className="flex justify-center">
         <QuantityButton
           value={quantity}
@@ -106,12 +114,11 @@ export default function SearchQuantityButton({
           onSet={handleSet}
           modelo={modelo}
           hideModelo={true}
-          size="normal" // ✅ Cambiado de "xs" a "normal"
-          maxStock={maxStock} // ✅ Pasar maxStock para validación
+          size="normal"
+          maxStock={maxStock}
         />
       </div>
 
-      {/* Botón Agregar - mejorado visualmente */}
       {quantity > 0 && (
         <div className="flex justify-center">
           <button
