@@ -154,7 +154,7 @@ export default function ProductosDestacados() {
             <SwiperSlide key={producto.id}>
               <ProductoDestacadoCard 
                 categoria={producto} 
-                onClick={() => {}} // ✅ Función vacía, no necesitamos navegación
+                onClick={() => {}}
               />
             </SwiperSlide>
           ))}

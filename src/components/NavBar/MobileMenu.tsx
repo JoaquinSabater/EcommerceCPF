@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { XMarkIcon, ChevronDownIcon, ChevronUpIcon, UserCircleIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, ChevronDownIcon, ChevronUpIcon, UserCircleIcon, FunnelIcon } from '@heroicons/react/24/outline';
 import Search from '../Search/Search';
 import { useCart } from '@/components/CartContext';
 import { useProspectoMode } from '@/hooks/useProspectoMode';
@@ -163,6 +163,20 @@ export default function MobileMenu({ menu }: { menu: MenuItem[] }) {
             {/* ✅ BÚSQUEDA con ancho completo */}
             <div className="p-4 border-b border-gray-100">
               <Search />
+            </div>
+
+            {/* ✅ NUEVO: Botón de filtros rápido */}
+            <div className="px-4 py-2">
+              <button
+                onClick={() => {
+                  setIsOpen(false);
+                  window.location.href = '/public/filtros';
+                }}
+                className="w-full flex items-center gap-2 p-3 bg-orange-50 text-orange-700 rounded-lg hover:bg-orange-100 transition-colors"
+              >
+                <FunnelIcon className="h-5 w-5" />
+                <span className="font-medium">Filtros avanzados</span>
+              </button>
             </div>
 
             {/* ✅ Navegación */}

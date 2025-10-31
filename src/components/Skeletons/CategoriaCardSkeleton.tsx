@@ -14,9 +14,27 @@ export default function CategoriaCardSkeleton() {
           <div className="h-4 bg-gray-300 rounded w-1/2"></div>
         </div>
         
-        {/* Skeleton del botón */}
+        {/* Skeleton del contenido inferior */}
         <div className="mt-auto flex items-center justify-between">
-          <div className="h-10 bg-gray-300 rounded-lg w-20"></div>
+          {/* ✅ Skeleton del rango de precios */}
+          <div className="flex-1">
+            {/* Precio principal */}
+            <div className="space-y-1 mb-2">
+              <div className="h-5 bg-gray-300 rounded w-32"></div>
+              <div className="h-3 bg-gray-300 rounded w-24"></div>
+            </div>
+            
+            {/* Badge de descuento */}
+            <div className="h-5 bg-gray-300 rounded-full w-20 mb-1"></div>
+            
+            {/* Info adicional */}
+            <div className="h-3 bg-gray-300 rounded w-28"></div>
+          </div>
+          
+          {/* Skeleton del botón */}
+          <div className="h-10 bg-gray-300 rounded-lg w-16 ml-auto flex items-center justify-center">
+            <div className="w-12 h-4 bg-gray-400 rounded"></div>
+          </div>
         </div>
       </div>
     </div>
