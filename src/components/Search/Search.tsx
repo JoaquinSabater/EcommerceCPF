@@ -33,26 +33,21 @@ export default function Search() {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const router = useRouter();
   
-  // ✅ MEJORADO: Usar un contador de búsqueda para evitar race conditions
   const searchCounterRef = useRef<number>(0);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    // ✅ Incrementar contador de búsqueda
     searchCounterRef.current++;
     const currentSearchCounter = searchCounterRef.current;
 
-    // ✅ Limpiar timeout anterior
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
 
-    // ✅ Cancelar búsqueda anterior si existe
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
 
-    // ✅ Si no hay suficientes caracteres, limpiar y salir
     if (search.trim().length < 3) {
       setResults([]);
       setShowResults(false);
@@ -60,22 +55,17 @@ export default function Search() {
       return;
     }
 
-    // ✅ LIMPIAR RESULTADOS INMEDIATAMENTE al empezar nueva búsqueda
     setResults([]);
     setIsSearching(true);
     
-    // ✅ Guardar el término de búsqueda actual
     const searchTerm = search.trim();
 
-    // ✅ DEBOUNCE: Esperar 600ms antes de ejecutar la búsqueda (reducido para mejor UX)
     timeoutRef.current = setTimeout(async () => {
-      // ✅ Verificar que esta siga siendo la búsqueda más reciente
       if (searchCounterRef.current !== currentSearchCounter) {
         console.log(`🚫 Búsqueda obsoleta cancelada: ${currentSearchCounter} != ${searchCounterRef.current}`);
         return;
       }
 
-      // ✅ Crear nuevo AbortController para esta búsqueda
       const abortController = new AbortController();
       abortControllerRef.current = abortController;
 
@@ -89,13 +79,11 @@ export default function Search() {
           }
         );
 
-        // ✅ Verificar que no se canceló la petición
         if (abortController.signal.aborted) {
           console.log(`🚫 Petición abortada #${currentSearchCounter}`);
           return;
         }
 
-        // ✅ VERIFICACIÓN CRÍTICA: Verificar que esta siga siendo la búsqueda actual
         if (searchCounterRef.current !== currentSearchCounter) {
           console.log(`🚫 Resultados descartados #${currentSearchCounter}, actual: ${searchCounterRef.current}`);
           return;
@@ -105,7 +93,6 @@ export default function Search() {
         
         console.log(`✅ Resultados #${currentSearchCounter} para "${searchTerm}": ${data.results?.length || 0}`);
         
-        // ✅ VERIFICACIÓN FINAL antes de actualizar estado
         if (searchCounterRef.current === currentSearchCounter) {
           setResults(data.results || []);
           setShowResults(true);
@@ -115,7 +102,6 @@ export default function Search() {
         }
         
       } catch (error) {
-        // ✅ Ignorar errores de cancelación
         if (error instanceof Error && error.name === 'AbortError') {
           console.log(`🚫 Búsqueda cancelada #${currentSearchCounter}`);
           return;
@@ -123,15 +109,13 @@ export default function Search() {
         
         console.error(`❌ Error en búsqueda #${currentSearchCounter}:`, error);
         
-        // ✅ Solo limpiar si es la búsqueda actual
         if (searchCounterRef.current === currentSearchCounter) {
           setResults([]);
           setIsSearching(false);
         }
       }
-    }, 600); // ✅ Reducido a 600ms para mejor UX
+    }, 600);
 
-    // ✅ Cleanup al cambiar el search
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
@@ -139,7 +123,6 @@ export default function Search() {
     };
   }, [search]);
 
-  // ✅ Limpiar al desmontar el componente
   useEffect(() => {
     return () => {
       if (timeoutRef.current) {
@@ -162,18 +145,34 @@ export default function Search() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // ✅ ACTUALIZADO: Esconder resultados y redirigir a filtros con la búsqueda
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (search.trim().length >= 3) {
-      setShowResults(true);
+      console.log(`🔍 Redirigiendo a filtros con búsqueda: "${search.trim()}"`);
+      
+      // ✅ NUEVO: Esconder resultados antes de redirigir
+      setShowResults(false);
+      
+      router.push(`/public/filtros?search=${encodeURIComponent(search.trim())}`);
+    }
+  };
+
+  // ✅ ACTUALIZADO: Esconder resultados y redirigir al hacer clic en la lupa
+  const handleSearchClick = () => {
+    if (search.trim().length >= 3) {
+      console.log(`🔍 Redirigiendo a filtros con búsqueda: "${search.trim()}"`);
+      
+      // ✅ NUEVO: Esconder resultados antes de redirigir
+      setShowResults(false);
+      
+      router.push(`/public/filtros?search=${encodeURIComponent(search.trim())}`);
     }
   };
 
   const clearSearch = () => {
-    // ✅ Incrementar contador para invalidar búsquedas en curso
     searchCounterRef.current++;
     
-    // ✅ Cancelar búsquedas pendientes
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
@@ -203,8 +202,9 @@ export default function Search() {
     console.log('Agregado al carrito desde búsqueda:', item);
   };
 
-  // ✅ NUEVO: Función para manejar click en filtros
   const handleFilterClick = () => {
+    // ✅ NUEVO: También esconder resultados al ir a filtros sin búsqueda
+    setShowResults(false);
     router.push('/public/filtros');
   };
 
@@ -215,7 +215,7 @@ export default function Search() {
     } else if (length < 3) {
       return `Escribe ${3 - length} caracteres más para buscar...`;
     } else {
-      return "Buscar por marca, modelo o producto...";
+      return "Presiona Enter o la lupa para buscar";
     }
   };
 
@@ -244,7 +244,6 @@ export default function Search() {
           )}
           
           <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
-            {/* ✅ MEJORADO: Botón de filtros con texto */}
             <button
               type="button"
               onClick={handleFilterClick}
@@ -265,14 +264,17 @@ export default function Search() {
               </button>
             )}
             
+            {/* ✅ ACTUALIZADO: Click en lupa esconde resultados y redirige a filtros */}
             <button 
-              type="submit" 
+              type="button"
+              onClick={handleSearchClick}
               disabled={isSearching || search.trim().length < 3}
               className={`rounded-full p-1 transition-colors duration-200 ${
                 search.trim().length >= 3 && !isSearching
                   ? 'text-gray-500 hover:text-white hover:bg-orange-600'
                   : 'text-gray-300 cursor-not-allowed'
               }`}
+              title={search.trim().length >= 3 ? "Buscar en página de filtros" : "Escribe al menos 3 caracteres"}
             >
               {isSearching ? (
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-500"></div>
@@ -283,10 +285,26 @@ export default function Search() {
           </div>
         </form>
 
+        {/* ✅ Dropdown de resultados - se esconde al buscar */}
         {showResults && !showHelper && (
           <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+            <div className="p-3 bg-blue-50 border-b border-blue-200">
+              <p className="text-sm text-blue-700 flex items-center gap-2">
+                <MagnifyingGlassIcon className="h-4 w-4" />
+                Vista rápida - <button 
+                  onClick={() => {
+                    // ✅ NUEVO: Esconder resultados al hacer clic en "Ver todos los resultados"
+                    setShowResults(false);
+                    router.push(`/public/filtros?search=${encodeURIComponent(search.trim())}`);
+                  }}
+                  className="underline font-medium hover:text-blue-800"
+                >
+                  Ver todos los resultados
+                </button>
+              </p>
+            </div>
             <SearchResults
-              results={results}
+              results={results.slice(0, 5)} // ✅ Mostrar solo primeros 5 resultados
               query={search}
               onItemClick={handleItemClick}
               onAddToCart={handleAddToCart}

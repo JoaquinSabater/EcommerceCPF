@@ -30,7 +30,7 @@ export async function POST(request: Request) {
       telefono: string;
       vendedor_id: number;
       habilitado: number;
-      Distribuidor: number; // ✅ Agregar el tipo
+      Distribuidor: number;
     }>, any];
 
     if (clienteRows.length === 0) {
@@ -56,50 +56,26 @@ export async function POST(request: Request) {
     const isAdmin = cliente.razon_social === 'Administrador' || cliente.id === 2223;
     const isDistribuidor = Boolean(cliente.Distribuidor);
 
-    //console.log(`🔍 Usuario autenticando:`, {
-      //id: cliente.id,
-      //nombre: cliente.nombre,
-      //Distribuidor_raw: cliente.Distribuidor,
-      //isDistribuidor: isDistribuidor,
-      //isAdmin: isAdmin
-    //});
-
     const [authRows] = await db.execute(
-      'SELECT id, cliente_id, password_hash, email_verified, failed_login_attempts, locked_until FROM clientes_auth WHERE cliente_id = ?',
+      'SELECT id, cliente_id, password_hash, email_verified FROM clientes_auth WHERE cliente_id = ?',
       [cliente.id]
     ) as [Array<{
       id: number;
       cliente_id: number;
       password_hash: string | null;
       email_verified: number;
-      failed_login_attempts: number;
-      locked_until: Date | string | null;
     }>, any];
 
     if (authRows.length === 0) {
       await db.execute(
-        'INSERT INTO clientes_auth (cliente_id, email_verified, failed_login_attempts) VALUES (?, 0, 0)',
+        'INSERT INTO clientes_auth (cliente_id, email_verified) VALUES (?, 0)',
         [cliente.id]
       );
     }
 
-    const auth = authRows[0] || { password_hash: null, failed_login_attempts: 0, locked_until: null };
-
-    if (auth.locked_until && new Date() < new Date(auth.locked_until)) {
-      return NextResponse.json(
-        { success: false, message: 'Cuenta bloqueada temporalmente' },
-        { status: 423 }
-      );
-    }
+    const auth = authRows[0] || { password_hash: null };
 
     if (!password) {
-      if (authRows.length > 0) {
-        await db.execute(
-          'UPDATE clientes_auth SET failed_login_attempts = 0, locked_until = NULL WHERE cliente_id = ?',
-          [cliente.id]
-        );
-      }
-
       // ✅ Generar token JWT CON DISTRIBUIDOR
       const token = jwt.sign(
         { 
@@ -109,7 +85,7 @@ export async function POST(request: Request) {
           apellido: cliente.apellido,
           vendedorId: cliente.vendedor_id,
           isAdmin,
-          Distribuidor: cliente.Distribuidor // ✅ Incluir en JWT
+          Distribuidor: cliente.Distribuidor
         },
         JWT_SECRET,
         { expiresIn: '24h' }
@@ -129,7 +105,7 @@ export async function POST(request: Request) {
           telefono: cliente.telefono,
           vendedor_id: cliente.vendedor_id,
           isAdmin,
-          Distribuidor: cliente.Distribuidor // ✅ INCLUIR DISTRIBUIDOR EN LA RESPUESTA
+          Distribuidor: cliente.Distribuidor
         }
       });
     }
@@ -144,32 +120,11 @@ export async function POST(request: Request) {
     const isValidPassword = await bcrypt.compare(password, auth.password_hash);
 
     if (!isValidPassword) {
-      const newAttempts = (auth.failed_login_attempts || 0) + 1;
-      const lockUntil = newAttempts >= 5 ? new Date(Date.now() + 15 * 60 * 1000) : null;
-
-      await db.execute(
-        'UPDATE clientes_auth SET failed_login_attempts = ?, locked_until = ? WHERE cliente_id = ?',
-        [newAttempts, lockUntil, cliente.id]
-      );
-
-      if (lockUntil) {
-        return NextResponse.json(
-          { success: false, message: 'Demasiados intentos fallidos. Cuenta bloqueada por 15 minutos.' },
-          { status: 423 }
-        );
-      }
-
       return NextResponse.json(
         { success: false, message: 'Contraseña incorrecta' },
         { status: 401 }
       );
     }
-
-    // Login exitoso - resetear intentos fallidos
-    await db.execute(
-      'UPDATE clientes_auth SET failed_login_attempts = 0, locked_until = NULL WHERE cliente_id = ?',
-      [cliente.id]
-    );
 
     // ✅ Generar token JWT CON DISTRIBUIDOR
     const token = jwt.sign(
@@ -180,7 +135,7 @@ export async function POST(request: Request) {
         apellido: cliente.apellido,
         vendedorId: cliente.vendedor_id,
         isAdmin,
-        Distribuidor: cliente.Distribuidor // ✅ Incluir en JWT
+        Distribuidor: cliente.Distribuidor
       },
       JWT_SECRET,
       { expiresIn: '24h' }
@@ -200,7 +155,7 @@ export async function POST(request: Request) {
         telefono: cliente.telefono,
         vendedor_id: cliente.vendedor_id,
         isAdmin,
-        Distribuidor: cliente.Distribuidor // ✅ INCLUIR DISTRIBUIDOR EN LA RESPUESTA
+        Distribuidor: cliente.Distribuidor
       }
     });
 
