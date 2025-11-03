@@ -32,33 +32,53 @@ export function useAuth() {
         setCookies(parsedUser);
         
       } else {
+        // ✅ VERIFICAR SI HAY MODO PROSPECTO ACTIVO ANTES DE REDIRIGIR
+        const prospectoModeActive = localStorage.getItem('prospecto_mode') === 'true';
+        const prospectoDataStored = localStorage.getItem('prospecto_data');
+        
         // Rutas públicas que NO requieren autenticación
         const publicRoutes = [
           '/',
           '/auth/forgot-password',
           '/auth/set-password',
-          '/auth/reset-password'
+          '/auth/reset-password',
+          '/prospecto-order'  // ✅ AGREGAR RUTA DE PROSPECTOS
         ];
         
-        // Si no hay usuario y no estamos en una ruta pública, redirigir al login
-        if (!publicRoutes.includes(pathname)) {
+        // ✅ NO REDIRIGIR SI:
+        // 1. Estamos en una ruta pública
+        // 2. Hay modo prospecto activo
+        const shouldNotRedirect = publicRoutes.includes(pathname) || 
+                                 (prospectoModeActive && prospectoDataStored);
+        
+        if (!shouldNotRedirect) {
+          console.log('🔄 No hay usuario ni prospecto activo, redirigiendo al login');
           clearAuthData();
           router.push('/');
+        } else if (prospectoModeActive && prospectoDataStored) {
+          console.log('✅ Modo prospecto detectado, permitiendo acceso');
         }
       }
     } catch (error) {
       console.error('Error parsing user data:', error);
-      clearAuthData();
       
-      // Rutas públicas que NO requieren autenticación
+      // ✅ VERIFICAR PROSPECTO ANTES DE LIMPIAR Y REDIRIGIR
+      const prospectoModeActive = localStorage.getItem('prospecto_mode') === 'true';
+      const prospectoDataStored = localStorage.getItem('prospecto_data');
+      
       const publicRoutes = [
         '/',
         '/auth/forgot-password',
         '/auth/set-password',
-        '/auth/reset-password'
+        '/auth/reset-password',
+        '/prospecto-order'
       ];
       
-      if (!publicRoutes.includes(pathname)) {
+      const shouldNotRedirect = publicRoutes.includes(pathname) || 
+                               (prospectoModeActive && prospectoDataStored);
+      
+      if (!shouldNotRedirect) {
+        clearAuthData();
         router.push('/');
       }
     }
@@ -87,7 +107,8 @@ export function useAuth() {
     document.cookie = `auth_user=; path=/; expires=${expireDate}`;
     document.cookie = `auth_token=; path=/; expires=${expireDate}`;
     
-    clearProspectoMode();
+    // ✅ NO LIMPIAR MODO PROSPECTO AUTOMÁTICAMENTE
+    // clearProspectoMode();
   };
 
   const clearProspectoMode = () => {
@@ -99,6 +120,7 @@ export function useAuth() {
 
   const logout = () => {
     clearAuthData();
+    clearProspectoMode(); // ✅ Solo limpiar prospecto en logout explícito
     setUser(null);
     router.push('/');
   };
@@ -110,7 +132,6 @@ export function useAuth() {
     clearProspectoMode();
   };
 
-  // ✅ MODIFICAR: Login con establecimiento de cookies
   const login = (userData: User) => {
     setUser(userData);
     localStorage.setItem('user', JSON.stringify(userData));

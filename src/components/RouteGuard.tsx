@@ -1,7 +1,9 @@
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
-import { usePathname } from 'next/navigation';
+import { useProspectoMode } from '@/hooks/useProspectoMode';
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useMemo } from 'react';
 
 interface RouteGuardProps {
   children: React.ReactNode;
@@ -9,47 +11,76 @@ interface RouteGuardProps {
 
 export default function RouteGuard({ children }: RouteGuardProps) {
   const { user, loading } = useAuth();
+  const { isProspectoMode, prospectoData, isValidatingToken } = useProspectoMode();
   const pathname = usePathname();
+  const router = useRouter();
   
-  // Rutas que NO necesitan autenticación
-  const publicRoutes = [
-    '/',                          // Login
-    '/auth/forgot-password',      // Recuperar contraseña
-    '/auth/set-password',         // Configurar contraseña
-    '/auth/reset-password'        // Reset contraseña
-  ];
+  const publicRoutes = useMemo(() => [
+    '/',
+    '/auth/forgot-password',
+    '/auth/set-password', 
+    '/auth/reset-password',
+    '/prospecto-order'
+  ], []);
   
-  const isPublicRoute = publicRoutes.includes(pathname);
+  const isPublicRoute = useMemo(() => 
+    publicRoutes.includes(pathname), 
+    [publicRoutes, pathname]
+  );
   
-  // Si es ruta pública, mostrar contenido directamente
+  const hasValidAccess = useMemo(() => 
+    user || (isProspectoMode && prospectoData), 
+    [user, isProspectoMode, prospectoData]
+  );
+  
+  const isLoading = useMemo(() => 
+    loading || isValidatingToken, 
+    [loading, isValidatingToken]
+  );
+  
+  useEffect(() => {
+    if (isLoading || isPublicRoute) {
+      return;
+    }
+    
+    if (!hasValidAccess) {
+      console.log('❌ Sin acceso válido, redirigiendo al login');
+      router.push('/');
+    }
+  }, [isLoading, isPublicRoute, hasValidAccess, router]);
+  
+  
   if (isPublicRoute) {
     return <>{children}</>;
   }
   
-  // Para rutas protegidas, verificar autenticación
-  
-  // Mostrar loading mientras se verifica
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="flex flex-col items-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mb-4"></div>
-          <p className="text-gray-600">Verificando acceso...</p>
+          <p className="text-gray-600">
+            {isValidatingToken ? 'Validando acceso de prospecto...' : 'Verificando acceso...'}
+          </p>
         </div>
       </div>
     );
   }
   
-  // Si no hay usuario autenticado, no mostrar contenido (middleware redirigirá)
-  if (!user) {
+  if (!hasValidAccess) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto mb-2"></div>
           <p className="text-gray-600">Redirigiendo al login...</p>
         </div>
       </div>
     );
   }
   
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+    </>
+  );
 }
