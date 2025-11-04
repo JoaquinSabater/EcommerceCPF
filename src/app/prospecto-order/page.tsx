@@ -3,6 +3,8 @@
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
+export const dynamic = 'force-dynamic';
+
 
 function ProspectoOrderContent() {
   const searchParams = useSearchParams();

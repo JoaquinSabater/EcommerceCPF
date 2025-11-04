@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { createPortal } from 'react-dom';
 import FiltrosResults from '@/components/Filtros/FiltrosResults';
 import DetalleProductoModal from '@/components/Products/DetalleProductoModal';
+export const dynamic = 'force-dynamic';
 
 interface Marca {
   id: number;

@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth'; // ✅ AGREGAR IMPORT
 import { LoginResponse } from '@/types/types';
 import Link from 'next/link';
 import { EyeIcon, EyeSlashIcon, ExclamationTriangleIcon} from '@heroicons/react/24/outline';
+export const dynamic = 'force-dynamic';
 
 export default function LoginPage() {
   const router = useRouter();
