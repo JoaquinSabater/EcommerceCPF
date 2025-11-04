@@ -4,9 +4,12 @@ import { Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import ResetPasswordForm from '@/components/auth/ResetPasswordForm'; // ✅ USAR TU COMPONENTE EXISTENTE
+import ResetPasswordForm from '@/components/auth/ResetPasswordForm';
 
-// ✅ Componente separado que usa useSearchParams (CAMBIAR NOMBRE PARA EVITAR CONFUSIÓN)
+// ✅ AGREGAR ESTO PARA EVITAR PRE-RENDERIZADO
+export const dynamic = 'force-dynamic';
+
+// ✅ Componente separado que usa useSearchParams
 function ResetPasswordContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -127,7 +130,6 @@ function ResetPasswordContent() {
           </p>
         </div>
 
-        {/* ✅ USAR TU COMPONENTE EXISTENTE ResetPasswordForm */}
         <ResetPasswordForm
           onSubmit={handleSubmit}
           loading={loading}
