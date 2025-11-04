@@ -2,27 +2,29 @@
 
 import { Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import ResetPasswordForm from '@/components/auth/ResetPasswordForm'; // ✅ USAR TU COMPONENTE EXISTENTE
 
-// ✅ Componente separado que usa useSearchParams
-function ResetPasswordForm() {
+// ✅ Componente separado que usa useSearchParams (CAMBIAR NOMBRE PARA EVITAR CONFUSIÓN)
+function ResetPasswordContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const token = searchParams.get('token');
   
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  // ✅ Obtener token después del primer render
+  useEffect(() => {
+    const tokenFromUrl = searchParams.get('token');
+    setToken(tokenFromUrl);
+    setIsInitialized(true);
+  }, [searchParams]);
+
+  const handleSubmit = async (newPassword: string, confirmPassword: string) => {
     if (newPassword !== confirmPassword) {
       setError('Las contraseñas no coinciden');
       return;
@@ -47,7 +49,7 @@ function ResetPasswordForm() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ token, newPassword }), // ✅ Enviar 'newPassword'
+        body: JSON.stringify({ token, newPassword }),
       });
 
       const data = await response.json();
@@ -66,6 +68,11 @@ function ResetPasswordForm() {
       setLoading(false);
     }
   };
+
+  // Mostrar loading hasta que se inicialice
+  if (!isInitialized) {
+    return <LoadingResetPassword />;
+  }
 
   if (!token) {
     return (
@@ -120,77 +127,12 @@ function ResetPasswordForm() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1">
-              Nueva contraseña
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                id="newPassword"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                placeholder="Mínimo 6 caracteres"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700"
-              >
-                {showPassword ? (
-                  <EyeSlashIcon className="h-5 w-5" />
-                ) : (
-                  <EyeIcon className="h-5 w-5" />
-                )}
-              </button>
-            </div>
-          </div>
-
-          <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-              Confirmar contraseña
-            </label>
-            <div className="relative">
-              <input
-                type={showConfirmPassword ? "text" : "password"}
-                id="confirmPassword"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                placeholder="Confirma tu contraseña"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700"
-              >
-                {showConfirmPassword ? (
-                  <EyeSlashIcon className="h-5 w-5" />
-                ) : (
-                  <EyeIcon className="h-5 w-5" />
-                )}
-              </button>
-            </div>
-          </div>
-
-          {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-800 text-sm">{error}</p>
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading || !token}
-            className="w-full bg-orange-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Restableciendo...' : 'Restablecer contraseña'}
-          </button>
-        </form>
+        {/* ✅ USAR TU COMPONENTE EXISTENTE ResetPasswordForm */}
+        <ResetPasswordForm
+          onSubmit={handleSubmit}
+          loading={loading}
+          error={error}
+        />
 
         <div className="mt-6 text-center">
           <Link 
@@ -223,7 +165,7 @@ function LoadingResetPassword() {
 export default function ResetPasswordPage() {
   return (
     <Suspense fallback={<LoadingResetPassword />}>
-      <ResetPasswordForm />
+      <ResetPasswordContent />
     </Suspense>
   );
 }
