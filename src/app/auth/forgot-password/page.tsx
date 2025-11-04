@@ -5,6 +5,9 @@ import Link from 'next/link';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { sendResetPasswordEmailClient } from '@/lib/email';
 
+export const dynamic = 'force-dynamic';
+
+
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
