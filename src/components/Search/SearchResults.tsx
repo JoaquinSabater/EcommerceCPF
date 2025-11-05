@@ -78,12 +78,9 @@ export default function SearchResults({
           key={`${result.codigo_interno}-${index}`}
           className="p-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 transition-colors"
         >
-          {/* Layout responsive: stack en móvil, horizontal en desktop */}
           <div className="flex flex-col sm:flex-row sm:items-start gap-3">
             
-            {/* Contenido principal: imagen + información */}
             <div className="flex items-start gap-3 flex-1 min-w-0">
-              {/* Imagen del producto */}
               <div className="w-12 h-12 flex-shrink-0">
                 {getImageSrc(result) ? (
                   <CldImage
@@ -104,7 +101,6 @@ export default function SearchResults({
                 )}
               </div>
 
-              {/* Información del producto */}
               <div className="flex-1 min-w-0">
                 <button
                   onClick={(e) => handleItemClick(result, e)}
@@ -115,7 +111,6 @@ export default function SearchResults({
                     {result.item}
                   </h3>
                   
-                  {/* ✅ Mostrar marca + modelo de forma prominente */}
                   <div className="flex flex-col mt-1">
                     <p className="text-sm font-semibold text-gray-700">
                       {formatModeloDisplay(result)}
@@ -131,9 +126,16 @@ export default function SearchResults({
                     <span className="text-sm font-semibold text-orange-600">
                       ${result.precio_venta.toLocaleString()}
                     </span>
-                    <span className="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
-                      Stock: {result.stock_real}
-                    </span>
+                    {/* ✅ NUEVO: Solo mostrar indicadores de disponibilidad limitada */}
+                    {result.stock_real <= 0 ? (
+                      <span className="text-xs text-red-600 bg-red-50 px-2 py-0.5 rounded-full">
+                        Sin stock
+                      </span>
+                    ) : result.stock_real <= 10 ? (
+                      <span className="text-xs text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded-full">
+                        Últimos disponibles
+                      </span>
+                    ) : null}
                     {result.marca_nombre && (
                       <span className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
                         {result.marca_nombre}

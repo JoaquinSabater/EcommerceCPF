@@ -31,22 +31,24 @@ export default function SearchQuantityButton({
   const { addToCart } = useCart();
 
   const handleAdd = () => {
-    if (quantity < maxStock) {
-      setQuantity(prev => prev + 1);
+    if (quantity >= maxStock) {
+      return; // No hacer nada si se alcanzó el máximo
+    }
+    setQuantity(prev => prev + 1);
+  };
+
+  // ✅ CORREGIDO: handleSet sin alert
+  const handleSet = (value: number) => {
+    if (value > maxStock) {
+      setQuantity(maxStock);
+    } else if (value >= 0) {
+      setQuantity(value);
     }
   };
 
   const handleRemove = () => {
     if (quantity > 0) {
       setQuantity(prev => prev - 1);
-    }
-  };
-
-  const handleSet = (value: number) => {
-    if (value > maxStock) {
-      setQuantity(maxStock);
-    } else if (value >= 0) {
-      setQuantity(value);
     }
   };
 
@@ -119,7 +121,7 @@ export default function SearchQuantityButton({
         />
       </div>
 
-      {quantity > 0 && (
+      {quantity > 0 && quantity <= maxStock && (
         <div className="flex justify-center">
           <button
             onClick={handleAddToCart}

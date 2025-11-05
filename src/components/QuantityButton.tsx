@@ -9,7 +9,7 @@ type QuantityButtonProps = {
   modelo: string;
   hideModelo?: boolean;
   size?: "xs" | "normal" | "large";
-  maxStock?: number; // ✅ Nueva prop para validación
+  maxStock?: number;
 };
 
 export default function QuantityButton({
@@ -20,7 +20,7 @@ export default function QuantityButton({
   modelo,
   hideModelo = false,
   size = "normal",
-  maxStock, // ✅ Nueva prop
+  maxStock,
 }: QuantityButtonProps) {
   const [editing, setEditing] = useState(false);
   const [inputValue, setInputValue] = useState<string>(String(value));
@@ -34,7 +34,7 @@ export default function QuantityButton({
     let parsed = parseInt(inputValue, 10);
     
     if (!isNaN(parsed) && parsed >= 0) {
-      // ✅ FIX 1: Validar contra maxStock si está disponible
+      // ✅ Validar contra maxStock si está disponible (SIN ALERT)
       if (maxStock !== undefined && parsed > maxStock) {
         parsed = maxStock;
         setInputValue(String(maxStock));
@@ -45,11 +45,18 @@ export default function QuantityButton({
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    if (val === "" || (/^\d+$/.test(val) && parseInt(val, 10) >= 0)) {
-      setInputValue(val);
+  // ✅ CORREGIDO: Solo verificar límite, sin alert
+  const handleAdd = () => {
+    if (maxStock !== undefined && value >= maxStock) {
+      return; // No hacer nada si se alcanzó el máximo
     }
+    onAdd(); // Solo ejecutar si no se excede el stock
+  };
+
+  // ✅ CORREGIDO: Manejar cambios en input sin alert
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValueStr = e.target.value;
+    setInputValue(newValueStr);
   };
 
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -58,27 +65,30 @@ export default function QuantityButton({
     }
   };
 
-  // ✅ FIX 2: Tamaños mejorados para mejor visibilidad
+  // ✅ NUEVO: Verificar si el botón + debe estar deshabilitado
+  const isPlusDisabled = maxStock !== undefined && value >= maxStock;
+
+  // Tamaños mejorados
   const buttonSize =
     size === "large"
       ? "w-10 h-10 text-lg"
       : size === "xs"
-      ? "w-6 h-6 text-xs" // ✅ Aumentado de w-5 h-5
-      : "w-8 h-8 text-sm"; // ✅ Aumentado de w-7 h-7
+      ? "w-6 h-6 text-xs"
+      : "w-8 h-8 text-sm";
   
   const iconSize =
     size === "large"
       ? "h-5 w-5"
       : size === "xs"
-      ? "h-3.5 w-3.5" // ✅ Aumentado de h-3 w-3
+      ? "h-3.5 w-3.5"
       : "h-4 w-4";
   
   const containerGap =
     size === "large"
       ? "gap-2"
       : size === "xs"
-      ? "gap-1" // ✅ Aumentado de gap-0.5
-      : "gap-1.5"; // ✅ Aumentado de gap-1
+      ? "gap-1"
+      : "gap-1.5";
   
   const fontSize =
     size === "large"
@@ -91,10 +101,10 @@ export default function QuantityButton({
     size === "large"
       ? { width: 40, height: 40 }
       : size === "xs"
-      ? { width: 24, height: 24 } // ✅ Aumentado de 20x20
-      : { width: 32, height: 32 }; // ✅ Aumentado de 28x28
+      ? { width: 24, height: 24 }
+      : { width: 32, height: 32 };
   
-  const inputWidth = size === "large" ? 40 : size === "xs" ? 24 : 32; // ✅ Ajustado
+  const inputWidth = size === "large" ? 40 : size === "xs" ? 24 : 32;
 
   return (
     <div className={`flex flex-col items-center ${containerGap} w-full`}>
@@ -117,7 +127,7 @@ export default function QuantityButton({
           <input
             type="number"
             min={0}
-            max={maxStock} // ✅ Agregar max attribute
+            max={maxStock}
             className={`text-center border border-gray-300 rounded-md bg-white outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 mx-1 ${buttonSize} ${fontSize}`}
             value={inputValue}
             autoFocus
@@ -137,14 +147,34 @@ export default function QuantityButton({
         )}
         
         <button
-          className={`rounded-md bg-white border border-gray-300 hover:border-green-400 text-green-600 flex items-center justify-center transition-colors ${buttonSize}`}
+          className={`rounded-md border flex items-center justify-center transition-colors ${buttonSize} ${
+            isPlusDisabled
+              ? 'bg-gray-200 border-gray-300 text-gray-400 cursor-not-allowed'
+              : 'bg-white border-gray-300 hover:border-green-400 text-green-600'
+          }`}
           style={btnStyle}
-          onClick={onAdd}
+          onClick={handleAdd}
+          disabled={isPlusDisabled}
           aria-label="Sumar"
+          title={isPlusDisabled ? `Máximo disponible: ${maxStock}` : "Aumentar cantidad"}
         >
           <PlusIcon className={iconSize} />
         </button>
       </div>
+      
+      {/* ✅ NUEVO: Cartelito cuando se alcanza el límite máximo */}
+      {maxStock !== undefined && value >= maxStock && maxStock > 0 && (
+        <p className="text-xs text-red-600 text-center mt-1 bg-red-50 px-2 py-1 rounded-full">
+          ¡Máximo disponible!
+        </p>
+      )}
+      
+      {/* ✅ NUEVO: Cartelito para indicar pocas unidades restantes */}
+      {maxStock !== undefined && maxStock <= 5 && maxStock > 0 && value < maxStock && (
+        <p className="text-xs text-amber-600 text-center mt-1">
+          ¡Últimas {maxStock} unidades!
+        </p>
+      )}
     </div>
   );
 }

@@ -99,7 +99,6 @@ export default function FiltrosResults({
           >
             <div className="flex flex-col sm:flex-row sm:items-start gap-4">
               
-              {/* ✅ CORREGIDO: Imagen más alta para mostrar fundas completas */}
               <div className="w-full h-48 sm:w-20 sm:h-24 flex-shrink-0 bg-white">
                 {getImageSrc(producto) ? (
                   <CldImage
@@ -123,10 +122,8 @@ export default function FiltrosResults({
                 )}
               </div>
 
-              {/* Contenido principal: información + botón */}
               <div className="flex flex-col sm:flex-row sm:items-start gap-4 flex-1 min-w-0 w-full">
                 
-                {/* Información del producto */}
                 <div className="flex-1 min-w-0">
                   <button
                     onClick={(e) => handleItemClick(producto, e)}
@@ -146,9 +143,16 @@ export default function FiltrosResults({
                         <span className="text-lg font-bold text-orange-600">
                           ${producto.precio_venta.toLocaleString()}
                         </span>
-                        <span className="text-sm text-green-600 bg-green-50 px-2 py-1 rounded-full">
-                          Stock: {producto.stock_real}
-                        </span>
+                        {/* ✅ NUEVO: Solo mostrar indicadores de disponibilidad limitada */}
+                        {producto.stock_real <= 0 ? (
+                          <span className="text-sm text-red-600 bg-red-50 px-2 py-1 rounded-full">
+                            Sin stock
+                          </span>
+                        ) : producto.stock_real <= 10 ? (
+                          <span className="text-sm text-yellow-600 bg-yellow-50 px-2 py-1 rounded-full">
+                            Últimos disponibles
+                          </span>
+                        ) : null}
                         <span className="text-sm text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
                           {producto.marca_nombre}
                         </span>
@@ -161,7 +165,6 @@ export default function FiltrosResults({
                   </button>
                 </div>
 
-                {/* ✅ CORREGIDO: Botón más alineado a la derecha */}
                 <div 
                   className="w-full sm:w-48 flex-shrink-0" 
                   onClick={(e) => e.stopPropagation()}

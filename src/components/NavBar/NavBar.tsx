@@ -42,7 +42,8 @@ export default function NavBar() {
       submenu: [
         { title: 'Popsockets', path: '/public/accesorios/popsockets' },
         { title: 'Aros de luz', path: '/public/accesorios/arosDeLuz' },
-        { title: 'Auriculares', path: '/public/accesorios/earbuds' }
+        { title: 'Auriculares', path: '/public/accesorios/earbuds' },
+        { title: 'Correas', path: '/public/accesorios/correas' }
       ]
     }
   ];

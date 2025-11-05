@@ -182,16 +182,20 @@ export default function FiltrosQuantityButton({
           </>
         )}
       </button>
-
-      {/* Indicadores de stock */}
-      {maxStock <= 5 && maxStock > 0 && (
+      {maxStock <= 5 && maxStock > 0 && quantity < maxStock && (
         <p className="text-xs text-amber-600 text-center">
           ¡Últimas {maxStock} unidades!
         </p>
       )}
-      
+
+      {quantity >= maxStock && maxStock > 0 && (
+        <p className="text-xs text-red-600 text-center bg-red-50 px-2 py-1 rounded-full">
+          ¡Máximo disponible!
+        </p>
+      )}
+
       {maxStock === 0 && (
-        <p className="text-xs text-red-600 text-center bg-red-50 px-2 py-1 rounded">
+        <p className="text-xs text-red-600 text-center bg-red-50 px-2 py-1 rounded-full">
           Sin stock disponible
         </p>
       )}

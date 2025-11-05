@@ -61,31 +61,26 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
     let esPesificado = false;
     
     if (articulo.es_pesificado === 1 && articulo.precio_pesos && articulo.precio_pesos > 0) {
-      // ✅ Usar precio pesificado de la BD
       const precioOriginalPesos = Number(articulo.precio_pesos);
       
       if (esElectronica) {
-        // ✅ ELECTRÓNICA: No aplicar descuento distribuidor
         precioArs = Math.round(precioOriginalPesos);
       } else {
-        // ✅ NORMAL: Aplicar descuento si corresponde
         const factorDescuento = precioConDescuentoUsd / precioOriginalUsd;
         precioArs = Math.round(precioOriginalPesos * factorDescuento);
       }
       
       esPesificado = true;
     } else {
-      // ✅ Calcular precio normal (USD * dolar correspondiente)
       precioArs = Math.round(precioConDescuentoUsd * dolar);
     }
 
-    // ✅ NUEVO: Obtener stock real
+    // ✅ NUEVO: Solo mostrar indicador de disponibilidad limitada (SIN NÚMEROS)
     const stockReal = Number(articulo.stock_real || 0);
-    const stockDisplay = stockReal > 0 ? `Stock: ${stockReal}` : 'Sin stock';
-    const stockColor = stockReal > 10 ? 'text-green-600' : stockReal > 0 ? 'text-yellow-600' : 'text-red-600';
+    const stockIndicador = stockReal <= 0 ? ' - Sin stock' : stockReal <= 10 ? ' - Últimos disponibles' : '';
     
     return {
-      texto: `${marcaModelo} - $${precioConDescuentoUsd.toFixed(2)} USD ($${precioArs.toLocaleString()} ARS${esPesificado ? ' 🏷️' : ''}${esElectronica ? ' ⚡' : ''}) - ${stockDisplay}`,
+      texto: `${marcaModelo} - $${precioConDescuentoUsd.toFixed(2)} USD ($${precioArs.toLocaleString()} ARS${esPesificado ? ' 🏷️' : ''}${esElectronica ? ' ⚡' : ''})${stockIndicador}`,
       marcaModelo: marcaModelo,
       precioUsd: precioConDescuentoUsd,
       precioOriginalUsd: precioOriginalUsd,
@@ -93,8 +88,7 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
       esPesificado: esPesificado,
       esElectronica: esElectronica,
       stockReal: stockReal,
-      stockDisplay: stockDisplay,
-      stockColor: stockColor
+      stockIndicador: stockIndicador
     };
   };
 
@@ -448,9 +442,6 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
                               <span className="ml-1 text-green-600">(-20%)</span>
                             )}
                           </span>
-                          <span className={`${displayInfo.stockColor}`}>
-                            Stock: {stockDisponible}
-                          </span>
                         </div>
                       )}
                     </div>
@@ -550,9 +541,6 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
                                         {displayInfo.esElectronica && (
                                           <span className="ml-1 text-blue-600">⚡</span>
                                         )}
-                                      </div>
-                                      <div className={`text-xs ${displayInfo.stockColor}`}>
-                                        Stock: {stockDisponible}
                                       </div>
                                     </div>
                                   </div>
@@ -697,9 +685,6 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
                               <span className="ml-1 text-blue-600">⚡</span>
                             )}
                           </div>
-                          <div className={`text-xs ${displayInfo.stockColor}`}>
-                            Stock: {stockDisponible}
-                          </div>
                         </div>
                       </div>
                     </button>
@@ -784,9 +769,6 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
                                     <span className="ml-1 text-blue-600">⚡</span>
                                   )}
                                 </div>
-                                <div className={`text-xs ${displayInfo.stockColor}`}>
-                                  Stock: {stockDisponible}
-                                </div>
                               </div>
                             </div>
                           </Listbox.Option>
@@ -842,7 +824,6 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
             {seleccionados.map((s) => {
               const displayInfo = formatModeloDisplay(s.articulo);
               const subtotalArs = displayInfo.precioArs * s.cantidad;
-              const stockDisponible = getStockDisponible(s.articulo);
               
               return (
                 <div key={s.articulo.codigo_interno} className="flex items-center gap-3 border border-gray-200 rounded px-3 py-2 bg-gray-50 hover:bg-gray-100">
@@ -865,9 +846,6 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
                           {displayInfo.esElectronica && (
                             <span className="ml-1 text-blue-600 text-xs">(Electrónica)</span>
                           )}
-                        </div>
-                        <div className={`text-xs ${displayInfo.stockColor}`}>
-                          Stock disponible: {stockDisponible + s.cantidad} (seleccionado: {s.cantidad})
                         </div>
                       </div>
                       <div className="text-right">
