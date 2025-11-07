@@ -16,9 +16,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // ✅ AGREGAR EL CAMPO DISTRIBUIDOR EN LA CONSULTA
+    // ✅ AGREGAR EL CAMPO contenidoEspecial EN LA CONSULTA
     const [clienteRows] = await db.execute(
-      'SELECT id, cuit_dni, razon_social, nombre, apellido, email, telefono, vendedor_id, habilitado, Distribuidor FROM clientes WHERE cuit_dni = ?',
+      'SELECT id, cuit_dni, razon_social, nombre, apellido, email, telefono, vendedor_id, habilitado, Distribuidor, contenidoEspecial FROM clientes WHERE cuit_dni = ?',
       [cuil]
     ) as [Array<{
       id: number;
@@ -31,6 +31,7 @@ export async function POST(request: Request) {
       vendedor_id: number;
       habilitado: number;
       Distribuidor: number;
+      contenidoEspecial: number; // ✅ NUEVO CAMPO
     }>, any];
 
     if (clienteRows.length === 0) {
@@ -76,7 +77,7 @@ export async function POST(request: Request) {
     const auth = authRows[0] || { password_hash: null };
 
     if (!password) {
-      // ✅ Generar token JWT CON DISTRIBUIDOR
+      // ✅ Generar token JWT CON contenidoEspecial
       const token = jwt.sign(
         { 
           clienteId: cliente.id,
@@ -85,7 +86,8 @@ export async function POST(request: Request) {
           apellido: cliente.apellido,
           vendedorId: cliente.vendedor_id,
           isAdmin,
-          Distribuidor: cliente.Distribuidor
+          Distribuidor: cliente.Distribuidor,
+          contenidoEspecial: cliente.contenidoEspecial // ✅ NUEVO CAMPO
         },
         JWT_SECRET,
         { expiresIn: '24h' }
@@ -105,7 +107,8 @@ export async function POST(request: Request) {
           telefono: cliente.telefono,
           vendedor_id: cliente.vendedor_id,
           isAdmin,
-          Distribuidor: cliente.Distribuidor
+          Distribuidor: cliente.Distribuidor,
+          contenidoEspecial: cliente.contenidoEspecial // ✅ NUEVO CAMPO
         }
       });
     }
@@ -135,7 +138,8 @@ export async function POST(request: Request) {
         apellido: cliente.apellido,
         vendedorId: cliente.vendedor_id,
         isAdmin,
-        Distribuidor: cliente.Distribuidor
+        Distribuidor: cliente.Distribuidor,
+        contenidoEspecial: cliente.contenidoEspecial // ✅ NUEVO CAMPO
       },
       JWT_SECRET,
       { expiresIn: '24h' }
@@ -155,7 +159,8 @@ export async function POST(request: Request) {
         telefono: cliente.telefono,
         vendedor_id: cliente.vendedor_id,
         isAdmin,
-        Distribuidor: cliente.Distribuidor
+        Distribuidor: cliente.Distribuidor,
+        contenidoEspecial: cliente.contenidoEspecial // ✅ NUEVO CAMPO
       }
     });
 

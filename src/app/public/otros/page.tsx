@@ -8,7 +8,8 @@ export default async function Otros() {
     18,
     19,
     20,
-    21
+    21,
+    24
   ];
   
   try {

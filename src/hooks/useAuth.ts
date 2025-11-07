@@ -152,6 +152,10 @@ export function useAuth() {
     return user?.Distribuidor === 1;
   };
 
+  const tieneContenidoEspecial = (): boolean => {
+    return user?.contenidoEspecial === 1;
+  };
+
   return {
     user,
     loading,
@@ -162,6 +166,7 @@ export function useAuth() {
     isAdmin: user?.isAdmin || user?.id === 2223,
     getPrecioConDescuento,
     isDistribuidor,
-    checkAuth
+    checkAuth,
+    tieneContenidoEspecial 
   };
 }

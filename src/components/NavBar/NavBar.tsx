@@ -15,7 +15,11 @@ import { User } from '@/types/types';
 import { useProspectoMode } from '@/hooks/useProspectoMode';
 
 export default function NavBar() {
-  const { user, logout }: { user: User | null, logout: () => void } = useAuth();
+  const { user, logout, tieneContenidoEspecial }: { 
+    user: User | null, 
+    logout: () => void,
+    tieneContenidoEspecial: () => boolean 
+  } = useAuth();
   const { isProspectoMode, prospectoData, clearProspectoSession } = useProspectoMode();
   
   const [cartOpen, setCartOpen] = useState(false);
@@ -23,6 +27,7 @@ export default function NavBar() {
   const pathname = usePathname();
   const router = useRouter();
 
+  // ✅ MENÚ DINÁMICO: Incluir "Otros" solo si tiene contenido especial
   const menu = [
     { title: 'Cables', path: '/public/cables' },
     { title: 'Vidrios', path: '/public/vidrios' },
@@ -45,7 +50,9 @@ export default function NavBar() {
         { title: 'Auriculares', path: '/public/accesorios/earbuds' },
         { title: 'Correas', path: '/public/accesorios/correas' }
       ]
-    }
+    },
+    // ✅ CONDICIONAL: Solo mostrar "Otros" si tiene acceso a contenido especial
+    ...(tieneContenidoEspecial() ? [{ title: 'Otros', path: '/public/otros' }] : [])
   ];
 
   const totalItems = cart.reduce((sum, item) => sum + item.cantidad, 0);

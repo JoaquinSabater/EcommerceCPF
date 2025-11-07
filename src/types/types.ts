@@ -34,12 +34,13 @@ export interface User {
   apellido: string;
   email: string;
   telefono: string;
-  domicilio?: string; // ✅ Hacer opcional si no siempre viene
+  domicilio?: string;
   cuil: string;
   isAdmin?: boolean;
   hasPassword?: boolean;
   Distribuidor?: number;
-  vendedor_id?: number; // ✅ AGREGAR este campo que viene del login
+  vendedor_id?: number; 
+  contenidoEspecial?: number;
 }
 
 export interface LoginResponse {
