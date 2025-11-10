@@ -1,5 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/data/mysql';
+import jwt from 'jsonwebtoken';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'tu-secret-key';
+
+// ✅ NUEVA FUNCIÓN: Verificar si el usuario tiene contenido especial
+async function verificarContenidoEspecial(request: NextRequest): Promise<boolean> {
+  try {
+    // Obtener token de las cookies
+    const authToken = request.cookies.get('auth_token')?.value;
+    const authUser = request.cookies.get('auth_user')?.value;
+    
+    if (!authUser) {
+      return false;
+    }
+    
+    const userData = JSON.parse(decodeURIComponent(authUser));
+    return userData.contenidoEspecial === 1;
+    
+  } catch (error) {
+    console.error('Error verificando contenido especial:', error);
+    return false;
+  }
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,6 +36,10 @@ export async function GET(request: NextRequest) {
         results: [] 
       });
     }
+
+    // ✅ VERIFICAR ACCESO A CONTENIDO ESPECIAL
+    const tieneContenidoEspecial = await verificarContenidoEspecial(request);
+    console.log(`🔒 Usuario tiene contenido especial: ${tieneContenidoEspecial}`);
 
     const termino = query.trim();
     console.log(`🔍 API Search - Término recibido: "${termino}"`);
@@ -41,7 +68,6 @@ export async function GET(request: NextRequest) {
         a.modelo LIKE ? OR
         d.descripcion LIKE ?
       )`);
-      // Cada palabra se busca en 5 campos
       parametros.push(
         `%${palabra}%`,  // codigo_interno
         `%${palabra}%`,  // item nombre
@@ -53,7 +79,12 @@ export async function GET(request: NextRequest) {
 
     const whereClause = condiciones.join(' AND ');
 
-    // ✅ QUERY SIMPLIFICADA pero con todos los datos necesarios
+    // ✅ AGREGAR FILTRO DE CONTENIDO ESPECIAL
+    const filtroContenidoEspecial = tieneContenidoEspecial 
+      ? '' // Si tiene acceso, mostrar todos los items
+      : 'AND (d.contenido_especial = 0 OR d.contenido_especial IS NULL)'; // Si no tiene acceso, solo items normales
+
+    // ✅ QUERY MODIFICADA con filtro de contenido especial
     const sqlFinal = `
       SELECT DISTINCT
         a.codigo_interno,
@@ -67,6 +98,7 @@ export async function GET(request: NextRequest) {
         d.foto1_url,
         d.foto_portada,
         d.descripcion,
+        d.contenido_especial,
         CONCAT(m.nombre, ' ', a.modelo) AS marca_modelo_completo,
         a.item_id,
         a.marca_id,
@@ -77,78 +109,55 @@ export async function GET(request: NextRequest) {
       LEFT JOIN item_detalle d ON a.item_id = d.item_id
       WHERE i.disponible = 1
       AND (${whereClause})
+      ${filtroContenidoEspecial}
       HAVING stock_real > 0
       ORDER BY 
-        -- ✅ ORDEN MEJORADO: Priorizar coincidencias exactas
         CASE
-          -- 🥇 PRIORIDAD 1: Coincidencia EXACTA en marca + modelo
           WHEN CONCAT(m.nombre, ' ', a.modelo) LIKE ? THEN 1
-          
-          -- 🥈 PRIORIDAD 2: Todas las palabras están en marca + modelo
           WHEN ${palabras.map(() => `CONCAT(m.nombre, ' ', a.modelo) LIKE ?`).join(' AND ')} THEN 2
-          
-          -- 🥉 PRIORIDAD 3: Coincidencia exacta solo en modelo
           WHEN a.modelo LIKE ? THEN 3
-          
-          -- 🏅 PRIORIDAD 4: Coincidencia parcial en marca + modelo
           WHEN CONCAT(m.nombre, ' ', a.modelo) LIKE ? THEN 4
-          
-          -- 🏅 PRIORIDAD 5: Coincidencia en nombre del item
           WHEN i.nombre LIKE ? THEN 5
-          
-          -- 🏅 PRIORIDAD 6: Solo marca
           WHEN m.nombre LIKE ? THEN 6
-          
           ELSE 7
         END,
-        -- ✅ Orden secundario: Por marca y modelo alfabéticamente
         m.nombre, a.modelo, i.nombre
       LIMIT 70
     `;
 
-    // ✅ Parámetros para ORDER BY con lógica inteligente
+    // ✅ Parámetros para ORDER BY (sin cambios)
     const terminoCompleto = termino.trim();
-    
-    // Para coincidencia exacta completa
     parametros.push(`%${terminoCompleto}%`);
     
-    // Para que todas las palabras estén en marca+modelo
     palabras.forEach(palabra => {
       parametros.push(`%${palabra}%`);
     });
     
-    // Para coincidencia exacta en modelo (última palabra generalmente es el modelo)
     const ultimaPalabra = palabras[palabras.length - 1];
     parametros.push(`%${ultimaPalabra}%`);
     
-    // Para coincidencia parcial en marca+modelo (primera palabra)
     const primeraPalabra = palabras[0];
     parametros.push(`%${primeraPalabra}%`);
     
-    // Para item, marca individual
-    parametros.push(`%${terminoCompleto}%`); // item
-    parametros.push(`%${primeraPalabra}%`);  // marca
+    parametros.push(`%${terminoCompleto}%`);
+    parametros.push(`%${primeraPalabra}%`);
 
     console.log(`🔍 Ejecutando consulta con ${parametros.length} parámetros`);
-    console.log(`📝 Condiciones: ${condiciones.length} (una por palabra)`);
-    console.log(`🎯 Término completo: "${terminoCompleto}"`);
-    console.log(`🎯 Primera palabra: "${primeraPalabra}", Última palabra: "${ultimaPalabra}"`);
+    console.log(`🔒 Filtro contenido especial aplicado: ${!tieneContenidoEspecial ? 'SÍ' : 'NO'}`);
 
     const [rows]: any = await db.query(sqlFinal, parametros);
 
     console.log(`✅ Resultados encontrados: ${rows.length}`);
     
-    // ✅ LOG de debugging mejorado con orden
+    // ✅ LOG mejorado con info de contenido especial
     if (rows.length > 0) {
       console.log('📦 Primeros resultados (ordenados por relevancia):');
       rows.slice(0, 8).forEach((row: any, index: number) => {
         const marcaModelo = `${row.marca_nombre} ${row.modelo}`;
+        const esEspecial = row.contenido_especial === 1;
         const coincideExacto = marcaModelo.toLowerCase().includes(terminoCompleto.toLowerCase());
-        console.log(`   ${index + 1}. [${marcaModelo}] ${row.item} ${coincideExacto ? '🎯' : ''}`);
+        console.log(`   ${index + 1}. [${marcaModelo}] ${row.item} ${coincideExacto ? '🎯' : ''} ${esEspecial ? '🔒' : ''}`);
       });
-    } else {
-      console.log('❌ No se encontraron resultados');
-      console.log('🔍 Se buscaron las palabras:', palabras);
     }
 
     return NextResponse.json({ 
@@ -159,8 +168,8 @@ export async function GET(request: NextRequest) {
       debug: {
         palabrasBuscadas: palabras,
         terminoCompleto,
-        primeraPalabra,
-        ultimaPalabra,
+        tieneContenidoEspecial,
+        filtroAplicado: !tieneContenidoEspecial,
         condicionesGeneradas: condiciones.length,
         parametrosEnviados: parametros.length
       }

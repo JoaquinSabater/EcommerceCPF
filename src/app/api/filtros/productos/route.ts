@@ -1,6 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/data/mysql';
 
+// ✅ NUEVA FUNCIÓN: Verificar si el usuario tiene contenido especial
+async function verificarContenidoEspecial(request: NextRequest): Promise<boolean> {
+  try {
+    const authUser = request.cookies.get('auth_user')?.value;
+    if (!authUser) {
+      return false;
+    }
+    
+    const userData = JSON.parse(decodeURIComponent(authUser));
+    return userData.contenidoEspecial === 1;
+    
+  } catch (error) {
+    console.error('Error verificando contenido especial:', error);
+    return false;
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const url = new URL(request.url);
@@ -25,6 +42,11 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // ✅ VERIFICAR ACCESO A CONTENIDO ESPECIAL
+    const tieneContenidoEspecial = await verificarContenidoEspecial(request);
+    console.log(`🔒 Filtros Productos - Usuario tiene contenido especial: ${tieneContenidoEspecial}`);
+
+    // ✅ BASE DE LA CONSULTA
     let sqlQuery = `
       SELECT DISTINCT
         a.codigo_interno,
@@ -38,6 +60,7 @@ export async function GET(request: NextRequest) {
         d.foto1_url,
         d.foto_portada,
         d.descripcion,
+        d.contenido_especial,
         CONCAT(m.nombre, ' ', a.modelo) AS marca_modelo_completo
       FROM articulos a
       INNER JOIN items i ON a.item_id = i.id
@@ -48,6 +71,14 @@ export async function GET(request: NextRequest) {
     `;
 
     let parametros: (string | number)[] = [...marcaIdsArray];
+
+    // ✅ AGREGAR FILTRO DE CONTENIDO ESPECIAL
+    if (!tieneContenidoEspecial) {
+      sqlQuery += ' AND (d.contenido_especial = 0 OR d.contenido_especial IS NULL)';
+      console.log('🔒 Filtro de contenido especial aplicado - solo productos normales');
+    } else {
+      console.log('🔒 Usuario con acceso especial - mostrando todos los productos');
+    }
 
     // Si hay modelos específicos seleccionados
     if (modelos && modelos.trim().length > 0) {
@@ -64,7 +95,17 @@ export async function GET(request: NextRequest) {
       LIMIT 100
     `;
 
+    console.log(`🔍 Filtros Productos - Ejecutando consulta con ${parametros.length} parámetros`);
+
     const [rows]: any = await db.query(sqlQuery, parametros);
+
+    console.log(`✅ Productos filtrados encontrados: ${rows.length}`);
+
+    // ✅ LOG de productos especiales encontrados
+    const productosEspeciales = rows.filter((row: any) => row.contenido_especial === 1);
+    if (productosEspeciales.length > 0) {
+      console.log(`🔒 Productos con contenido especial en resultados: ${productosEspeciales.length}`);
+    }
 
     return NextResponse.json({ 
       success: true,
@@ -73,11 +114,16 @@ export async function GET(request: NextRequest) {
       filtros: {
         marcas: marcaIdsArray,
         modelos: modelos ? modelos.split(',') : []
+      },
+      debug: {
+        tieneContenidoEspecial,
+        filtroContenidoAplicado: !tieneContenidoEspecial,
+        productosEspeciales: productosEspeciales.length
       }
     });
 
   } catch (error) {
-    console.error('Error al obtener productos filtrados:', error);
+    console.error('❌ Error al obtener productos filtrados:', error);
     return NextResponse.json(
       { success: false, error: 'Error al obtener productos' },
       { status: 500 }

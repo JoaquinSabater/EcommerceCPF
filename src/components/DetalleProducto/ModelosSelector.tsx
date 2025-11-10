@@ -7,6 +7,8 @@ import QuantityButton from "@/components/QuantityButton";
 import { Articulo } from "@/types/types";
 import { useCart } from "@/components/CartContext";
 import { useAuth } from "@/hooks/useAuth";
+import ProductoUnico from "./ProductoUnico"; 
+
 
 type ModeloSeleccionado = {
   articulo: Articulo;
@@ -32,6 +34,7 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
   const [isEditingRecomendados, setIsEditingRecomendados] = useState<boolean>(false);
   const [tempRecomendados, setTempRecomendados] = useState<string[]>([]);
   const [modeloSeleccionadoAdmin, setModeloSeleccionadoAdmin] = useState<Articulo | null>(null);
+  const [esModoSimple, setEsModoSimple] = useState<boolean>(false);
 
   const { addToCart } = useCart();
   const { isAdmin, getPrecioConDescuento, isDistribuidor } = useAuth();
@@ -126,18 +129,26 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
     fetch(`/api/articulosPorSubcategoria?subcategoriaId=${subcategoriaId}`)
       .then(res => res.json())
       .then(data => {
-        console.log('🟡 Artículos cargados con stock:', data.articulos?.slice(0, 3).map((a: Articulo) => ({
+        const articulosConStock = (data.articulos || []).filter((a: Articulo) => 
+          Number(a.stock_real || 0) > 0
+        );
+        
+        console.log('🟡 Artículos cargados con stock:', articulosConStock.slice(0, 3).map((a: Articulo) => ({
           modelo: a.modelo,
           stock_real: a.stock_real,
           es_pesificado: a.es_pesificado,
           precio_pesos: a.precio_pesos,
           precio_venta: a.precio_venta
         })));
+        
         setModelos(data.articulos || []);
+        
+        setEsModoSimple(articulosConStock.length === 1);
       })
       .catch(error => {
         console.error('Error cargando modelos:', error);
         setModelos([]);
+        setEsModoSimple(false);
       })
       .finally(() => {
         setLoadingModelos(false);
@@ -158,6 +169,15 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
         setTempRecomendados(recomendacionesDefault);
       });
   }, [subcategoriaId]);
+
+    if (esModoSimple) {
+      return (
+        <ProductoUnico 
+          subcategoriaId={subcategoriaId} 
+          sugerenciaActual={sugerenciaActual} 
+        />
+      );
+    }
 
   const modelosDisponibles = modelos.filter(
     (m) => !seleccionados.some((s) => s.articulo.modelo === m.modelo) && Number(m.stock_real || 0) > 0
@@ -371,13 +391,11 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
     <div className="w-full mt-4 rounded-lg bg-white shadow-sm p-4">
       <h3 className="text-lg font-bold mb-3 text-gray-800">
         Selección de modelos
-        {/* ✅ CAMBIO: No mostrar descuento distribuidor si es electrónica */}
         {!esElectronica && isDistribuidor() && (
           <span className="ml-2 text-sm bg-green-100 text-green-800 px-2 py-1 rounded-full">
             20% OFF Distribuidor 🎉
           </span>
         )}
-        {/* ✅ NUEVO: Indicador de electrónica */}
         {esElectronica && (
           <span className="ml-2 text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
             Electrónica ⚡
