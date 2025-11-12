@@ -4,10 +4,8 @@ import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'tu-secret-key';
 
-// ✅ NUEVA FUNCIÓN: Verificar si el usuario tiene contenido especial
 async function verificarContenidoEspecial(request: NextRequest): Promise<boolean> {
   try {
-    // Obtener token de las cookies
     const authToken = request.cookies.get('auth_token')?.value;
     const authUser = request.cookies.get('auth_user')?.value;
     
@@ -37,14 +35,12 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // ✅ VERIFICAR ACCESO A CONTENIDO ESPECIAL
     const tieneContenidoEspecial = await verificarContenidoEspecial(request);
     console.log(`🔒 Usuario tiene contenido especial: ${tieneContenidoEspecial}`);
 
     const termino = query.trim();
     console.log(`🔍 API Search - Término recibido: "${termino}"`);
 
-    // ✅ NUEVA LÓGICA: Similar al PHP - dividir en palabras y buscar TODAS
     const palabras = termino.split(' ').filter(palabra => palabra.trim().length > 0);
     console.log(`📝 Palabras a buscar: [${palabras.join(', ')}]`);
 
@@ -56,7 +52,6 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // ✅ CREAR CONDICIONES: Cada palabra debe estar en algún campo
     const condiciones: any[] = [];
     const parametros = [];
 
@@ -79,12 +74,10 @@ export async function GET(request: NextRequest) {
 
     const whereClause = condiciones.join(' AND ');
 
-    // ✅ AGREGAR FILTRO DE CONTENIDO ESPECIAL
     const filtroContenidoEspecial = tieneContenidoEspecial 
       ? '' // Si tiene acceso, mostrar todos los items
       : 'AND (d.contenido_especial = 0 OR d.contenido_especial IS NULL)'; // Si no tiene acceso, solo items normales
 
-    // ✅ QUERY MODIFICADA con filtro de contenido especial
     const sqlFinal = `
       SELECT DISTINCT
         a.codigo_interno,
@@ -125,7 +118,6 @@ export async function GET(request: NextRequest) {
       LIMIT 70
     `;
 
-    // ✅ Parámetros para ORDER BY (sin cambios)
     const terminoCompleto = termino.trim();
     parametros.push(`%${terminoCompleto}%`);
     
@@ -149,7 +141,6 @@ export async function GET(request: NextRequest) {
 
     console.log(`✅ Resultados encontrados: ${rows.length}`);
     
-    // ✅ LOG mejorado con info de contenido especial
     if (rows.length > 0) {
       console.log('📦 Primeros resultados (ordenados por relevancia):');
       rows.slice(0, 8).forEach((row: any, index: number) => {
