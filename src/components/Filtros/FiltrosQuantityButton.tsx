@@ -172,12 +172,10 @@ export default function FiltrosQuantityButton({
       >
         {isAdding ? (
           <>
-            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
             ¡Agregado!
           </>
         ) : (
           <>
-            <ShoppingCartIcon className="w-4 h-4" />
             {quantity === 0 ? 'Seleccionar' : 'Agregar'}
           </>
         )}

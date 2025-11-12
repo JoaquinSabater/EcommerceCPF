@@ -3,8 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { categorias } from "@/types/types";
 import { CldImage } from 'next-cloudinary';
-import { createPortal } from 'react-dom';
-import DetalleProductoModal from "@/components/Products/DetalleProductoModal";
+import { useRouter } from 'next/navigation'; // ✅ Agregar router
 
 interface ProductoDestacadoCardProps {
   categoria: categorias;
@@ -13,7 +12,6 @@ interface ProductoDestacadoCardProps {
 
 export default function ProductoDestacadoCard({ categoria, onClick }: ProductoDestacadoCardProps) {
   const [loading, setLoading] = useState(true);
-  const [modalOpen, setModalOpen] = useState(false);
   const [imagenPrincipal, setImagenPrincipal] = useState<string>('');
   const [imageError, setImageError] = useState(false);
   const [descripcion, setDescripcion] = useState<string>('');
@@ -21,6 +19,8 @@ export default function ProductoDestacadoCard({ categoria, onClick }: ProductoDe
   
   // ✅ Estados específicos para controlar loading
   const [loadingImagen, setLoadingImagen] = useState(true);
+  
+  const router = useRouter(); // ✅ Agregar router
 
   useEffect(() => {
     setMounted(true);
@@ -83,39 +83,16 @@ export default function ProductoDestacadoCard({ categoria, onClick }: ProductoDe
     fetchData();
   }, [categoria.id]);
 
+  // ✅ CAMBIO PRINCIPAL: Navegar en lugar de abrir modal
   const handleVerClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setModalOpen(true);
+    
+    // ✅ Navegar a la página del producto
+    router.push(`/public/items/${categoria.id}`);
+    
+    // ✅ Mantener callback por compatibilidad
     if (onClick) {
       onClick();
-    }
-  };
-
-  const handleCloseModal = () => {
-    setModalOpen(false);
-  };
-
-  const handleProductUpdate = (updatedProduct: any) => {
-    setDescripcion(updatedProduct.descripcion || '');
-    
-    if (updatedProduct.foto_portada && updatedProduct.foto_portada.trim() !== '') {
-      setImagenPrincipal(updatedProduct.foto_portada);
-      setImageError(false);
-    } else if (updatedProduct.foto1_url && updatedProduct.foto1_url.trim() !== '') {
-      setImagenPrincipal(updatedProduct.foto1_url);
-      setImageError(false);
-    } else if (updatedProduct.foto2_url && updatedProduct.foto2_url.trim() !== '') {
-      setImagenPrincipal(updatedProduct.foto2_url);
-      setImageError(false);
-    } else if (updatedProduct.foto3_url && updatedProduct.foto3_url.trim() !== '') {
-      setImagenPrincipal(updatedProduct.foto3_url);
-      setImageError(false);
-    } else if (updatedProduct.foto4_url && updatedProduct.foto4_url.trim() !== '') {
-      setImagenPrincipal(updatedProduct.foto4_url);
-      setImageError(false);
-    } else {
-      setImagenPrincipal('');
-      setImageError(true);
     }
   };
 
@@ -159,83 +136,69 @@ export default function ProductoDestacadoCard({ categoria, onClick }: ProductoDe
   }
 
   return (
-    <>
-      <div
-        className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden flex flex-col h-full relative cursor-pointer"
-        onClick={handleVerClick}
-        tabIndex={0}
-        role="button"
-        aria-label={`Ver detalles de ${categoria.nombre} (producto destacado)`}
-      >
-        {/* ✅ BADGE DE DESTACADO */}
-        <div className="absolute top-2 left-2 z-10">
-          <span className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg border border-yellow-300">
-            ⭐ DESTACADO
-          </span>
-        </div>
+    <div
+      className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden flex flex-col h-full relative cursor-pointer"
+      onClick={handleVerClick}
+      tabIndex={0}
+      role="button"
+      aria-label={`Ver detalles de ${categoria.nombre} (producto destacado)`}
+    >
+      {/* ✅ BADGE DE DESTACADO */}
+      <div className="absolute top-2 left-2 z-10">
+        <span className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg border border-yellow-300">
+          ⭐ DESTACADO
+        </span>
+      </div>
 
-        {/* ✅ SECCIÓN DE IMAGEN */}
-        <div className="relative bg-white p-2 flex justify-center items-center h-72 md:h-80 border-b border-gray-100">
-          {imageError || !imagenPrincipal ? (
-            <img
-              src="/not-image.png"
-              alt={categoria.nombre}
-              className="object-contain w-full h-full transition-transform duration-300 hover:scale-105"
-              width={400}
-              height={400}
-              onError={() => console.log('Error cargando not-image.png')}
-            />
-          ) : (
-            <CldImage
-              src={imagenPrincipal}
-              alt={categoria.nombre}
-              width={600}
-              height={600}
-              className="object-contain w-full h-full transition-transform duration-300 hover:scale-105"
-              crop="fit"
-              quality="auto"
-              format="auto"
-              onError={() => {
-                console.warn(`❌ Error cargando imagen destacada: ${imagenPrincipal}`);
-                setImageError(true);
-              }}
-            />
-          )}
-        </div>
+      {/* ✅ SECCIÓN DE IMAGEN */}
+      <div className="relative bg-white p-2 flex justify-center items-center h-72 md:h-80 border-b border-gray-100">
+        {imageError || !imagenPrincipal ? (
+          <img
+            src="/not-image.png"
+            alt={categoria.nombre}
+            className="object-contain w-full h-full transition-transform duration-300 hover:scale-105"
+            width={400}
+            height={400}
+            onError={() => console.log('Error cargando not-image.png')}
+          />
+        ) : (
+          <CldImage
+            src={imagenPrincipal}
+            alt={categoria.nombre}
+            width={600}
+            height={600}
+            className="object-contain w-full h-full transition-transform duration-300 hover:scale-105"
+            crop="fit"
+            quality="auto"
+            format="auto"
+            onError={() => {
+              console.warn(`❌ Error cargando imagen destacada: ${imagenPrincipal}`);
+              setImageError(true);
+            }}
+          />
+        )}
+      </div>
+      
+      {/* ✅ SECCIÓN DE CONTENIDO - SIN PRECIOS */}
+      <div className="p-4 flex flex-col flex-grow">
+        <h3 className="font-bold text-gray-800 text-base mb-2 line-clamp-2 min-h-[2.5rem]">
+          {categoria.nombre}
+        </h3>
         
-        {/* ✅ SECCIÓN DE CONTENIDO - SIN PRECIOS */}
-        <div className="p-4 flex flex-col flex-grow">
-          <h3 className="font-bold text-gray-800 text-base mb-2 line-clamp-2 min-h-[2.5rem]">
-            {categoria.nombre}
-          </h3>
+        <div className="mt-auto flex items-center justify-between">
+          {/* ✅ Sin información de precios */}
+          <div className="flex-1">
+            {/* Área vacía donde estaban los precios */}
+          </div>
           
-          <div className="mt-auto flex items-center justify-between">
-            {/* ✅ Sin información de precios */}
-            <div className="flex-1">
-              {/* Área vacía donde estaban los precios */}
-            </div>
-            
-            <div className="bg-orange-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-orange-600 transition-colors flex items-center gap-1 shadow-sm hover:shadow ml-auto">
-              ver +
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </div>
+          <div className="bg-orange-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-orange-600 transition-colors flex items-center gap-1 shadow-sm hover:shadow ml-auto">
+            ver +
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
           </div>
         </div>
       </div>
-
-      {mounted && modalOpen && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center">
-          <DetalleProductoModal 
-            itemId={categoria.id.toString()}
-            isOpen={modalOpen}
-            onClose={handleCloseModal}
-            onUpdate={handleProductUpdate}
-          />
-        </div>,
-        document.body
-      )}
-    </>
+    </div>
   );
 }

@@ -135,7 +135,6 @@ export default function SearchQuantityButton({
               </>
             ) : (
               <>
-                <ShoppingCartIcon className="w-4 h-4" />
                 <span>Agregar</span>
               </>
             )}

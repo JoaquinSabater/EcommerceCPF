@@ -441,7 +441,6 @@ export default function FiltrosPage() {
         )}
       </div>
 
-      {/* Tabs para alternar entre filtros y búsqueda */}
       <div className="bg-white border-b border-gray-200">
         <div className="flex">
           <button

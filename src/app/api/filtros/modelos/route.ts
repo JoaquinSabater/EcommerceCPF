@@ -26,11 +26,9 @@ export async function GET(request: NextRequest) {
 
     const placeholders = marcaIdsArray.map(() => '?').join(',');
 
-    // ✅ AGREGAR FILTRO: Excluir subcategorías de "Otros"
-    const subcategoriasOtros = [18, 19, 20, 21, 24]; // ✅ Mismas que en /public/otros/page.tsx
+    const subcategoriasOtros = [18, 19, 20, 21, 24];
     const placeholdersOtros = subcategoriasOtros.map(() => '?').join(',');
 
-    // ✅ CONSULTA MODIFICADA: Excluir modelos de subcategorías "Otros"
     const [rows]: any = await db.query(`
       SELECT DISTINCT 
         a.modelo,

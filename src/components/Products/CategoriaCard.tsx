@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { categorias } from "@/types/types";
 import { CldImage } from 'next-cloudinary';
-import DetalleProductoModal from "./DetalleProductoModal";
+import { useRouter } from 'next/navigation';
 import CategoriaCardSkeleton from "@/components/Skeletons/CategoriaCardSkeleton";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -23,13 +23,13 @@ interface RangoPrecio {
 export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps) {
   const [rangoPrecio, setRangoPrecio] = useState<RangoPrecio | null>(null);
   const [loading, setLoading] = useState(true);
-  const [modalOpen, setModalOpen] = useState(false);
   const [imagenPrincipal, setImagenPrincipal] = useState<string>('');
   const [imageError, setImageError] = useState(false);
   const [descripcion, setDescripcion] = useState<string>('');
   const [dolar, setDolar] = useState<number>(1);
 
   const { getPrecioConDescuento, isDistribuidor } = useAuth();
+  const router = useRouter();
 
   // ✅ Obtener cotización del dólar
   useEffect(() => {
@@ -51,13 +51,11 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
       setImageError(false);
       
       try {
-        // ✅ Obtener detalles de imagen y descripción
         const [resDetail, resPrecio] = await Promise.all([
           fetch(`/api/detalle?id=${categoria.id}`),
-          fetch(`/api/rangoPrecio?itemId=${categoria.id}`) // ✅ Nueva API
+          fetch(`/api/rangoPrecio?itemId=${categoria.id}`)
         ]);
 
-        // ✅ Procesar detalles de imagen (código existente)
         if (resDetail.ok) {
           const dataDetail = await resDetail.json();
           
@@ -89,7 +87,6 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
           setDescripcion('');
         }
 
-        // ✅ Procesar rango de precios
         if (resPrecio.ok) {
           const dataPrecio = await resPrecio.json();
           setRangoPrecio(dataPrecio);
@@ -119,39 +116,12 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
     fetchData();
   }, [categoria.id, categoria.nombre]);
 
+  // ✅ CAMBIO PRINCIPAL: Navegar en vez de abrir modal
   const handleCardClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setModalOpen(true);
+    router.push(`/public/items/${categoria.id}`);
     if (onClick) {
       onClick();
-    }
-  };
-
-  const handleCloseModal = () => {
-    setModalOpen(false);
-  };
-
-  const handleProductUpdate = (updatedProduct: any) => {
-    setDescripcion(updatedProduct.descripcion || '');
-    
-    if (updatedProduct.foto_portada && updatedProduct.foto_portada.trim() !== '') {
-      setImagenPrincipal(updatedProduct.foto_portada);
-      setImageError(false);
-    } else if (updatedProduct.foto1_url && updatedProduct.foto1_url.trim() !== '') {
-      setImagenPrincipal(updatedProduct.foto1_url);
-      setImageError(false);
-    } else if (updatedProduct.foto2_url && updatedProduct.foto2_url.trim() !== '') {
-      setImagenPrincipal(updatedProduct.foto2_url);
-      setImageError(false);
-    } else if (updatedProduct.foto3_url && updatedProduct.foto3_url.trim() !== '') {
-      setImagenPrincipal(updatedProduct.foto3_url);
-      setImageError(false);
-    } else if (updatedProduct.foto4_url && updatedProduct.foto4_url.trim() !== '') {
-      setImagenPrincipal(updatedProduct.foto4_url);
-      setImageError(false);
-    } else {
-      setImagenPrincipal('');
-      setImageError(true);
     }
   };
 
@@ -211,82 +181,70 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
   }
 
   return (
-    <>
-      <div
-        className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden flex flex-col h-full cursor-pointer"
-        onClick={handleCardClick}
-        tabIndex={0}
-        role="button"
-        aria-label={`Ver detalles de ${categoria.nombre}`}
-      >
-        <div className="relative bg-white p-2 flex justify-center items-center h-72 md:h-80 border-b border-gray-100">
-          {imageError || !imagenPrincipal ? (
-            <img
-              src="/not-image.png"
-              alt={categoria.nombre}
-              className="object-contain w-full h-full transition-transform duration-300 hover:scale-105"
-              width={400}
-              height={400}
-            />
-          ) : (
-            <CldImage
-              src={imagenPrincipal}
-              alt={categoria.nombre}
-              width={600}
-              height={600}
-              className="object-contain w-full h-full transition-transform duration-300 hover:scale-105"
-              crop="fit"
-              quality="auto"
-              format="auto"
-              onError={() => {
-                console.warn(`❌ Error cargando imagen: ${imagenPrincipal}`);
-                setImageError(true);
-              }}
-            />
-          )}
-        </div>
+    <div
+      className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden flex flex-col h-full cursor-pointer"
+      onClick={handleCardClick}
+      tabIndex={0}
+      role="button"
+      aria-label={`Ver detalles de ${categoria.nombre}`}
+    >
+      <div className="relative bg-white p-2 flex justify-center items-center h-72 md:h-80 border-b border-gray-100">
+        {imageError || !imagenPrincipal ? (
+          <img
+            src="/not-image.png"
+            alt={categoria.nombre}
+            className="object-contain w-full h-full transition-transform duration-300 hover:scale-105"
+            width={400}
+            height={400}
+          />
+        ) : (
+          <CldImage
+            src={imagenPrincipal}
+            alt={categoria.nombre}
+            width={600}
+            height={600}
+            className="object-contain w-full h-full transition-transform duration-300 hover:scale-105"
+            crop="fit"
+            quality="auto"
+            format="auto"
+            onError={() => {
+              console.warn(`❌ Error cargando imagen: ${imagenPrincipal}`);
+              setImageError(true);
+            }}
+          />
+        )}
+      </div>
+      
+      <div className="p-4 flex flex-col flex-grow">
+        <h3 className="font-bold text-gray-800 text-base mb-2 line-clamp-2 min-h-[2.5rem]">
+          {categoria.nombre}
+        </h3>
         
-        <div className="p-4 flex flex-col flex-grow">
-          <h3 className="font-bold text-gray-800 text-base mb-2 line-clamp-2 min-h-[2.5rem]">
-            {categoria.nombre}
-          </h3>
+        <div className="mt-auto flex items-center justify-between">
+          <div className="flex-1">
+            {renderPrecio()}
+            {isDistribuidor() && rangoPrecio?.precioMinimo && (
+              <div className="mt-1">
+                <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                  20% OFF aplicado
+                </span>
+              </div>
+            )}
+            {rangoPrecio?.tieneVariacion && (
+              <div className="text-xs text-gray-400 mt-1">
+                {rangoPrecio.totalArticulos} modelos disponibles
+              </div>
+            )}
+          </div>
           
-          <div className="mt-auto flex items-center justify-between">
-            {/* ✅ Mostrar precio o rango de precios */}
-            <div className="flex-1">
-              {renderPrecio()}
-              {/* ✅ Badge de distribuidor */}
-              {isDistribuidor() && rangoPrecio?.precioMinimo && (
-                <div className="mt-1">
-                  <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
-                    20% OFF aplicado
-                  </span>
-                </div>
-              )}
-              {/* ✅ Info de variación */}
-              {rangoPrecio?.tieneVariacion && (
-                <div className="text-xs text-gray-400 mt-1">
-                  {rangoPrecio.totalArticulos} modelos disponibles
-                </div>
-              )}
-            </div>
-            
-            <div className="bg-orange-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-orange-600 transition-colors flex items-center gap-1 shadow-sm hover:shadow ml-auto">
-              ver +
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </div>
+          <div className="bg-orange-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-orange-600 transition-colors flex items-center gap-1 shadow-sm hover:shadow ml-auto">
+            ver +
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
           </div>
         </div>
       </div>
-
-      <DetalleProductoModal 
-        itemId={categoria.id.toString()}
-        isOpen={modalOpen}
-        onClose={handleCloseModal}
-        onUpdate={handleProductUpdate}
-      />
-    </>
+    </div>
   );
 }

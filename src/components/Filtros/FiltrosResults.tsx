@@ -52,7 +52,6 @@ export default function FiltrosResults({
         {[1, 2, 3, 4, 5].map((i) => (
           <div key={i} className="bg-white rounded-lg p-4 border border-gray-200">
             <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-              {/* ✅ CORREGIDO: Imagen más alta en móvil para fundas completas */}
               <div className="w-full h-48 sm:w-20 sm:h-24 bg-gray-200 rounded-lg animate-pulse flex-shrink-0"></div>
               <div className="flex-1 space-y-2">
                 <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
