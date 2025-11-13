@@ -42,23 +42,29 @@ interface ProductoFormateado {
   mostrarCaracteristicas?: boolean;
 }
 
-// Funciones para obtener datos del servidor
+// ✅ FIX: Usar rutas relativas como en el modal
 async function fetchProductoDetalle(id: string): Promise<DetalleProducto> {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/detalle?id=${id}`, {
-    cache: 'no-store'
-  });
-  
-  if (!response.ok) {
-    throw new Error('Error al obtener detalles del producto');
+  try {
+    const response = await fetch(`/api/detalle?id=${id}`, {
+      cache: 'no-store'
+    });
+    
+    if (!response.ok) {
+      throw new Error('Error al obtener detalles del producto');
+    }
+    
+    const data = await response.json();
+    return data.detalle as DetalleProducto;
+  } catch (error) {
+    console.error("Error al obtener detalles del producto:", error);
+    throw error;
   }
-  
-  const data = await response.json();
-  return data.detalle as DetalleProducto;
 }
 
+// ✅ FIX: Usar rutas relativas como en el modal
 async function fetchPrecio(id: string): Promise<number> {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/precio?itemId=${id}`, {
+    const response = await fetch(`/api/precio?itemId=${id}`, {
       cache: 'no-store'
     });
     
@@ -104,9 +110,8 @@ function formatearProducto(detalle: DetalleProducto, precio: number): ProductoFo
   };
 }
 
-// ✅ FIX: Cambiar params para ser compatible con Next.js 15+
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params; // ✅ Agregar await aquí
+  const { id } = await params;
 
   try {
     // Obtener datos en paralelo
@@ -122,15 +127,13 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     const productoFormateado = formatearProducto(detalleProducto, precio);
 
     return (
-      <main className="min-h-screen bg-white"> {/* ✅ Cambiar fondo a blanco */}
+      <main className="min-h-screen bg-white">
         <div className="container mx-auto px-4 py-6 max-w-7xl">
-          {/* ✅ Header simplificado - solo botón de regreso y botón editar */}
+          {/* Header simplificado */}
           <div className="flex items-center justify-between mb-8">
             <BackButton />
             <EditProductButton producto={detalleProducto} />
           </div>
-
-          {/* ✅ REMOVER: Estados del producto, título, etc. */}
 
           {/* Contenido principal */}
           <div className="space-y-8">
