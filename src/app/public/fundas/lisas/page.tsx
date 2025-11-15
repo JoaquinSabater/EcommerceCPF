@@ -12,8 +12,7 @@ function LisasContent() {
   const { selectedMarca } = useFilters();
   const [categorias, setCategorias] = useState<categorias[]>([]);
   const [loading, setLoading] = useState(true);
-  // ✅ CAMBIO: Array con múltiples subcategorías
-  const subcategoriasIds = [10, 22]; // Fundas lisas (10) + Protectores r original (22)
+  const subcategoriasIds = [10];
 
   useEffect(() => {
     const fetchCategorias = async () => {
@@ -48,7 +47,7 @@ function LisasContent() {
     };
 
     fetchCategorias();
-  }, [selectedMarca]); // ✅ CAMBIO: Quité subcategoriaId de las dependencias
+  }, [selectedMarca]); 
 
   return (
     <div className="flex">
