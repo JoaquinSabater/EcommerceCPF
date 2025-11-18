@@ -183,7 +183,7 @@ export default function NavBar() {
               height={30}
               alt="shopping cart icon"
             />
-            <div className="rounded-full flex justify-center items-center bg-orange-600 text-xs text-white absolute w-5 h-5 -top-2 -right-2">
+            <div className="rounded-full flex justify-center items-center text-xs text-white absolute w-5 h-5 -top-2 -right-2" style={{ backgroundColor: '#ea580c' }}>
               {formatCartCount(totalItems)}
             </div>
           </button>

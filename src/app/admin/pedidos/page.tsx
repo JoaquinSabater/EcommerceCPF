@@ -16,11 +16,13 @@ import {
 } from 'lucide-react';
 import { Pedido, ArticuloPedido } from "@/types/types";
 import { PedidoPreliminar } from "@/data/data";
+import EstadoPedidoTracker from '@/components/AdminComponents/EstadoPedidoTracker';
 
 // Tipo combinado para manejar ambos tipos de pedidos
 type PedidoCombinado = (Pedido | PedidoPreliminar) & {
   tipo: 'normal' | 'preliminar';
   esPreliminar?: boolean;
+  consolidado_despachado?: number; // ✅ AGREGAR: Campo para despacho
 };
 
 export default function PedidosPage() {
@@ -46,6 +48,7 @@ export default function PedidosPage() {
     }
   }, [user, authLoading]);
 
+  // ✅ SIMPLIFICADO: Ahora la información de despacho viene en la consulta principal
   const fetchPedidos = async () => {
     if (!user) return;
     try {
@@ -111,7 +114,13 @@ export default function PedidosPage() {
 
   // Combinar y ordenar ambos tipos de pedidos
   const pedidosCombinados: PedidoCombinado[] = [
-    ...pedidos.map(p => ({ ...p, tipo: 'normal' as const, esPreliminar: false })),
+    ...pedidos.map(p => ({ 
+      ...p, 
+      tipo: 'normal' as const, 
+      esPreliminar: false,
+      // ✅ Mantener la información de despacho que viene de la BD
+      consolidado_despachado: (p as any).consolidado_despachado
+    })),
     ...pedidosPreliminares.map(p => ({ 
       ...p, 
       tipo: 'preliminar' as const, 
@@ -407,7 +416,24 @@ export default function PedidosPage() {
                     backgroundColor: 'rgba(211, 211, 211, 0.05)'
                   }}
                 >
-                  {/* Información adicional - solo para pedidos normales */}
+                  {/* ✅ TRACKER DE ESTADO CON INFORMACIÓN DE DESPACHO */}
+                  <div className="mb-6">
+                    <h4 className="font-semibold mb-4 text-sm md:text-base" style={{ color: '#1a1a1a' }}>
+                      Estado del Pedido
+                    </h4>
+                    <EstadoPedidoTracker 
+                      estadoActual={
+                        pedido.esPreliminar 
+                          ? (pedido as any).estado_preliminar || (pedido as any).estado || 'borrador'
+                          : pedido.estado || 'solicitud'
+                      } 
+                      esPreliminar={pedido.esPreliminar}
+                      estaDespachado={
+                        !pedido.esPreliminar && (pedido as any).consolidado_despachado === 1
+                      }
+                    />
+                  </div>
+
                   {!pedido.esPreliminar && (
                     <div className="mb-4">
                       <h4 className="font-semibold mb-3 text-sm md:text-base" style={{ color: '#1a1a1a' }}>
@@ -417,11 +443,12 @@ export default function PedidosPage() {
                         {'consolidado_id' in pedido && pedido.consolidado_id && (
                           <p style={{ color: '#1a1a1a', opacity: 0.7 }}>
                             <span className="font-medium" style={{ color: '#1a1a1a' }}>Consolidado ID:</span> {pedido.consolidado_id}
-                          </p>
-                        )}
-                        {'categoria_principal_id' in pedido && pedido.categoria_principal_id && (
-                          <p style={{ color: '#1a1a1a', opacity: 0.7 }}>
-                            <span className="font-medium" style={{ color: '#1a1a1a' }}>Categoría Principal:</span> {pedido.categoria_principal_id}
+                            {/* ✅ MOSTRAR ESTADO DE DESPACHO */}
+                            {(pedido as any).consolidado_despachado === 1 && (
+                              <span className="ml-2 px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">
+                                Despachado
+                              </span>
+                            )}
                           </p>
                         )}
                         {pedido.observaciones_generales && (

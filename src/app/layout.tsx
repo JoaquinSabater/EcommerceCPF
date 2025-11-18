@@ -39,9 +39,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="es">
+      <head>
+        <meta name="google" content="notranslate" />
+        <meta httpEquiv="Content-Language" content="es" />
+        <meta name="language" content="Spanish" />
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        {/* ✅ Envolver RouteGuard en Suspense */}
         <Suspense fallback={<RouteGuardLoading />}>
           <RouteGuard>
             <CartProvider>

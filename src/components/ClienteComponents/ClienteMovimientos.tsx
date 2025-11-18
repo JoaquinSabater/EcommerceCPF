@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Calendar, RefreshCw, Filter } from 'lucide-react';
+import { Calendar, RefreshCw, Filter, Zap, Package } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 interface MovimientoCuentaCorriente {
   fecha: string;
@@ -50,7 +51,24 @@ const PERIODOS_PREDEFINIDOS = [
   { label: 'Período personalizado', meses: 0 }
 ];
 
+// ✅ NUEVO: Tipos de cuenta corriente
+const TIPOS_CUENTA = [
+  { 
+    value: 'general', 
+    label: 'Accesorios', 
+    icon: <Package className="h-4 w-4" />,
+    description: 'Cuenta corriente de accesorios'
+  },
+  { 
+    value: 'electronica', 
+    label: 'Electrónica', 
+    icon: <Zap className="h-4 w-4" />,
+    description: 'Cuenta corriente de productos electrónicos'
+  }
+];
+
 export default function ClienteMovimientos({ clienteId }: ClienteMovimientosProps) {
+  const { user } = useAuth();
   const [movimientos, setMovimientos] = useState<MovimientoCuentaCorriente[]>([]);
   const [resumen, setResumen] = useState<ResumenCuentaCorriente | null>(null);
   const [cliente, setCliente] = useState<ClienteInfo | null>(null);
@@ -62,6 +80,12 @@ export default function ClienteMovimientos({ clienteId }: ClienteMovimientosProp
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
+  
+  // ✅ NUEVO: Estado para tipo de cuenta corriente
+  const [tipoMovimiento, setTipoMovimiento] = useState<'general' | 'electronica'>('general');
+
+  // ✅ NUEVO: Verificar si el usuario tiene acceso a contenido especial (electrónica)
+  const tieneAccesoElectronica = user?.contenidoEspecial === 1;
 
   // ✅ Inicializar fechas por defecto (último año)
   useEffect(() => {
@@ -77,7 +101,7 @@ export default function ClienteMovimientos({ clienteId }: ClienteMovimientosProp
     if (clienteId && fechaDesde && fechaHasta) {
       fetchMovimientos();
     }
-  }, [clienteId, fechaDesde, fechaHasta]);
+  }, [clienteId, fechaDesde, fechaHasta, tipoMovimiento]);
 
   // ✅ Manejar cambio de período predefinido
   const handlePeriodoChange = (meses: number) => {
@@ -96,6 +120,11 @@ export default function ClienteMovimientos({ clienteId }: ClienteMovimientosProp
     setFechaDesde(fechaInicio.toISOString().split('T')[0]);
   };
 
+  // ✅ NUEVO: Manejar cambio de tipo de cuenta corriente
+  const handleTipoMovimientoChange = (tipo: 'general' | 'electronica') => {
+    setTipoMovimiento(tipo);
+  };
+
   const fetchMovimientos = async () => {
     try {
       setLoading(true);
@@ -108,7 +137,8 @@ export default function ClienteMovimientos({ clienteId }: ClienteMovimientosProp
         throw new Error('Token de API no configurado');
       }
       
-      const url = `https://cellphonefree.com.ar/accesorios/Sistema/scrphp/api/clientes/movimientos_cuenta_corriente.php?cliente_id=${clienteId}&fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}&token=${TOKEN}`;
+      // ✅ NUEVO: Incluir tipo_movimiento en la URL
+      const url = `https://cellphonefree.com.ar/accesorios/Sistema/scrphp/api/clientes/movimientos_cuenta_corriente.php?cliente_id=${clienteId}&fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}&tipo_movimiento=${tipoMovimiento}&token=${TOKEN}`;
             
       const response = await fetch(url, {
         method: 'GET',
@@ -124,7 +154,11 @@ export default function ClienteMovimientos({ clienteId }: ClienteMovimientosProp
       
       const data: ApiResponse = await response.json();
       
-      //console.log('📥 Respuesta completa:', data);
+      console.log('📥 Respuesta API:', { 
+        success: data.success, 
+        tipo: tipoMovimiento, 
+        movimientos: data.data?.movimientos?.length || 0 
+      });
       
       if (data.success) {
         setMovimientos(data.data.movimientos || []);
@@ -237,9 +271,22 @@ export default function ClienteMovimientos({ clienteId }: ClienteMovimientosProp
         <p className="text-sm sm:text-base" style={{ color: '#1a1a1a', opacity: 0.7 }}>
           {cliente ? `${cliente.razon_social}` : 'Consulta tus movimientos de cuenta corriente'}
         </p>
+        
+        {/* ✅ NUEVO: Mostrar si tiene acceso a electrónica */}
+        {tieneAccesoElectronica && (
+          <div className="mt-2">
+            <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full" style={{
+              backgroundColor: 'rgba(255, 113, 0, 0.1)',
+              color: '#ff7100'
+            }}>
+              <Zap className="h-3 w-3" />
+              Acceso a Electrónica
+            </span>
+          </div>
+        )}
       </div>
 
-      {/* ✅ SELECTOR DE PERÍODO */}
+      {/* ✅ SELECTOR DE PERÍODO Y TIPO DE CUENTA */}
       <div className="mb-6 space-y-4">
         {/* Botón para mostrar filtros en móvil */}
         <button
@@ -251,13 +298,66 @@ export default function ClienteMovimientos({ clienteId }: ClienteMovimientosProp
           }}
         >
           <Filter className="h-4 w-4" />
-          <span>Filtrar período</span>
+          <span>Filtrar período y cuenta</span>
           <Calendar className="h-4 w-4" />
         </button>
 
         {/* Panel de filtros */}
         <div className={`space-y-4 ${mostrarFiltros ? 'block' : 'hidden md:block'}`}>
           <div className="bg-white rounded-lg shadow-sm border p-4" style={{ borderColor: '#d3d3d3' }}>
+            
+            {/* ✅ NUEVO: Selector de tipo de cuenta corriente */}
+            {tieneAccesoElectronica && (
+              <div className="mb-6">
+                <h3 className="font-semibold mb-3 text-sm" style={{ color: '#1a1a1a' }}>
+                  🏦 Tipo de Cuenta Corriente
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {TIPOS_CUENTA.map((tipo) => (
+                    <button
+                      key={tipo.value}
+                      onClick={() => handleTipoMovimientoChange(tipo.value as 'general' | 'electronica')}
+                      className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${
+                        tipoMovimiento === tipo.value 
+                          ? 'border-2' 
+                          : 'border hover:border-gray-400'
+                      }`}
+                      style={{
+                        borderColor: tipoMovimiento === tipo.value 
+                          ? (tipo.value === 'electronica' ? '#ff7100' : '#1a1a1a')
+                          : '#d3d3d3',
+                        backgroundColor: tipoMovimiento === tipo.value 
+                          ? (tipo.value === 'electronica' ? 'rgba(255, 113, 0, 0.1)' : 'rgba(26, 26, 26, 0.05)')
+                          : 'transparent'
+                      }}
+                    >
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full" style={{
+                        backgroundColor: tipo.value === 'electronica' 
+                          ? 'rgba(255, 113, 0, 0.2)' 
+                          : 'rgba(26, 26, 26, 0.1)',
+                        color: tipo.value === 'electronica' ? '#ff7100' : '#1a1a1a'
+                      }}>
+                        {tipo.icon}
+                      </div>
+                      <div className="flex-1 text-left">
+                        <p className="font-medium text-sm" style={{ color: '#1a1a1a' }}>
+                          {tipo.label}
+                        </p>
+                        <p className="text-xs" style={{ color: '#1a1a1a', opacity: 0.7 }}>
+                          {tipo.description}
+                        </p>
+                      </div>
+                      {tipoMovimiento === tipo.value && (
+                        <div className="w-2 h-2 rounded-full" style={{
+                          backgroundColor: tipo.value === 'electronica' ? '#ff7100' : '#1a1a1a'
+                        }}></div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <h3 className="font-semibold mb-3 text-sm" style={{ color: '#1a1a1a' }}>
               📅 Seleccionar Período
             </h3>
@@ -349,6 +449,30 @@ export default function ClienteMovimientos({ clienteId }: ClienteMovimientosProp
         </div>
       </div>
 
+      {/* ✅ NUEVO: Indicador de cuenta activa */}
+      <div className="mb-4">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm" style={{
+          backgroundColor: tipoMovimiento === 'electronica' 
+            ? 'rgba(255, 113, 0, 0.1)' 
+            : 'rgba(26, 26, 26, 0.05)',
+          border: '1px solid',
+          borderColor: tipoMovimiento === 'electronica' ? '#ff7100' : '#d3d3d3'
+        }}>
+          {TIPOS_CUENTA.find(t => t.value === tipoMovimiento)?.icon}
+          <span className="font-medium" style={{ color: '#1a1a1a' }}>
+            Viendo: Cuenta {TIPOS_CUENTA.find(t => t.value === tipoMovimiento)?.label}
+          </span>
+          {tipoMovimiento === 'electronica' && (
+            <span className="text-xs px-2 py-1 rounded-full" style={{
+              backgroundColor: 'rgba(255, 113, 0, 0.2)',
+              color: '#ff7100'
+            }}>
+              Productos Electrónicos
+            </span>
+          )}
+        </div>
+      </div>
+
       {/* Resumen - Cards responsivas */}
       {resumen && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
@@ -426,15 +550,17 @@ export default function ClienteMovimientos({ clienteId }: ClienteMovimientosProp
       {/* Información del período */}
       {resumen && (
         <div className="border rounded-lg p-3 sm:p-4 mb-4 sm:mb-6" style={{ 
-          backgroundColor: 'rgba(255, 113, 0, 0.1)', 
-          borderColor: '#ff7100' 
+          backgroundColor: tipoMovimiento === 'electronica' 
+            ? 'rgba(255, 113, 0, 0.1)' 
+            : 'rgba(26, 26, 26, 0.05)', 
+          borderColor: tipoMovimiento === 'electronica' ? '#ff7100' : '#d3d3d3'
         }}>
           <div className="space-y-1">
             <p className="font-medium text-xs sm:text-sm" style={{ color: '#1a1a1a' }}>
               📅 Período: {formatDate(resumen.fecha_desde)} - {formatDate(resumen.fecha_hasta)}
             </p>
             <p className="text-xs sm:text-sm" style={{ color: '#1a1a1a', opacity: 0.7 }}>
-              Total de movimientos: {resumen.total_movimientos}
+              Total de movimientos: {resumen.total_movimientos} ({TIPOS_CUENTA.find(t => t.value === tipoMovimiento)?.label})
             </p>
           </div>
         </div>
@@ -443,8 +569,11 @@ export default function ClienteMovimientos({ clienteId }: ClienteMovimientosProp
       {/* Tabla/Cards de movimientos */}
       <div className="bg-white rounded-lg shadow-md overflow-hidden" style={{ borderColor: '#d3d3d3' }}>
         <div className="px-3 sm:px-6 py-3 sm:py-4 border-b" style={{ borderColor: '#d3d3d3' }}>
-          <h2 className="text-base sm:text-lg font-semibold" style={{ color: '#1a1a1a' }}>
-            📋 Mis Movimientos
+          <h2 className="text-base sm:text-lg font-semibold flex items-center gap-2" style={{ color: '#1a1a1a' }}>
+            📋 Movimientos de Cuenta {TIPOS_CUENTA.find(t => t.value === tipoMovimiento)?.label}
+            {tipoMovimiento === 'electronica' && (
+              <Zap className="h-4 w-4" style={{ color: '#ff7100' }} />
+            )}
           </h2>
         </div>
 
@@ -456,7 +585,7 @@ export default function ClienteMovimientos({ clienteId }: ClienteMovimientosProp
                 <span className="text-3xl mb-3 block">📄</span>
                 <p className="text-base font-medium" style={{ color: '#1a1a1a' }}>No hay movimientos</p>
                 <p className="text-xs mt-1" style={{ color: '#1a1a1a', opacity: 0.7 }}>
-                  No se encontraron movimientos en el período consultado
+                  No se encontraron movimientos en el período consultado para la cuenta {TIPOS_CUENTA.find(t => t.value === tipoMovimiento)?.label.toLowerCase()}
                 </p>
               </div>
             </div>
@@ -533,7 +662,7 @@ export default function ClienteMovimientos({ clienteId }: ClienteMovimientosProp
                       <span className="text-4xl mb-4 block">📄</span>
                       <p className="text-lg" style={{ color: '#1a1a1a' }}>No hay movimientos para mostrar</p>
                       <p className="text-sm" style={{ color: '#1a1a1a', opacity: 0.7 }}>
-                        No se encontraron movimientos en el período consultado
+                        No se encontraron movimientos en el período consultado para la cuenta {TIPOS_CUENTA.find(t => t.value === tipoMovimiento)?.label.toLowerCase()}
                       </p>
                     </div>
                   </td>
@@ -585,7 +714,7 @@ export default function ClienteMovimientos({ clienteId }: ClienteMovimientosProp
             borderColor: '#d3d3d3' 
           }}>
             <p className="text-xs sm:text-sm" style={{ color: '#1a1a1a', opacity: 0.7 }}>
-              Mostrando {movimientos.length} de {resumen.total_movimientos} movimientos
+              Mostrando {movimientos.length} de {resumen.total_movimientos} movimientos - Cuenta {TIPOS_CUENTA.find(t => t.value === tipoMovimiento)?.label}
             </p>
           </div>
         )}

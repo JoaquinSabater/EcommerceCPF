@@ -146,11 +146,13 @@ export async function getPedidosByCliente(clienteId: number): Promise<Pedido[]> 
         p.*,
         u1.username AS armador_nombre,
         u2.username AS controlador_nombre,
-        v.nombre AS vendedor_nombre
+        v.nombre AS vendedor_nombre,
+        COALESCE(c.despachado, 0) AS consolidado_despachado
       FROM pedidos p
       LEFT JOIN usuarios u1 ON p.armador_id = u1.id
       LEFT JOIN usuarios u2 ON p.controlador_id = u2.id
       LEFT JOIN vendedores v ON p.vendedor_id = v.id
+      LEFT JOIN consolidados c ON p.consolidado_id = c.id
       WHERE p.cliente_id = ?
       ORDER BY p.fecha_creacion DESC;
     `;
