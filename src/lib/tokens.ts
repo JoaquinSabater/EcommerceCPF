@@ -12,7 +12,6 @@ export function isTokenExpired(expiryDate: Date): boolean {
   return new Date() > expiryDate;
 }
 
-// ✅ CAMBIAR A 4 DÍAS
 export function generateProspectoToken(): string {
   return crypto.randomBytes(48).toString('hex');
 }

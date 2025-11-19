@@ -11,7 +11,7 @@ interface RouteGuardProps {
 
 export default function RouteGuard({ children }: RouteGuardProps) {
   const { user, loading } = useAuth();
-  const { isProspectoMode, prospectoData, isValidatingToken } = useProspectoMode();
+  const { isProspectoMode, isChatbotMode, prospectoData, isValidatingToken } = useProspectoMode(); // ✅ AGREGADO isChatbotMode
   const pathname = usePathname();
   const router = useRouter();
   
@@ -28,9 +28,10 @@ export default function RouteGuard({ children }: RouteGuardProps) {
     [publicRoutes, pathname]
   );
   
+  // ✅ MODIFICADO: Incluir isChatbotMode en acceso válido
   const hasValidAccess = useMemo(() => 
-    user || (isProspectoMode && prospectoData), 
-    [user, isProspectoMode, prospectoData]
+    user || (isProspectoMode && prospectoData) || (isChatbotMode && prospectoData), 
+    [user, isProspectoMode, isChatbotMode, prospectoData]
   );
   
   const isLoading = useMemo(() => 
@@ -60,7 +61,7 @@ export default function RouteGuard({ children }: RouteGuardProps) {
         <div className="flex flex-col items-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mb-4"></div>
           <p className="text-gray-600">
-            {isValidatingToken ? 'Validando acceso de prospecto...' : 'Verificando acceso...'}
+            {isValidatingToken ? 'Validando acceso...' : 'Verificando acceso...'}
           </p>
         </div>
       </div>

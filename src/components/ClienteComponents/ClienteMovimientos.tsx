@@ -51,7 +51,6 @@ const PERIODOS_PREDEFINIDOS = [
   { label: 'Período personalizado', meses: 0 }
 ];
 
-// ✅ NUEVO: Tipos de cuenta corriente
 const TIPOS_CUENTA = [
   { 
     value: 'general', 

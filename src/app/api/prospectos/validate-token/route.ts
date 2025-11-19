@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/data/mysql';
 import { isTokenExpired } from '@/lib/tokens';
 
+// ✅ Token fijo para chatbot
+const CHATBOT_TOKEN = 'chatbot_access_token_2025_permanent';
+
 export async function POST(request: NextRequest) {
   let connection;
   
@@ -15,6 +18,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // ✅ NUEVO: Verificar si es token de chatbot
+    if (token === CHATBOT_TOKEN) {
+      return NextResponse.json({
+        success: true,
+        message: 'Token de chatbot válido',
+        isChatbot: true,
+        prospecto: {
+          id: 0,
+          nombre: 'Cliente Chatbot',
+          email: 'chatbot@sistema.com',
+          telefono: '',
+          cuit: '',
+          negocio: 'Consulta via Chatbot'
+        }
+      });
+    }
+
+    // ✅ Lógica existente para tokens de prospectos
     connection = await db.getConnection();
     await connection.query('SET SESSION wait_timeout=300');
     await connection.query('SET SESSION interactive_timeout=300');
@@ -44,11 +65,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    //console.log(`✅ Token válido para prospecto: ${tokenData.nombre} (uso múltiple permitido)`);
-
     return NextResponse.json({
       success: true,
       message: 'Token válido',
+      isChatbot: false,
       prospecto: {
         id: tokenData.prospecto_id,
         nombre: tokenData.nombre,

@@ -32,8 +32,9 @@ export function useAuth() {
         setCookies(parsedUser);
         
       } else {
-        // ✅ VERIFICAR SI HAY MODO PROSPECTO ACTIVO ANTES DE REDIRIGIR
+        // ✅ VERIFICAR SI HAY MODO PROSPECTO O CHATBOT ACTIVO ANTES DE REDIRIGIR
         const prospectoModeActive = localStorage.getItem('prospecto_mode') === 'true';
+        const chatbotModeActive = localStorage.getItem('chatbot_mode') === 'true'; // ✅ NUEVO
         const prospectoDataStored = localStorage.getItem('prospecto_data');
         
         // Rutas públicas que NO requieren autenticación
@@ -42,28 +43,33 @@ export function useAuth() {
           '/auth/forgot-password',
           '/auth/set-password',
           '/auth/reset-password',
-          '/prospecto-order'  // ✅ AGREGAR RUTA DE PROSPECTOS
+          '/prospecto-order'
         ];
         
         // ✅ NO REDIRIGIR SI:
         // 1. Estamos en una ruta pública
         // 2. Hay modo prospecto activo
+        // 3. Hay modo chatbot activo
         const shouldNotRedirect = publicRoutes.includes(pathname) || 
-                                 (prospectoModeActive && prospectoDataStored);
+                                 (prospectoModeActive && prospectoDataStored) ||
+                                 (chatbotModeActive && prospectoDataStored); // ✅ NUEVO
         
         if (!shouldNotRedirect) {
-          console.log('🔄 No hay usuario ni prospecto activo, redirigiendo al login');
+          console.log('🔄 No hay usuario ni prospecto/chatbot activo, redirigiendo al login');
           clearAuthData();
           router.push('/');
         } else if (prospectoModeActive && prospectoDataStored) {
           console.log('✅ Modo prospecto detectado, permitiendo acceso');
+        } else if (chatbotModeActive && prospectoDataStored) { // ✅ NUEVO
+          console.log('✅ Modo chatbot detectado, permitiendo acceso');
         }
       }
     } catch (error) {
       console.error('Error parsing user data:', error);
       
-      // ✅ VERIFICAR PROSPECTO ANTES DE LIMPIAR Y REDIRIGIR
+      // ✅ VERIFICAR PROSPECTO Y CHATBOT ANTES DE LIMPIAR Y REDIRIGIR
       const prospectoModeActive = localStorage.getItem('prospecto_mode') === 'true';
+      const chatbotModeActive = localStorage.getItem('chatbot_mode') === 'true'; // ✅ NUEVO
       const prospectoDataStored = localStorage.getItem('prospecto_data');
       
       const publicRoutes = [
@@ -75,7 +81,8 @@ export function useAuth() {
       ];
       
       const shouldNotRedirect = publicRoutes.includes(pathname) || 
-                               (prospectoModeActive && prospectoDataStored);
+                               (prospectoModeActive && prospectoDataStored) ||
+                               (chatbotModeActive && prospectoDataStored); // ✅ NUEVO
       
       if (!shouldNotRedirect) {
         clearAuthData();
@@ -107,12 +114,13 @@ export function useAuth() {
     document.cookie = `auth_user=; path=/; expires=${expireDate}`;
     document.cookie = `auth_token=; path=/; expires=${expireDate}`;
     
-    // ✅ NO LIMPIAR MODO PROSPECTO AUTOMÁTICAMENTE
+    // ✅ NO LIMPIAR MODO PROSPECTO/CHATBOT AUTOMÁTICAMENTE
     // clearProspectoMode();
   };
 
   const clearProspectoMode = () => {
     localStorage.removeItem('prospecto_mode');
+    localStorage.removeItem('chatbot_mode'); // ✅ NUEVO
     localStorage.removeItem('prospecto_data');
     localStorage.removeItem('prospecto_cart');
     localStorage.removeItem('prospecto_token');
@@ -120,7 +128,7 @@ export function useAuth() {
 
   const logout = () => {
     clearAuthData();
-    clearProspectoMode(); // ✅ Solo limpiar prospecto en logout explícito
+    clearProspectoMode(); // ✅ Solo limpiar prospecto/chatbot en logout explícito
     setUser(null);
     router.push('/');
   };

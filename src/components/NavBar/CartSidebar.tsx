@@ -13,13 +13,13 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
   const sidebarRef = useRef<HTMLDivElement>(null);
   const { cart, changeQuantity, clearCart, getStockWarnings } = useCart(); 
   const { user, getPrecioConDescuento, isDistribuidor } = useAuth();
-  const { isProspectoMode, prospectoData } = useProspectoMode();
+  const { isProspectoMode, isChatbotMode, prospectoData } = useProspectoMode(); // ✅ NUEVO
   const router = useRouter();
 
   const [dolar, setDolar] = useState<number>(1);
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
 
-  // ✅ NUEVO: Estados para swipe
+  // ✅ Estados para swipe
   const [touchStart, setTouchStart] = useState(0);
   const [touchEnd, setTouchEnd] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -37,10 +37,10 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
     fetchDolar();
   }, []);
 
-  // ✅ NUEVO: Obtener advertencias de stock
+  // ✅ Obtener advertencias de stock
   const stockValidation = getStockWarnings();
 
-  // ✅ NUEVO: Funciones para manejar swipe
+  // ✅ Funciones para manejar swipe
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchStart(e.targetTouches[0].clientX);
     setIsDragging(true);
@@ -79,12 +79,17 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
   );
 
   const handleBuy = async () => {
+    if (isChatbotMode) {
+      alert('💬 Este carrito es solo para consultas. No se pueden realizar pedidos en modo chatbot.');
+      return;
+    }
+
     if (cart.length === 0) {
       alert('El carrito está vacío');
       return;
     }
 
-    // ✅ NUEVO: Validar stock antes de proceder
+    // ✅ Validar stock antes de proceder
     if (stockValidation.hasWarnings) {
       const errorsMessage = stockValidation.warnings.join('\n');
       alert(`⚠️ Hay problemas de stock:\n\n${errorsMessage}\n\nPor favor, ajusta las cantidades antes de continuar.`);
@@ -164,7 +169,7 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
     }
   };
 
-  // ✅ MEJORADO: Manejo de eventos con prevención de scroll
+  // ✅ Manejo de eventos con prevención de scroll
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -192,7 +197,7 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
 
   return (
     <>
-      {/* ✅ NUEVO: Overlay con backdrop blur */}
+      {/* ✅ Overlay con backdrop blur */}
       {isOpen && (
         <div 
           className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm transition-opacity duration-300"
@@ -210,7 +215,7 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        {/* ✅ HEADER CON BADGE DISTRIBUIDOR */}
+        {/* ✅ HEADER CON BADGES */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-orange-50 to-orange-100">
           <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
             🛒 Mi carrito
@@ -229,7 +234,7 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
           </button>
         </div>
 
-        {/* ✅ NUEVO: Advertencias de stock */}
+        {/* ✅ Advertencias de stock */}
         {stockValidation.hasWarnings && (
           <div className="p-3 bg-red-50 border-b border-red-200">
             <div className="text-red-800 text-sm font-medium mb-1">⚠️ Problemas de stock:</div>
@@ -278,7 +283,7 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
                               </span>
                             )}
                           </div>
-                          {/* ✅ NUEVO: Mostrar info de stock */}
+                          {/* ✅ Mostrar info de stock */}
                           <div className={`text-xs ${stockColor} mt-1`}>
                             Stock: {stockDisponible} 
                             {item.cantidad > stockDisponible && (
@@ -302,7 +307,7 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
                             modelo={item.modelo}
                             hideModelo={true}
                             size="normal"
-                            maxStock={stockDisponible} // ✅ NUEVO: Pasar stock máximo
+                            maxStock={stockDisponible}
                           />
                         </div>
                       </div>
@@ -312,7 +317,7 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
               </ul>
             </div>
             
-            {/* ✅ FOOTER CON TOTAL CON DESCUENTO */}
+            {/* ✅ FOOTER CON TOTAL Y BOTONES */}
             <div className="border-t border-gray-200 bg-gray-50 p-4">
               <div className="flex justify-between items-center mb-4">
                 <span className="font-bold text-gray-900">
@@ -339,14 +344,18 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
 
               <button
                 className={`w-full py-3 rounded-lg font-bold transition-all transform hover:scale-[1.02] disabled:transform-none shadow-md ${
-                  stockValidation.hasWarnings 
-                    ? 'bg-red-600 hover:bg-red-700 text-white cursor-not-allowed opacity-75'
-                    : 'bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white'
+                  isChatbotMode // ✅ NUEVO: Deshabilitar si es modo chatbot
+                    ? 'bg-gray-400 text-gray-600 cursor-not-allowed opacity-75'
+                    : stockValidation.hasWarnings 
+                      ? 'bg-red-600 hover:bg-red-700 text-white cursor-not-allowed opacity-75'
+                      : 'bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white'
                 } disabled:opacity-50 disabled:cursor-not-allowed`}
                 onClick={handleBuy}
-                disabled={isCreatingOrder || cart.length === 0 || stockValidation.hasWarnings}
+                disabled={isCreatingOrder || cart.length === 0 || stockValidation.hasWarnings || isChatbotMode} // ✅ NUEVO
               >
-                {isCreatingOrder ? (
+                {isChatbotMode ? ( // ✅ NUEVO
+                  '🔒 Modo consulta - Sin pedidos'
+                ) : isCreatingOrder ? (
                   <div className="flex items-center justify-center gap-2">
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                     Enviando...
@@ -358,8 +367,25 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
                 )}
               </button>
 
-              {/* ✅ MENSAJE PARA PROSPECTOS Y DISTRIBUIDORES */}
-              {isProspectoMode && (
+              {/* ✅ NUEVO: Mensaje para modo chatbot */}
+              {isChatbotMode && (
+                <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <span className="text-blue-500 text-sm">💬</span>
+                    <div>
+                      <p className="text-blue-800 font-semibold text-xs">
+                        Modo Consulta Activado
+                      </p>
+                      <p className="text-blue-700 text-xs">
+                        Este carrito es solo para consultas. No se pueden realizar pedidos.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ✅ MENSAJE PARA PROSPECTOS */}
+              {isProspectoMode && !isChatbotMode && (
                 <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
                   <div className="flex items-center gap-2">
                     <span className="text-orange-500 text-sm">👋</span>
@@ -375,7 +401,8 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
                 </div>
               )}
 
-              {isDistribuidor() && !isProspectoMode && (
+              {/* ✅ MENSAJE PARA DISTRIBUIDORES */}
+              {isDistribuidor() && !isProspectoMode && !isChatbotMode && (
                 <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
                   <div className="flex items-center gap-2">
                     <span className="text-green-500 text-sm">🎉</span>

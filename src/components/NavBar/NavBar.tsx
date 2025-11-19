@@ -20,7 +20,7 @@ export default function NavBar() {
     logout: () => void,
     tieneContenidoEspecial: () => boolean 
   } = useAuth();
-  const { isProspectoMode, prospectoData, clearProspectoSession } = useProspectoMode();
+  const { isProspectoMode, isChatbotMode, prospectoData, clearProspectoSession } = useProspectoMode(); // ✅ AGREGADO isChatbotMode
   
   const [cartOpen, setCartOpen] = useState(false);
   const { cart } = useCart();
@@ -96,7 +96,8 @@ export default function NavBar() {
 
   return (
     <>
-      {isProspectoMode && (
+      {/* ✅ MODIFICADO: Banner para prospecto (no para chatbot) */}
+      {isProspectoMode && !isChatbotMode && (
         <div className="bg-orange-600 text-white px-4 py-2 text-sm">
           <div className="flex items-center justify-between max-w-7xl mx-auto">
             <div className="flex items-center gap-2">
@@ -104,6 +105,21 @@ export default function NavBar() {
               <span>
                 <strong>Modo de prueba activado</strong> - Hola {prospectoData?.nombre} | 
                 Acceso válido por 4 días - Puedes navegar y simular pedidos
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ✅ NUEVO: Banner para chatbot */}
+      {isChatbotMode && (
+        <div className="bg-blue-600 text-white px-4 py-2 text-sm">
+          <div className="flex items-center justify-between max-w-7xl mx-auto">
+            <div className="flex items-center gap-2">
+              <span>💬</span>
+              <span>
+                <strong>Modo consulta activado</strong> - Navegación libre para consultas | 
+                No se pueden realizar pedidos
               </span>
             </div>
           </div>
@@ -165,7 +181,8 @@ export default function NavBar() {
 
         {/* ✅ User + Cart - Siempre visible */}
         <div className="flex justify-end items-center gap-4 2xl:flex-1">
-          {!isProspectoMode && (
+          {/* ✅ MODIFICADO: No mostrar botón admin para prospectos NI chatbots */}
+          {!isProspectoMode && !isChatbotMode && (
             <button
               onClick={() => router.push('/admin')}
               className="hidden 2xl:block p-1"
