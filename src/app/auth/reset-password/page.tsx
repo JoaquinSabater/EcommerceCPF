@@ -86,7 +86,8 @@ function ResetPasswordContent() {
             <p className="text-gray-600 mb-6">El enlace de reset no es válido o ha expirado.</p>
             <Link 
               href="/auth/forgot-password" 
-              className="w-full bg-orange-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-orange-700 transition-colors inline-block text-center"
+              className="w-full text-white py-2 px-4 rounded-lg font-medium transition-colors inline-block text-center"
+              style={{ backgroundColor: '#ea580c' }}
             >
               Solicitar nuevo enlace
             </Link>
@@ -111,7 +112,8 @@ function ResetPasswordContent() {
           </p>
           <Link 
             href="/" 
-            className="bg-orange-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-orange-700 transition-colors inline-block"
+            className="text-white py-2 px-4 rounded-lg font-medium transition-colors inline-block"
+            style={{ backgroundColor: '#ea580c' }}
           >
             Ir al login ahora
           </Link>

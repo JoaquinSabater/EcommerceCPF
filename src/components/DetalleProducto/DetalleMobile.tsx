@@ -155,7 +155,10 @@ export default function DetalleMobile({ producto, onSugerenciaChange }: DetalleM
               {imageLoading && (
                 <div className="absolute inset-0 bg-white flex items-center justify-center z-20 rounded-lg">
                   <div className="flex flex-col items-center">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-600 mb-2"></div>
+                    <div 
+                      className="animate-spin rounded-full h-6 w-6 border-b-2 mb-2"
+                      style={{ borderColor: '#ea580c' }}
+                    ></div>
                     <span className="text-xs text-gray-500">Cargando...</span>
                   </div>
                 </div>
@@ -175,13 +178,19 @@ export default function DetalleMobile({ producto, onSugerenciaChange }: DetalleM
               
               {todasLasImagenes.length > 1 && (
                 <div className="absolute top-2 left-0 right-0 flex items-center justify-between px-2">
-                  <div className="text-orange-600 text-sm font-bold">
+                  <div 
+                    className="text-sm font-bold"
+                    style={{ color: '#ea580c' }}
+                  >
                     {currentImageIndex + 1} / {todasLasImagenes.length}
                   </div>
                   
-                  <div className={`text-orange-600 text-xs font-medium md:hidden ${
-                    imageLoading ? 'opacity-50' : ''
-                  }`}>
+                  <div 
+                    className={`text-xs font-medium md:hidden ${
+                      imageLoading ? 'opacity-50' : ''
+                    }`}
+                    style={{ color: '#ea580c' }}
+                  >
                     {imageLoading ? 'Cargando...' : 'Desliza para ver más fotos'}
                   </div>
                 </div>
@@ -207,9 +216,10 @@ export default function DetalleMobile({ producto, onSugerenciaChange }: DetalleM
                 disabled={imageLoading}
                 className={`w-3 h-3 rounded-full transition-all disabled:cursor-not-allowed ${
                   index === currentImageIndex 
-                    ? 'bg-orange-600' 
+                    ? 'text-white'
                     : 'bg-gray-300 hover:bg-gray-400'
                 } ${imageLoading ? 'opacity-50' : ''}`}
+                style={index === currentImageIndex ? { backgroundColor: '#ea580c' } : {}}
               />
             ))}
           </div>
@@ -221,7 +231,10 @@ export default function DetalleMobile({ producto, onSugerenciaChange }: DetalleM
       <div className="text-gray-700 mb-2">{producto.descripcion}</div>
 
       <div className="mb-4">
-        <label className="block text-sm font-bold text-orange-600 mb-2">
+        <label 
+          className="block text-sm font-bold mb-2"
+          style={{ color: '#ea580c' }}
+        >
           SUGERENCIAS ESPECIALES
         </label>
         <textarea
@@ -238,7 +251,12 @@ export default function DetalleMobile({ producto, onSugerenciaChange }: DetalleM
 
       {producto.mostrarCaracteristicas && (
         <>
-          <div className="mb-2 font-bold text-orange-600">CARACTERÍSTICAS</div>
+          <div 
+            className="mb-2 font-bold"
+            style={{ color: '#ea580c' }}
+          >
+            CARACTERÍSTICAS
+          </div>
           <table className="w-full text-sm mb-4">
             <tbody>
               {producto.caracteristicas.map((c: any) => (

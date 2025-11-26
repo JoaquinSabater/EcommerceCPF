@@ -175,7 +175,8 @@ export default function HomeCarouselManager() {
         {slides.length < 4 && (
           <button
             onClick={handleCreate}
-            className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700"
+            className="flex items-center gap-2 px-4 py-2 text-white rounded"
+            style={{ backgroundColor: '#ea580c' }}
           >
             <PlusIcon className="w-5 h-5" />
             Agregar Slide
@@ -235,8 +236,9 @@ export default function HomeCarouselManager() {
         <div className="text-center py-8 text-gray-500">
           <p className="mb-4">No hay slides en el carousel</p>
           <button
-            onClick={handleCreate}
-            className="px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700"
+            onClick={handleSave}
+            className="px-4 py-2 text-white rounded"
+            style={{ backgroundColor: '#ea580c' }}
           >
             Crear primera slide
           </button>
@@ -416,7 +418,8 @@ export default function HomeCarouselManager() {
               <button
                 onClick={handleSave}
                 disabled={saving || uploadingDesktop || uploadingMobile}
-                className="px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700 disabled:opacity-50"
+                className="px-4 py-2 text-white rounded disabled:opacity-50"
+                style={{ backgroundColor: '#ea580c' }}
               >
                 {saving ? 'Guardando...' : (isCreating ? 'Crear' : 'Guardar')}
               </button>

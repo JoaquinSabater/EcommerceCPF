@@ -87,7 +87,8 @@ export default function ResetPasswordForm({ onSubmit, loading, error }: ResetPas
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-orange-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full text-white py-2 px-4 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        style={{ backgroundColor: '#ea580c' }}
       >
         {loading ? 'Restableciendo...' : 'Restablecer contraseña'}
       </button>

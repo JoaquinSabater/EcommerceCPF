@@ -271,9 +271,11 @@ export default function Search() {
               disabled={isSearching || search.trim().length < 3}
               className={`rounded-full p-1 transition-colors duration-200 ${
                 search.trim().length >= 3 && !isSearching
-                  ? 'text-gray-500 hover:text-white hover:bg-orange-600'
+                  ? 'text-gray-500 hover:text-white'
                   : 'text-gray-300 cursor-not-allowed'
               }`}
+              onMouseEnter={(e) => search.trim().length >= 3 && !isSearching && (e.currentTarget.style.backgroundColor = '#ea580c')}
+              onMouseLeave={(e) => search.trim().length >= 3 && !isSearching && (e.currentTarget.style.backgroundColor = 'transparent')}
               title={search.trim().length >= 3 ? "Buscar en página de filtros" : "Escribe al menos 3 caracteres"}
             >
               {isSearching ? (

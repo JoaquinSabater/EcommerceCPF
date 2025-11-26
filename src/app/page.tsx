@@ -160,7 +160,7 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={loading}
-          className="bg-orange-600 text-white rounded py-2 font-semibold hover:bg-orange-700 transition disabled:opacity-50"
+          className={"text-white rounded py-2 font-semibold hover:bg-orange-700 transition disabled:opacity-50"} style={{ backgroundColor: '#ea580c' }}
         >
           {loading ? 'Verificando...' : 'Entrar'}
         </button>

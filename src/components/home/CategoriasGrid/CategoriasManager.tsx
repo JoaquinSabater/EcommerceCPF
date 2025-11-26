@@ -119,7 +119,8 @@ export default function CategoriasManager() {
         <h3 className="text-lg font-bold">Gestión de Categorías ({categorias.length})</h3>
         <button
           onClick={handleCreate}
-          className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700"
+          className="flex items-center gap-2 px-4 py-2 text-white rounded"
+          style={{ backgroundColor: '#ea580c' }}
         >
           <PlusIcon className="w-5 h-5" />
           Agregar
@@ -244,7 +245,7 @@ export default function CategoriasManager() {
               <button onClick={() => setIsEditing(false)} className="px-4 py-2 text-gray-700 border rounded hover:bg-gray-50">
                 Cancelar
               </button>
-              <button onClick={handleSave} disabled={saving} className="px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700 disabled:opacity-50">
+              <button onClick={handleSave} disabled={saving} className="px-4 py-2 text-white rounded disabled:opacity-50" style={{ backgroundColor: '#ea580c' }}>
                 {saving ? 'Guardando...' : 'Guardar'}
               </button>
             </div>

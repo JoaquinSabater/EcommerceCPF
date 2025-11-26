@@ -824,7 +824,8 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
               />
             </div>
             <button
-              className="flex-1 bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 text-white px-4 py-2 rounded font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ backgroundColor: '#ea580c' }}
               onClick={handleAddModelo}
               disabled={getStockDisponible(modeloActual) <= 0}
             >
@@ -930,7 +931,8 @@ export default function ModelosSelector({ subcategoriaId, sugerenciaActual = '' 
 
       {/* Botón añadir al carrito */}
       <button
-        className="mt-2 bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded font-bold w-full disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        className="mt-2 text-white px-6 py-3 rounded font-bold w-full disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        style={{ backgroundColor: '#ea580c' }}
         disabled={seleccionados.length === 0}
         onClick={handleAddToCart}
       >

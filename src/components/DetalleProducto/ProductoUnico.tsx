@@ -246,7 +246,8 @@ export default function ProductoUnico({ subcategoriaId, sugerenciaActual = '' }:
 
       {/* ✅ Botón principal */}
       <button
-        className="w-full bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full text-white px-6 py-3 rounded font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        style={{ backgroundColor: '#ea580c' }}
         onClick={handleAddToCart}
         disabled={stockDisponible <= 0}
       >

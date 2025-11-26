@@ -147,7 +147,8 @@ export default function ChatFloatingButton() {
               <button
                 type="button"
                 onClick={() => setOpen(!open)}
-                className="bg-orange-500 hover:bg-orange-600 text-white rounded-full p-3 transition-all duration-300 flex-shrink-0 shadow-md"
+                className="text-white rounded-full p-3 transition-all duration-300 flex-shrink-0 shadow-md"
+                style={{ backgroundColor: '#ea580c' }}
                 aria-label={open ? "Cerrar chat" : "Abrir chat"}
               >
                 <svg 
@@ -176,7 +177,8 @@ export default function ChatFloatingButton() {
               <button
                 type="submit"
                 disabled={!input.trim() || loading}
-                className="bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-full p-3 transition-colors duration-200 flex-shrink-0"
+                className="text-white rounded-full p-3 transition-colors duration-200 flex-shrink-0"
+                style={{ backgroundColor: !input.trim() || loading ? '#d1d5db' : '#ea580c' }}
               >
                 <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
                   <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -191,7 +193,8 @@ export default function ChatFloatingButton() {
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          className="fixed bottom-6 left-6 z-[10000] bg-orange-500 hover:bg-orange-600 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg transition-all duration-300 hover:scale-110"
+          className="fixed bottom-6 left-6 z-[10000] text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg transition-all duration-300 hover:scale-110"
+          style={{ backgroundColor: '#ea580c' }}
           aria-label="Abrir chat"
         >
           <svg width="28" height="28" fill="none" viewBox="0 0 24 24">

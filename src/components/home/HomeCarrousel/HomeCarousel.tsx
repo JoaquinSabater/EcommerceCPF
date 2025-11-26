@@ -231,9 +231,10 @@ export default function HomeCarousel() {
                   onClick={() => goToSlide(index)}
                   className={`w-2 h-2 md:w-3 md:h-3 rounded-full transition-all duration-300 ${
                     index === currentSlide 
-                      ? 'bg-orange-600 scale-125' 
+                      ? 'scale-125'
                       : 'bg-white/60 hover:bg-white/80 hover:scale-110'
                   }`}
+                  style={index === currentSlide ? { backgroundColor: '#ea580c' } : {}}
                   aria-label={`Ir a slide ${index + 1}`}
                 />
               ))}

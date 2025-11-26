@@ -28,7 +28,8 @@ export default function ResumenCarrito() {
       </ul>
       <div className="flex gap-4">
         <button
-          className="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700"
+          className="text-white px-4 py-2 rounded"
+          style={{ backgroundColor: '#ea580c' }}
           onClick={() => router.push('/public')}
         >
           Volver al inicio

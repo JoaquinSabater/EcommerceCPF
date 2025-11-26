@@ -71,7 +71,10 @@ export default function DetalleDesktop({ producto, onSugerenciaChange }: Detalle
           <div className="text-gray-700 mb-4 text-lg">{producto.descripcion}</div>
           
           <div className="mb-4">
-            <label className="block text-sm font-bold text-orange-600 mb-2">
+            <label 
+              className="block text-sm font-bold mb-2"
+              style={{ color: '#ea580c' }}
+            >
               SUGERENCIAS ESPECIALES
             </label>
             <textarea
@@ -88,7 +91,12 @@ export default function DetalleDesktop({ producto, onSugerenciaChange }: Detalle
 
           {producto.mostrarCaracteristicas && (
             <>
-              <div className="mb-2 font-bold text-orange-600 text-xl">CARACTERÍSTICAS</div>
+              <div 
+                className="mb-2 font-bold text-xl"
+                style={{ color: '#ea580c' }}
+              >
+                CARACTERÍSTICAS
+              </div>
               <div className="flex-1 flex flex-col justify-between">
                 <table className="w-full text-base">
                   <tbody>
@@ -115,7 +123,10 @@ export default function DetalleDesktop({ producto, onSugerenciaChange }: Detalle
                   {imageLoading && (
                     <div className="absolute inset-0 bg-white flex items-center justify-center z-20 rounded-lg">
                       <div className="flex flex-col items-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mb-2"></div>
+                        <div 
+                          className="animate-spin rounded-full h-8 w-8 border-b-2 mb-2"
+                          style={{ borderColor: '#ea580c' }}
+                        ></div>
                         <span className="text-sm text-gray-500">Cargando imagen...</span>
                       </div>
                     </div>
@@ -153,7 +164,10 @@ export default function DetalleDesktop({ producto, onSugerenciaChange }: Detalle
                   )}
                   
                   {todasLasImagenes.length > 1 && (
-                    <div className="absolute top-3 right-3 text-orange-600 text-sm font-bold">
+                    <div 
+                      className="absolute top-3 right-3 text-sm font-bold"
+                      style={{ color: '#ea580c' }}
+                    >
                       {currentImageIndex + 1} / {todasLasImagenes.length}
                     </div>
                   )}
@@ -178,9 +192,10 @@ export default function DetalleDesktop({ producto, onSugerenciaChange }: Detalle
                     disabled={imageLoading}
                     className={`w-3 h-3 rounded-full transition-all disabled:cursor-not-allowed ${
                       index === currentImageIndex 
-                        ? 'bg-orange-600' 
+                        ? 'text-white'
                         : 'bg-gray-300 hover:bg-gray-400'
                     } ${imageLoading ? 'opacity-50' : ''}`}
+                    style={index === currentImageIndex ? { backgroundColor: '#ea580c' } : {}}
                   />
                 ))}
               </div>

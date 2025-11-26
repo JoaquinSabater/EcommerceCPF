@@ -128,7 +128,8 @@ export default function Home() {
           {isAdmin && (
             <button
               onClick={() => setShowCategoriasAdmin(!showCategoriasAdmin)}
-              className="absolute top-0 right-0 z-10 bg-orange-600 text-white p-2 rounded-full hover:bg-orange-700 transition-colors"
+              className="absolute top-0 right-0 z-10 text-white p-2 rounded-full transition-colors"
+              style={{ backgroundColor: '#ea580c' }}
               title="Administrar categorías"
             >
               <CogIcon className="w-5 h-5" />

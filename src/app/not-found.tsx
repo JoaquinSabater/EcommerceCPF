@@ -13,7 +13,7 @@ export default function NotFound() {
         </p>
         <a 
           href="/"
-          className="mt-6 inline-block bg-orange-600 text-white px-6 py-3 rounded-lg hover:bg-orange-700 transition-colors"
+          className={"mt-6 inline-block text-white px-6 py-3 rounded-lg hover:bg-orange-700 transition-colors"} style={{ backgroundColor: '#ea580c' }}
         >
           Volver al inicio
         </a>

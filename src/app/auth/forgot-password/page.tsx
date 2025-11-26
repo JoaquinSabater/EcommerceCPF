@@ -97,7 +97,8 @@ export default function ForgotPasswordPage() {
             <div className="space-y-3">
               <Link 
                 href="/" 
-                className="w-full bg-orange-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-orange-700 transition-colors inline-block text-center"
+                className="w-full text-white py-2 px-4 rounded-lg font-medium transition-colors inline-block text-center"
+                style={{ backgroundColor: '#ea580c' }}
               >
                 Volver al login
               </Link>
@@ -160,7 +161,8 @@ export default function ForgotPasswordPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-orange-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full text-white py-2 px-4 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ backgroundColor: '#ea580c' }}
           >
             {loading ? 'Enviando...' : 'Enviar instrucciones'}
           </button>

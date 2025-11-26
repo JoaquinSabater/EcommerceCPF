@@ -12,7 +12,8 @@ export default function NotFound() {
         </p>
         <Link
           href="/"
-          className="px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+          className="px-6 py-3 text-white rounded-lg transition-colors"
+          style={{ backgroundColor: '#ea580c' }}
         >
           Volver al inicio
         </Link>

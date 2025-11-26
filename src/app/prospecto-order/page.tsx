@@ -123,7 +123,8 @@ function ProspectoOrderContent() {
             </ul>
             <a 
               href="/" 
-              className="bg-orange-600 text-white px-6 py-3 rounded-lg hover:bg-orange-700 transition-colors inline-block mt-4"
+              className="text-white px-6 py-3 rounded-lg transition-colors inline-block mt-4"
+              style={{ backgroundColor: '#ea580c' }}
             >
               Ir al ecommerce
             </a>

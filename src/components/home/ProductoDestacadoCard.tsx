@@ -191,7 +191,7 @@ export default function ProductoDestacadoCard({ categoria, onClick }: ProductoDe
             {/* Área vacía donde estaban los precios */}
           </div>
           
-          <div className="bg-orange-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-orange-600 transition-colors flex items-center gap-1 shadow-sm hover:shadow ml-auto">
+          <div className="text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-1 shadow-sm hover:shadow ml-auto" style={{ backgroundColor: '#ea580c' }}>
             ver +
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />

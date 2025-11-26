@@ -315,7 +315,8 @@ export default function DetalleProductoModal({
                 <p className="text-red-500 text-lg">{error}</p>
                 <button 
                   onClick={handleCloseMainModal}
-                  className="mt-4 px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+                  className="mt-4 px-6 py-3 text-white rounded-lg transition-colors"
+                  style={{ backgroundColor: '#ea580c' }}
                 >
                   Cerrar
                 </button>

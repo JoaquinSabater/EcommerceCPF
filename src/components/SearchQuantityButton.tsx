@@ -126,7 +126,8 @@ export default function SearchQuantityButton({
           <button
             onClick={handleAddToCart}
             disabled={isAdding || maxStock <= 0}
-            className="flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md min-w-[100px]"
+            className="flex items-center justify-center gap-2 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md min-w-[100px]"
+            style={{ backgroundColor: '#ea580c' }}
           >
             {isAdding ? (
               <>

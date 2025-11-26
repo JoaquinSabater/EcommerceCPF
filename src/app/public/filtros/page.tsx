@@ -413,7 +413,7 @@ export default function FiltrosPage() {
               disabled={isSearching || searchQuery.trim().length < 3}
               className={`rounded-full p-1 transition-colors duration-200 ${
                 searchQuery.trim().length >= 3 && !isSearching
-                  ? 'text-gray-500 hover:text-white hover:bg-orange-600'
+                  ? 'text-gray-500 hover:text-white'
                   : 'text-gray-300 cursor-not-allowed'
               }`}
             >
@@ -618,7 +618,8 @@ export default function FiltrosPage() {
               <button
                 onClick={handleAplicarFiltros}
                 disabled={selectedMarcas.length === 0 || isLoadingProductos}
-                className="py-3 px-4 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors flex items-center justify-center gap-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="py-3 px-4 text-white rounded-lg transition-colors flex items-center justify-center gap-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ backgroundColor: '#ea580c' }}
               >
                 {isLoadingProductos ? (
                   <>

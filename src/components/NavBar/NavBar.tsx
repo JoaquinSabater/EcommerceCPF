@@ -98,7 +98,7 @@ export default function NavBar() {
     <>
       {/* ✅ MODIFICADO: Banner para prospecto (no para chatbot) */}
       {isProspectoMode && !isChatbotMode && (
-        <div className="bg-orange-600 text-white px-4 py-2 text-sm">
+        <div className="text-white px-4 py-2 text-sm" style={{ backgroundColor: '#ea580c' }}>
           <div className="flex items-center justify-between max-w-7xl mx-auto">
             <div className="flex items-center gap-2">
               <span>🛍️</span>
