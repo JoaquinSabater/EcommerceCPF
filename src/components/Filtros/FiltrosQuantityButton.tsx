@@ -166,10 +166,9 @@ export default function FiltrosQuantityButton({
             : quantity === 0 
               ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
               : 'text-white disabled:opacity-50 disabled:cursor-not-allowed'
-            }
-            style={!isOutOfStock ? { backgroundColor: '#ea580c' } : {}}
           }
         `}
+        style={quantity > 0 && !isAdding ? { backgroundColor: '#ea580c' } : {}}
         title={quantity === 0 ? "Selecciona una cantidad" : quantity > maxStock ? `Stock máximo: ${maxStock}` : "Agregar al carrito"}
       >
         {isAdding ? (
