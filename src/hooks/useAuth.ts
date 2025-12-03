@@ -28,16 +28,13 @@ export function useAuth() {
         setUser(parsedUser);
         clearProspectoMode();
         
-        // Establecer cookies para el middleware
         setCookies(parsedUser);
         
       } else {
-        // ✅ VERIFICAR SI HAY MODO PROSPECTO O CHATBOT ACTIVO ANTES DE REDIRIGIR
         const prospectoModeActive = localStorage.getItem('prospecto_mode') === 'true';
-        const chatbotModeActive = localStorage.getItem('chatbot_mode') === 'true'; // ✅ NUEVO
+        const chatbotModeActive = localStorage.getItem('chatbot_mode') === 'true';
         const prospectoDataStored = localStorage.getItem('prospecto_data');
         
-        // Rutas públicas que NO requieren autenticación
         const publicRoutes = [
           '/',
           '/auth/forgot-password',
@@ -46,13 +43,9 @@ export function useAuth() {
           '/prospecto-order'
         ];
         
-        // ✅ NO REDIRIGIR SI:
-        // 1. Estamos en una ruta pública
-        // 2. Hay modo prospecto activo
-        // 3. Hay modo chatbot activo
         const shouldNotRedirect = publicRoutes.includes(pathname) || 
                                  (prospectoModeActive && prospectoDataStored) ||
-                                 (chatbotModeActive && prospectoDataStored); // ✅ NUEVO
+                                 (chatbotModeActive && prospectoDataStored);
         
         if (!shouldNotRedirect) {
           console.log('🔄 No hay usuario ni prospecto/chatbot activo, redirigiendo al login');
@@ -60,16 +53,15 @@ export function useAuth() {
           router.push('/');
         } else if (prospectoModeActive && prospectoDataStored) {
           console.log('✅ Modo prospecto detectado, permitiendo acceso');
-        } else if (chatbotModeActive && prospectoDataStored) { // ✅ NUEVO
+        } else if (chatbotModeActive && prospectoDataStored) { 
           console.log('✅ Modo chatbot detectado, permitiendo acceso');
         }
       }
     } catch (error) {
       console.error('Error parsing user data:', error);
       
-      // ✅ VERIFICAR PROSPECTO Y CHATBOT ANTES DE LIMPIAR Y REDIRIGIR
       const prospectoModeActive = localStorage.getItem('prospecto_mode') === 'true';
-      const chatbotModeActive = localStorage.getItem('chatbot_mode') === 'true'; // ✅ NUEVO
+      const chatbotModeActive = localStorage.getItem('chatbot_mode') === 'true';
       const prospectoDataStored = localStorage.getItem('prospecto_data');
       
       const publicRoutes = [
@@ -82,7 +74,7 @@ export function useAuth() {
       
       const shouldNotRedirect = publicRoutes.includes(pathname) || 
                                (prospectoModeActive && prospectoDataStored) ||
-                               (chatbotModeActive && prospectoDataStored); // ✅ NUEVO
+                               (chatbotModeActive && prospectoDataStored);
       
       if (!shouldNotRedirect) {
         clearAuthData();
@@ -93,10 +85,8 @@ export function useAuth() {
   };
 
   const setCookies = (userData: User) => {
-    // Generar token simple pero más seguro
     const token = `${userData.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
-    // Establecer cookies con configuración segura
     const maxAge = 86400; // 24 horas
     const cookieOptions = `path=/; max-age=${maxAge}; SameSite=Strict; ${
       typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'Secure;' : ''
@@ -109,18 +99,14 @@ export function useAuth() {
   const clearAuthData = () => {
     localStorage.removeItem('user');
     
-    // Limpiar cookies de forma más robusta
     const expireDate = 'Thu, 01 Jan 1970 00:00:01 GMT';
     document.cookie = `auth_user=; path=/; expires=${expireDate}`;
     document.cookie = `auth_token=; path=/; expires=${expireDate}`;
-    
-    // ✅ NO LIMPIAR MODO PROSPECTO/CHATBOT AUTOMÁTICAMENTE
-    // clearProspectoMode();
   };
 
   const clearProspectoMode = () => {
     localStorage.removeItem('prospecto_mode');
-    localStorage.removeItem('chatbot_mode'); // ✅ NUEVO
+    localStorage.removeItem('chatbot_mode');
     localStorage.removeItem('prospecto_data');
     localStorage.removeItem('prospecto_cart');
     localStorage.removeItem('prospecto_token');
@@ -128,7 +114,7 @@ export function useAuth() {
 
   const logout = () => {
     clearAuthData();
-    clearProspectoMode(); // ✅ Solo limpiar prospecto/chatbot en logout explícito
+    clearProspectoMode();
     setUser(null);
     router.push('/');
   };
@@ -147,13 +133,26 @@ export function useAuth() {
     clearProspectoMode();
   };
 
-  const getPrecioConDescuento = (precioOriginal: number): number => {
+  // ✅ NUEVA FUNCIÓN: Verificar si un item está excluido del descuento
+  const esCategoriaExcluida = (itemId?: number): boolean => {
+    if (!itemId) return false;
+    
+    // ✅ IDs de items excluidos del descuento de distribuidor
+    const itemsExcluidos = [18, 19, 20, 21, 22, 24, 25,323];
+    
+    return itemsExcluidos.includes(itemId);
+  };
+
+  // ✅ FUNCIÓN ACTUALIZADA: Solo aplicar descuento si no está excluido
+  const getPrecioConDescuento = (precioOriginal: number, product?: any): number => {
     const esDistribuidor = user?.Distribuidor === 1;
-    if (esDistribuidor) {
-      const precioConDescuento = precioOriginal * 0.80;
-      return Math.ceil(precioConDescuento * 100) / 100;
+    
+    if (!esDistribuidor) {
+      return precioOriginal; // Si no es distribuidor, precio original
     }
-    return precioOriginal;
+
+    const precioConDescuento = precioOriginal * 0.80;
+    return Math.ceil(precioConDescuento * 100) / 100;
   };
 
   const isDistribuidor = (): boolean => {
@@ -162,6 +161,10 @@ export function useAuth() {
 
   const tieneContenidoEspecial = (): boolean => {
     return user?.contenidoEspecial === 1;
+  };
+
+  const isAdmin = (): boolean => {
+    return user?.isAdmin || user?.id === 2223;
   };
 
   return {
@@ -173,6 +176,7 @@ export function useAuth() {
     isAuthenticated: !!user,
     isAdmin: user?.isAdmin || user?.id === 2223,
     getPrecioConDescuento,
+    esCategoriaExcluida, // ✅ NUEVA FUNCIÓN EXPORTADA
     isDistribuidor,
     checkAuth,
     tieneContenidoEspecial 

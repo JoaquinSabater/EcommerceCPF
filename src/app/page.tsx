@@ -119,7 +119,7 @@ export default function LoginPage() {
         {/* Campo CUIL */}
         <input
           type="text"
-          placeholder="CUIL (ej: 20123456789)"
+          placeholder="CUIT/CUIL (ej: 20123456789)"
           value={cuil}
           onChange={e => setCuil(e.target.value)}
           className="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"

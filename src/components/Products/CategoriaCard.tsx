@@ -28,10 +28,15 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
   const [descripcion, setDescripcion] = useState<string>('');
   const [dolar, setDolar] = useState<number>(1);
 
-  const { getPrecioConDescuento, isDistribuidor } = useAuth();
+  const { getPrecioConDescuento, isDistribuidor, esCategoriaExcluida } = useAuth();
   const router = useRouter();
 
-  // ✅ Obtener cotización del dólar
+  // ✅ CORREGIDO: Usar subcategoria_id en lugar de id
+  const itemExcluido = esCategoriaExcluida(categoria.subcategoria_id);
+  
+  // ✅ Log corregido para debugging
+  console.log(`🔍 ${categoria.nombre} (item_id: ${categoria.id}, subcategoria_id: ${categoria.subcategoria_id}) - Excluido: ${itemExcluido} - Es distribuidor: ${isDistribuidor()}`);
+
   useEffect(() => {
     async function fetchDolar() {
       try {
@@ -90,13 +95,6 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
         if (resPrecio.ok) {
           const dataPrecio = await resPrecio.json();
           setRangoPrecio(dataPrecio);
-          
-          console.log(`💰 Rango de precios para ${categoria.nombre}:`, {
-            minimo: dataPrecio.precioMinimo,
-            maximo: dataPrecio.precioMaximo,
-            variacion: dataPrecio.tieneVariacion,
-            articulos: dataPrecio.totalArticulos
-          });
         } else {
           console.warn(`❌ No se pudo obtener rango de precios para ${categoria.nombre}`);
           setRangoPrecio(null);
@@ -114,9 +112,8 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
     };
 
     fetchData();
-  }, [categoria.id, categoria.nombre]);
+  }, [categoria.id, categoria.nombre, categoria.subcategoria_id]);
 
-  // ✅ CAMBIO PRINCIPAL: Navegar en vez de abrir modal
   const handleCardClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     router.push(`/public/items/${categoria.id}`);
@@ -125,7 +122,6 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
     }
   };
 
-  // ✅ Función para formatear el display de precios
   const renderPrecio = () => {
     if (!rangoPrecio || (!rangoPrecio.precioMinimo && !rangoPrecio.precioMaximo)) {
       return null;
@@ -135,16 +131,29 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
 
     if (!precioMinimo && !precioMaximo) return null;
 
-    // ✅ Aplicar descuentos si corresponde
-    const precioMinimoConDescuento = precioMinimo ? getPrecioConDescuento(precioMinimo) : 0;
-    const precioMaximoConDescuento = precioMaximo ? getPrecioConDescuento(precioMaximo) : 0;
+    // ✅ CORREGIDO: Calcular precios usando subcategoria_id
+    let precioMinimoConDescuento: number;
+    let precioMaximoConDescuento: number;
 
-    // ✅ Convertir a pesos
+    if (itemExcluido) {
+      // Si está excluido, usar precio original sin descuento
+      precioMinimoConDescuento = precioMinimo || 0;
+      precioMaximoConDescuento = precioMaximo || 0;
+    } else {
+      // Si NO está excluido, aplicar descuento - usar subcategoria_id
+      precioMinimoConDescuento = precioMinimo ? getPrecioConDescuento(precioMinimo, { id: categoria.subcategoria_id }) : 0;
+      precioMaximoConDescuento = precioMaximo ? getPrecioConDescuento(precioMaximo, { id: categoria.subcategoria_id }) : 0;
+    }
+
     const precioMinimoPesos = Math.round(precioMinimoConDescuento * dolar);
     const precioMaximoPesos = Math.round(precioMaximoConDescuento * dolar);
 
+    // ✅ CORREGIDO: Solo mostrar descuento si NO está excluido Y es distribuidor Y hay descuento aplicado
+    const hayDescuentoAplicado = isDistribuidor() && !itemExcluido && precioMinimo && (precioMinimoConDescuento < precioMinimo);
+
+    console.log(`💰 ${categoria.nombre}: Original: ${precioMinimo}, Con descuento: ${precioMinimoConDescuento}, Hay descuento: ${hayDescuentoAplicado}, Excluido: ${itemExcluido} (subcategoria_id: ${categoria.subcategoria_id})`);
+
     if (tieneVariacion && precioMinimo !== precioMaximo) {
-      // ✅ Mostrar rango
       return (
         <div className="text-green-600 font-bold">
           <div className="text-lg">
@@ -152,14 +161,14 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
           </div>
           <div className="text-xs text-gray-500">
             USD ${precioMinimoConDescuento.toFixed(2)} - ${precioMaximoConDescuento.toFixed(2)}
-            {isDistribuidor() && (
+            {/* ✅ CORREGIDO: Solo mostrar si hay descuento aplicado */}
+            {hayDescuentoAplicado && (
               <span className="ml-1 text-green-600">(-20%)</span>
             )}
           </div>
         </div>
       );
     } else {
-      // ✅ Precio único
       return (
         <div className="text-green-600 font-bold">
           <div className="text-lg">
@@ -167,7 +176,8 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
           </div>
           <div className="text-xs text-gray-500">
             USD ${precioMinimoConDescuento.toFixed(2)}
-            {isDistribuidor() && (
+            {/* ✅ CORREGIDO: Solo mostrar si hay descuento aplicado */}
+            {hayDescuentoAplicado && (
               <span className="ml-1 text-green-600">(-20%)</span>
             )}
           </div>
@@ -223,13 +233,25 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
         <div className="mt-auto flex items-center justify-between">
           <div className="flex-1">
             {renderPrecio()}
-            {isDistribuidor() && rangoPrecio?.precioMinimo && (
+            
+            {/* ✅ CORREGIDO: Solo mostrar badge si NO está excluido Y es distribuidor Y tiene precio */}
+            {!itemExcluido && isDistribuidor() && rangoPrecio?.precioMinimo && (
               <div className="mt-1">
                 <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
                   20% OFF aplicado
                 </span>
               </div>
             )}
+            
+            {/* ✅ Mostrar badge para items excluidos */}
+            {itemExcluido && isDistribuidor() && (
+              <div className="mt-1">
+                <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-full">
+                  📱 Sin descuento distribuidor
+                </span>
+              </div>
+            )}
+            
             {rangoPrecio?.tieneVariacion && (
               <div className="text-xs text-gray-400 mt-1">
                 {rangoPrecio.totalArticulos} modelos disponibles

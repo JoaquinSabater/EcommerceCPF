@@ -17,14 +17,15 @@ export interface Articulo {
   item_nombre?: string;
   marca_nombre?: string;
   cantidad?: number;
-  es_pesificado?: number; // 0 o 1
+  es_pesificado?: number;
   precio_pesos?: number;
-  stock_real?: number; // ✅ Agregado para reflejar stock real calculado
+  stock_real?: number;
 }
 
 export type categorias = {
   id: number;
   nombre: string;
+  subcategoria_id: number;
   imagen?: string;
 }
 

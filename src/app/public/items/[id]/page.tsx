@@ -15,6 +15,7 @@ interface Caracteristica {
 
 interface DetalleProducto {
   item_id: number;
+  subcategoria_id: number;
   item_nombre: string;
   descripcion: string;
   material: string;
@@ -104,9 +105,8 @@ function formatearProducto(detalle: DetalleProducto, precio: number): ProductoFo
   };
 }
 
-// ✅ FIX: Cambiar params para ser compatible con Next.js 15+
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params; // ✅ Agregar await aquí
+  const { id } = await params;
 
   try {
     // Obtener datos en paralelo
@@ -121,23 +121,22 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 
     const productoFormateado = formatearProducto(detalleProducto, precio);
 
+    console.log(`🔍 Página producto - Item ID: ${id}, Subcategoria ID: ${detalleProducto.subcategoria_id}`);
+
     return (
-      <main className="min-h-screen bg-white"> {/* ✅ Cambiar fondo a blanco */}
+      <main className="min-h-screen bg-white">
         <div className="container mx-auto px-4 py-6 max-w-7xl">
-          {/* ✅ Header simplificado - solo botón de regreso y botón editar */}
           <div className="flex items-center justify-between mb-8">
             <BackButton />
             <EditProductButton producto={detalleProducto} />
           </div>
 
-          {/* ✅ REMOVER: Estados del producto, título, etc. */}
-
-          {/* Contenido principal */}
           <div className="space-y-8">
             <Suspense fallback={<LoadingSpinner />}>
               <ProductWithSuggestions 
                 producto={productoFormateado} 
-                subcategoriaId={parseInt(id)} 
+                subcategoriaId={detalleProducto.subcategoria_id}
+                itemId={parseInt(id)}
               />
             </Suspense>
           </div>

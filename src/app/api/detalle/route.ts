@@ -13,12 +13,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // ✅ Consulta mejorada que devuelve TODOS los campos necesarios
+    // ✅ CONSULTA ACTUALIZADA: Incluir subcategoria_id desde la tabla items
     const [rows]: any = await db.query(`
       SELECT 
         id.id,
         id.item_id,
         i.nombre as item_nombre,
+        i.subcategoria_id,
         id.descripcion,
         id.material,
         id.espesor,
@@ -46,10 +47,11 @@ export async function GET(request: NextRequest) {
 
     const producto = rows[0];
     
-    // ✅ Formatear respuesta con TODOS los campos
+    // ✅ FORMATEAR CON SUBCATEGORIA_ID
     const detalleProducto = {
       id: producto.id,
       item_id: producto.item_id,
+      subcategoria_id: producto.subcategoria_id, // ✅ AGREGAR
       item_nombre: producto.item_nombre,
       descripcion: producto.descripcion,
       material: producto.material,
@@ -66,13 +68,14 @@ export async function GET(request: NextRequest) {
       activo: Boolean(producto.activo)
     };
 
-    //console.log(`📦 Detalle obtenido - ID: ${id}, Activo: ${detalleProducto.activo}, Destacar: ${detalleProducto.destacar}`);
+    console.log(`📦 Detalle obtenido - Item ID: ${id}, Subcategoria ID: ${producto.subcategoria_id}`);
 
-    // ✅ Devolver en el formato que espera CategoriaCard
+    // ✅ DEVOLVER CON SUBCATEGORIA_ID
     return NextResponse.json({
       success: true,
       detalle: detalleProducto,
-      // ✅ También devolver los campos directamente para retrocompatibilidad
+      subcategoria_id: producto.subcategoria_id, // ✅ AGREGAR para retrocompatibilidad
+      // Campos existentes para retrocompatibilidad
       foto_portada: producto.foto_portada,
       foto1_url: producto.foto1_url,
       foto2_url: producto.foto2_url,

@@ -7,10 +7,11 @@ import ModelosSelector from './ModelosSelector';
 
 interface ProductWithSuggestionsProps {
   producto: any;
-  subcategoriaId: number;
+  subcategoriaId: number; // Para exclusiones de descuento
+  itemId: number; // Para APIs
 }
 
-export default function ProductWithSuggestions({ producto, subcategoriaId }: ProductWithSuggestionsProps) {
+export default function ProductWithSuggestions({ producto, subcategoriaId, itemId }: ProductWithSuggestionsProps) {
   const [sugerenciaActual, setSugerenciaActual] = useState('');
 
   const handleSugerenciaChange = (nuevaSugerencia: string) => {
@@ -27,7 +28,8 @@ export default function ProductWithSuggestions({ producto, subcategoriaId }: Pro
         />
         <div className="mt-6">
           <ModelosSelector 
-            subcategoriaId={subcategoriaId} 
+            subcategoriaId={subcategoriaId}
+            itemId={itemId}
             sugerenciaActual={sugerenciaActual}
           />
         </div>
@@ -42,6 +44,7 @@ export default function ProductWithSuggestions({ producto, subcategoriaId }: Pro
         <div className="mt-8">
           <ModelosSelector 
             subcategoriaId={subcategoriaId}
+            itemId={itemId}
             sugerenciaActual={sugerenciaActual}
           />
         </div>

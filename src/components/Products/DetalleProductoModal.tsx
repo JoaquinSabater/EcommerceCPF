@@ -15,6 +15,7 @@ interface Caracteristica {
 
 interface DetalleProducto {
   item_id: number;
+  subcategoria_id: number; // ✅ AGREGAR: Para exclusiones de descuento
   item_nombre: string;
   descripcion: string;
   material: string;
@@ -39,7 +40,7 @@ interface ProductoFormateado {
   precio: number;
   caracteristicas: Caracteristica[];
   sugerencia?: string;
-  mostrarCaracteristicas?: boolean; // ✅ Nueva prop para controlar características
+  mostrarCaracteristicas?: boolean;
 }
 
 interface DetalleProductoModalProps {
@@ -71,7 +72,11 @@ export default function DetalleProductoModal({
         throw new Error('Error al obtener detalles del producto');
       }
       const data = await response.json();
-      //console.log('🔍 Detalle obtenido del API:', data.detalle);
+      console.log('🔍 Detalle obtenido del API (Modal):', {
+        item_id: data.detalle.item_id,
+        subcategoria_id: data.detalle.subcategoria_id,
+        item_nombre: data.detalle.item_nombre
+      });
       return data.detalle as DetalleProducto;
     } catch (error) {
       console.error("Error al obtener detalles del producto:", error);
@@ -103,10 +108,7 @@ export default function DetalleProductoModal({
       detalle.foto4_url,
     ].filter((img): img is string => typeof img === 'string' && img.trim() !== '');
 
-    // ✅ Usar el campo activo para determinar si mostrar características
     const mostrarCaracteristicas = Boolean(detalle.activo);
-    
-    //console.log(`🎛️ Formateando producto - Activo: ${detalle.activo}, Mostrar características: ${mostrarCaracteristicas}`);
 
     return {
       imagen: imagenPrincipal,
@@ -115,7 +117,7 @@ export default function DetalleProductoModal({
       precio: precio,
       imagenes: todasLasImagenes,
       sugerencia: sugerenciaActual,
-      mostrarCaracteristicas: mostrarCaracteristicas, // ✅ Usar el campo activo
+      mostrarCaracteristicas: mostrarCaracteristicas,
       caracteristicas: [
         { label: "Material", value: detalle.material || "No especificado" },
         { label: "Espesor", value: detalle.espesor || "No especificado" },
@@ -127,7 +129,6 @@ export default function DetalleProductoModal({
   };
 
   const handleSugerenciaChange = (nuevaSugerencia: string) => {
-    //console.log('🟡 Sugerencia actualizada en DetalleProductoModal:', nuevaSugerencia);
     setSugerenciaActual(nuevaSugerencia);
   };
 
@@ -145,19 +146,12 @@ export default function DetalleProductoModal({
     setIsUpdating(true);
     
     try {
-      // ✅ Actualizar el estado local con los nuevos datos
       setDetalleProducto(updatedProduct);
       setShowEditModal(false);
       
       if (onUpdate) {
         onUpdate(updatedProduct);
       }
-      
-      // console.log('✅ Producto actualizado exitosamente:', {
-      //   nombre: updatedProduct.item_nombre,
-      //   activo: updatedProduct.activo,
-      //   destacar: updatedProduct.destacar
-      // });
       
     } catch (error) {
       console.error('Error al procesar la actualización:', error);
@@ -181,12 +175,6 @@ export default function DetalleProductoModal({
           
           setDetalleProducto(detalleData);
           setPrecio(precioData);
-          
-          // console.log('📊 Datos cargados:', {
-          //   item_id: detalleData.item_id,
-          //   activo: detalleData.activo,
-          //   destacar: detalleData.destacar
-          // });
           
         } catch (err) {
           setError('Error al cargar los datos del producto');
@@ -255,7 +243,6 @@ export default function DetalleProductoModal({
                 )}
               </h2>
               
-              {/* ✅ Mostrar estado del detalle activo */}
               {detalleProducto && (
                 <div className="flex items-center gap-2">
                   <span className={`text-xs px-2 py-1 rounded-full ${
@@ -277,20 +264,6 @@ export default function DetalleProductoModal({
                 <span className="text-xs text-gray-500 bg-blue-100 px-2 py-1 rounded">
                   📝 Con sugerencia: {sugerenciaActual.substring(0, 20)}...
                 </span>
-              )}
-              
-              {isAdmin && detalleProducto && (
-                <button
-                  onClick={handleEditProduct}
-                  disabled={loading || isUpdating}
-                  className="flex items-center gap-2 px-3 py-2 text-sm bg-orange-100 text-orange-700 hover:bg-orange-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Editar producto"
-                >
-                  <PencilIcon className="w-4 h-4" />
-                  <span className="hidden sm:inline">
-                    {loading ? 'Cargando...' : 'Editar'}
-                  </span>
-                </button>
               )}
             </div>
             
@@ -328,8 +301,9 @@ export default function DetalleProductoModal({
                     producto={formatearProducto(detalleProducto, precio)} 
                     onSugerenciaChange={handleSugerenciaChange} 
                   />
-                  <ModelosSelector 
-                    subcategoriaId={parseInt(itemId)} 
+                  <ModelosSelector
+                    subcategoriaId={detalleProducto.subcategoria_id} 
+                    itemId={parseInt(itemId)} 
                     sugerenciaActual={sugerenciaActual} 
                   />
                 </div>
@@ -340,7 +314,8 @@ export default function DetalleProductoModal({
                     onSugerenciaChange={handleSugerenciaChange} 
                   />
                   <ModelosSelector 
-                    subcategoriaId={parseInt(itemId)}
+                    subcategoriaId={detalleProducto.subcategoria_id} 
+                    itemId={parseInt(itemId)}
                     sugerenciaActual={sugerenciaActual} 
                   />
                 </div>
@@ -349,15 +324,6 @@ export default function DetalleProductoModal({
           </div>
         </div>
       </div>
-
-      {detalleProducto && (
-        <EditProductModal
-          producto={detalleProducto}
-          isOpen={showEditModal}
-          onClose={handleCloseEditModal}
-          onSave={handleSaveProduct}
-        />
-      )}
     </>
   );
 }
