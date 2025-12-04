@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import Image from 'next/image';
+import { CldImage } from 'next-cloudinary'; // ✅ NUEVO: Importar CldImage
 import { useCart } from '@/components/CartContext';
 import QuantityButton from '../QuantityButton';
 import { useRouter } from 'next/navigation';
@@ -12,8 +13,8 @@ import { useProspectoMode } from '@/hooks/useProspectoMode';
 export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const sidebarRef = useRef<HTMLDivElement>(null);
   const { cart, changeQuantity, clearCart, getStockWarnings } = useCart(); 
-  const { user, getPrecioConDescuento, isDistribuidor } = useAuth();
-  const { isProspectoMode, isChatbotMode, prospectoData } = useProspectoMode(); // ✅ NUEVO
+  const { user, getPrecioConDescuento, isDistribuidor, esCategoriaExcluida } = useAuth(); // ✅ NUEVO: Agregar esCategoriaExcluida
+  const { isProspectoMode, isChatbotMode, prospectoData } = useProspectoMode();
   const router = useRouter();
 
   const [dolar, setDolar] = useState<number>(1);
@@ -69,10 +70,24 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
     setTouchEnd(0);
   };
 
+  // ✅ NUEVO: Función para calcular precio final con exclusiones
+  const calcularPrecioFinal = (item: any) => {
+    // Usar item_id para verificar exclusión de descuento
+    const itemExcluido = item.item_id ? esCategoriaExcluida(item.item_id) : false;
+    
+    if (itemExcluido) {
+      // Si está excluido, usar precio original sin descuento
+      return item.precio_venta;
+    } else {
+      // Si NO está excluido, aplicar descuento usando item_id
+      return getPrecioConDescuento(item.precio_venta, { id: item.item_id });
+    }
+  };
+
   // ✅ Calcular total VISUAL (con descuento) pero mantener precios originales en cart
   const totalEnPesos = cart.reduce(
     (sum, item) => {
-      const precioConDescuento = getPrecioConDescuento(item.precio_venta);
+      const precioConDescuento = calcularPrecioFinal(item);
       return sum + (item.cantidad * precioConDescuento * dolar);
     },
     0
@@ -256,60 +271,109 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
           </div>
         ) : (
           <div className="flex flex-col h-[calc(100%-64px)]">
-            {/* ✅ LISTA DE PRODUCTOS CON PRECIOS CON DESCUENTO Y STOCK */}
+            {/* ✅ LISTA DE PRODUCTOS CON IMÁGENES Y PRECIOS CON DESCUENTO Y STOCK */}
             <div className="flex-1 overflow-y-auto p-3">
               <ul className="space-y-3">
                 {cart.map((item) => {
-                  const precioConDescuento = getPrecioConDescuento(item.precio_venta);
+                  const precioConDescuento = calcularPrecioFinal(item);
                   const precioFinalPesos = Math.round(precioConDescuento * dolar);
                   const stockDisponible = Number(item.stock_real || 0);
                   const stockColor = item.cantidad > stockDisponible ? 'text-red-600' : 
                                    stockDisponible > 10 ? 'text-green-600' : 'text-yellow-600';
                   
+                  // ✅ NUEVO: Verificar si el item está excluido del descuento
+                  const itemExcluido = item.item_id ? esCategoriaExcluida(item.item_id) : false;
+                  const hayDescuentoAplicado = isDistribuidor() && !itemExcluido && (precioConDescuento < item.precio_venta);
+                  
                   return (
                     <li key={item.codigo_interno} className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          <div className="font-semibold text-gray-900 text-sm leading-tight mb-1">{item.modelo}</div>
-                          <div className="text-xs text-gray-500 mb-2">{item.item_nombre}</div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-orange-600 font-bold text-sm">
-                              ${precioFinalPesos.toLocaleString()}
-                            </span>
-                            <span className="text-xs text-gray-500">c/u</span>
-                            {isDistribuidor() && (
-                              <span className="text-xs bg-green-100 text-green-700 px-1 py-0.5 rounded">
-                                -20%
+                      {/* ✅ MODIFICADO: Layout reorganizado */}
+                      <div className="flex flex-col gap-3">
+                        {/* ✅ Fila superior: Imagen + Info + QuantityButton */}
+                        <div className="flex items-start justify-between gap-3">
+                          {/* ✅ Imagen del producto */}
+                          <div className="flex-shrink-0 w-16 h-16 bg-gray-100 rounded-lg overflow-hidden">
+                            {item.foto_portada || item.foto1_url ? (
+                              <CldImage
+                                src={item.foto_portada || item.foto1_url || ''}
+                                alt={item.modelo}
+                                width={64}
+                                height={64}
+                                className="object-contain w-full h-full"
+                                crop="fit"
+                                quality="auto"
+                                format="auto"
+                                onError={(e) => {
+                                  console.warn(`Error cargando imagen del carrito: ${item.foto_portada || item.foto1_url}`);
+                                  // Fallback a imagen por defecto
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                  target.parentElement!.innerHTML = `
+                                    <img src="/not-image.png" alt="${item.modelo}" 
+                                         class="object-contain w-full h-full" />
+                                  `;
+                                }}
+                              />
+                            ) : (
+                              <img
+                                src="/not-image.png"
+                                alt={item.modelo}
+                                className="object-contain w-full h-full"
+                              />
+                            )}
+                          </div>
+                          
+                          {/* ✅ Info del producto (sin descripción) */}
+                          <div className="flex-1 min-w-0">
+                            <div className="font-semibold text-gray-900 text-sm leading-tight mb-1">{item.modelo}</div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-orange-600 font-bold text-sm">
+                                ${precioFinalPesos.toLocaleString()}
                               </span>
-                            )}
-                          </div>
-                          {/* ✅ Mostrar info de stock */}
-                          <div className={`text-xs ${stockColor} mt-1`}>
-                            Stock: {stockDisponible} 
-                            {item.cantidad > stockDisponible && (
-                              <span className="ml-1 font-medium">⚠️ Excede stock</span>
-                            )}
-                          </div>
-                          {item.sugerencia && (
-                            <div className="bg-blue-50 border border-blue-200 rounded p-2 mt-2">
-                              <div className="text-xs font-medium text-blue-800">💡 Sugerencia:</div>
-                              <div className="text-xs text-blue-700">{item.sugerencia}</div>
+                              <span className="text-xs text-gray-500">c/u</span>
+                              {/* ✅ Mostrar descuento solo si aplica */}
+                              {hayDescuentoAplicado && (
+                                <span className="text-xs bg-green-100 text-green-800 px-1 py-0.5 rounded">
+                                  -20%
+                                </span>
+                              )}
+                              {/* ✅ Mostrar badge para items excluidos */}
+                              {itemExcluido && isDistribuidor() && (
+                                <span className="text-xs bg-orange-100 text-orange-800 px-1 py-0.5 rounded">
+                                  📱 Sin desc.
+                                </span>
+                              )}
                             </div>
-                          )}
+                          </div>
+                          
+                          {/* ✅ QuantityButton */}
+                          <div className="flex-shrink-0">
+                            <QuantityButton
+                              value={item.cantidad}
+                              onAdd={() => changeQuantity(item.codigo_interno, 1)}
+                              onRemove={() => changeQuantity(item.codigo_interno, -1)}
+                              onSet={(val) => changeQuantity(item.codigo_interno, val - item.cantidad)}
+                              modelo={item.modelo}
+                              hideModelo={true}
+                              size="normal"
+                              maxStock={stockDisponible}
+                            />
+                          </div>
                         </div>
                         
-                        <div className="flex-shrink-0">
-                          <QuantityButton
-                            value={item.cantidad}
-                            onAdd={() => changeQuantity(item.codigo_interno, 1)}
-                            onRemove={() => changeQuantity(item.codigo_interno, -1)}
-                            onSet={(val) => changeQuantity(item.codigo_interno, val - item.cantidad)}
-                            modelo={item.modelo}
-                            hideModelo={true}
-                            size="normal"
-                            maxStock={stockDisponible}
-                          />
+                        {/* ✅ NUEVO: Descripción del producto DEBAJO del QuantityButton */}
+                        <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
+                          {item.item_nombre}
                         </div>
+                        
+                        {/* ✅ Sugerencia (si existe) */}
+                        {item.sugerencia && (
+                          <div className="bg-blue-50 border border-blue-200 rounded p-2">
+                            <div className="text-xs text-blue-700">
+                              <strong>Sugerencia:</strong> {item.sugerencia}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </li>
                   );
@@ -323,7 +387,7 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
                 <span className="font-bold text-gray-900">
                   Total
                   {isDistribuidor() && (
-                    <span className="ml-2 text-xs text-green-600">(con 20% OFF)</span>
+                    <span className="ml-2 text-xs text-green-600">(con descuentos)</span>
                   )}
                 </span>
                 <div className="text-right">
@@ -332,11 +396,11 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
                   </div>
                   <div className="text-xs text-gray-500">
                     USD ${cart.reduce((sum, item) => {
-                      const precioConDescuento = getPrecioConDescuento(item.precio_venta);
+                      const precioConDescuento = calcularPrecioFinal(item);
                       return sum + (item.cantidad * precioConDescuento);
                     }, 0).toFixed(2)}
                     {isDistribuidor() && (
-                      <span className="ml-1 text-green-600">(-20%)</span>
+                      <span className="ml-1 text-green-600">(con desc.)</span>
                     )}
                   </div>
                 </div>
@@ -344,16 +408,16 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
 
               <button
                 className={`w-full py-3 rounded-lg font-bold transition-all transform hover:scale-[1.02] disabled:transform-none shadow-md ${
-                  isChatbotMode // ✅ NUEVO: Deshabilitar si es modo chatbot
+                  isChatbotMode
                     ? 'bg-gray-400 text-gray-600 cursor-not-allowed opacity-75'
                     : stockValidation.hasWarnings 
                       ? 'bg-red-600 hover:bg-red-700 text-white cursor-not-allowed opacity-75'
                       : 'bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white'
                 } disabled:opacity-50 disabled:cursor-not-allowed`}
                 onClick={handleBuy}
-                disabled={isCreatingOrder || cart.length === 0 || stockValidation.hasWarnings || isChatbotMode} // ✅ NUEVO
+                disabled={isCreatingOrder || cart.length === 0 || stockValidation.hasWarnings || isChatbotMode}
               >
-                {isChatbotMode ? ( // ✅ NUEVO
+                {isChatbotMode ? (
                   '🔒 Modo consulta - Sin pedidos'
                 ) : isCreatingOrder ? (
                   <div className="flex items-center justify-center gap-2">
@@ -408,10 +472,10 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
                     <span className="text-green-500 text-sm">🎉</span>
                     <div>
                       <p className="text-green-800 font-semibold text-xs">
-                        Descuento Distribuidor Aplicado
+                        Descuentos Aplicados
                       </p>
                       <p className="text-green-700 text-xs">
-                        Los precios mostrados incluyen tu 20% de descuento
+                        Los precios mostrados incluyen descuentos donde aplica
                       </p>
                     </div>
                   </div>

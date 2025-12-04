@@ -10,6 +10,10 @@ type CartItem = {
   precio_venta: number; 
   sugerencia?: string;
   stock_real: number;
+  // ✅ NUEVO: Agregar campos de imagen
+  foto_portada?: string;
+  foto1_url?: string;
+  item_id?: number; // Para poder obtener imágenes si no las tenemos
 };
 
 type CartContextType = {
@@ -32,6 +36,22 @@ export function useCart() {
   if (!ctx) throw new Error("useCart must be used within CartProvider");
   return ctx;
 }
+
+// ✅ NUEVO: Función helper para obtener imagen principal
+const getCloudinaryImageUrl = (dataDetail: any): string => {
+  if (dataDetail.foto_portada && dataDetail.foto_portada.trim() !== '') {
+    return dataDetail.foto_portada;
+  } else if (dataDetail.foto1_url && dataDetail.foto1_url.trim() !== '') {
+    return dataDetail.foto1_url;
+  } else if (dataDetail.foto2_url && dataDetail.foto2_url.trim() !== '') {
+    return dataDetail.foto2_url;
+  } else if (dataDetail.foto3_url && dataDetail.foto3_url.trim() !== '') {
+    return dataDetail.foto3_url;
+  } else if (dataDetail.foto4_url && dataDetail.foto4_url.trim() !== '') {
+    return dataDetail.foto4_url;
+  }
+  return '';
+};
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -79,7 +99,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     };
   };
 
-  const addToCart = (articulo: Articulo, nombre: string, cantidad: number = 1, sugerencia: string = '') => {
+  const addToCart = async (articulo: Articulo, nombre: string, cantidad: number = 1, sugerencia: string = '') => {
     setCart((prev) => {
       const found = prev.find((i) => i.codigo_interno === articulo.codigo_interno);
       if (found) {
@@ -132,15 +152,44 @@ export function CartProvider({ children }: { children: ReactNode }) {
         cantidad = stockDisponible;
       }
       
-      const nuevoItem = {
+      // ✅ NUEVO: Obtener imagen del producto de forma asíncrona
+      const nuevoItem: CartItem = {
         codigo_interno: articulo.codigo_interno,
         modelo: articulo.modelo,
         item_nombre: articulo.item_nombre || nombre || 'Sin nombre',
         cantidad: cantidad,
         precio_venta: Number(articulo.precio_venta) || 0,
         sugerencia: sugerencia,
-        stock_real: Number(articulo.stock_real || 0)
+        stock_real: Number(articulo.stock_real || 0),
+        item_id: articulo.item_id,
+        foto_portada: '',
+        foto1_url: ''
       };
+
+      // ✅ Obtener imagen de forma asíncrona después de agregar el item
+      if (articulo.item_id) {
+        fetch(`/api/detalle?id=${articulo.item_id}`)
+          .then(res => res.json())
+          .then(dataDetail => {
+            const imagenPrincipal = getCloudinaryImageUrl(dataDetail);
+            if (imagenPrincipal) {
+              setCart(currentCart => 
+                currentCart.map(item => 
+                  item.codigo_interno === articulo.codigo_interno 
+                    ? { 
+                        ...item, 
+                        foto_portada: dataDetail.foto_portada || '',
+                        foto1_url: dataDetail.foto1_url || ''
+                      }
+                    : item
+                )
+              );
+            }
+          })
+          .catch(error => {
+            console.warn(`No se pudo obtener imagen para ${articulo.modelo}:`, error);
+          });
+      }
       
       return [...prev, nuevoItem];
     });
@@ -211,18 +260,45 @@ export function CartProvider({ children }: { children: ReactNode }) {
           return prev; // No agregar si no hay stock
         }
         
-        return [
-          ...prev,
-          {
-            codigo_interno: articulo.codigo_interno,
-            modelo: articulo.modelo,
-            item_nombre: articulo.item_nombre || 'Sin nombre',
-            cantidad: cantidadFinal,
-            precio_venta: articulo.precio_venta,
-            sugerencia: '',
-            stock_real: Number(articulo.stock_real || 0)
-          },
-        ];
+        const nuevoItem: CartItem = {
+          codigo_interno: articulo.codigo_interno,
+          modelo: articulo.modelo,
+          item_nombre: articulo.item_nombre || 'Sin nombre',
+          cantidad: cantidadFinal,
+          precio_venta: articulo.precio_venta,
+          sugerencia: '',
+          stock_real: Number(articulo.stock_real || 0),
+          item_id: articulo.item_id,
+          foto_portada: '',
+          foto1_url: ''
+        };
+
+        // ✅ Obtener imagen de forma asíncrona
+        if (articulo.item_id) {
+          fetch(`/api/detalle?id=${articulo.item_id}`)
+            .then(res => res.json())
+            .then(dataDetail => {
+              const imagenPrincipal = getCloudinaryImageUrl(dataDetail);
+              if (imagenPrincipal) {
+                setCart(currentCart => 
+                  currentCart.map(item => 
+                    item.codigo_interno === articulo.codigo_interno 
+                      ? { 
+                          ...item, 
+                          foto_portada: dataDetail.foto_portada || '',
+                          foto1_url: dataDetail.foto1_url || ''
+                        }
+                      : item
+                  )
+                );
+              }
+            })
+            .catch(error => {
+              console.warn(`No se pudo obtener imagen para ${articulo.modelo}:`, error);
+            });
+        }
+
+        return [...prev, nuevoItem];
       }
       return prev;
     });

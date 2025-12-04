@@ -2,9 +2,7 @@
 
 import { MagnifyingGlassIcon, XMarkIcon, FunnelIcon } from '@heroicons/react/24/outline';
 import { useState, useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
 import SearchResults from '@/components/Search/SearchResults';
-import DetalleProductoModal from '@/components/Products/DetalleProductoModal';
 import { useRouter } from 'next/navigation';
 
 interface SearchResult {
@@ -25,9 +23,6 @@ export default function Search() {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
-  
-  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   
   const searchRef = useRef<HTMLDivElement | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -186,16 +181,15 @@ export default function Search() {
     setIsSearching(false);
   };
 
+  // ✅ MODIFICADO: Redirigir al page.tsx en lugar de abrir modal
   const handleItemClick = (result: SearchResult) => {
-    const productId = result.item_id.toString();
-    setSelectedProductId(productId);
-    setIsModalOpen(true);
+    console.log(`🔍 Navegando a página de producto: /public/items/${result.item_id}`);
+    
+    // ✅ Esconder resultados antes de navegar
     setShowResults(false);
-  };
-
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setSelectedProductId(null);
+    
+    // ✅ Navegar a la página del producto usando item_id
+    router.push(`/public/items/${result.item_id}`);
   };
 
   const handleAddToCart = (item: any) => {
@@ -222,110 +216,97 @@ export default function Search() {
   const showHelper = search.length > 0 && search.length < 3;
 
   return (
-    <>
-      <div ref={searchRef} className="relative w-full">
-        <form onSubmit={handleSubmit} className="relative">
-          <input
-            type="text"
-            placeholder={getPlaceholderText()}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className={`w-full rounded-lg border bg-white px-4 py-2 pr-36 text-sm text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-orange-600 transition-colors ${
-              showHelper 
-                ? 'border-yellow-300 focus:ring-yellow-500' 
-                : 'border-neutral-200 focus:ring-orange-600'
-            }`}
-          />
-          
-          {showHelper && (
-            <div className="absolute top-full left-0 right-0 mt-1 px-3 py-2 bg-yellow-50 border border-yellow-200 rounded-md text-xs text-yellow-700 z-40">
-              💡 Escribe al menos 3 caracteres para buscar
-            </div>
-          )}
-          
-          <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
-            <button
-              type="button"
-              onClick={handleFilterClick}
-              className="flex items-center gap-1 text-gray-500 hover:text-orange-600 px-2 py-1 text-xs transition-colors bg-gray-50 hover:bg-orange-50 rounded-md"
-              title="Filtros avanzados"
-            >
-              <FunnelIcon className="h-3 w-3" />
-              <span className="whitespace-nowrap">Filtros</span>
-            </button>
-            
-            {search && (
-              <button
-                type="button"
-                onClick={clearSearch}
-                className="text-gray-400 hover:text-gray-600 p-1"
-              >
-                <XMarkIcon className="h-4 w-4" />
-              </button>
-            )}
-            
-            {/* ✅ ACTUALIZADO: Click en lupa esconde resultados y redirige a filtros */}
-            <button 
-              type="button"
-              onClick={handleSearchClick}
-              disabled={isSearching || search.trim().length < 3}
-              className={`rounded-full p-1 transition-colors duration-200 ${
-                search.trim().length >= 3 && !isSearching
-                  ? 'text-gray-500 hover:text-white'
-                  : 'text-gray-300 cursor-not-allowed'
-              }`}
-              onMouseEnter={(e) => search.trim().length >= 3 && !isSearching && (e.currentTarget.style.backgroundColor = '#ea580c')}
-              onMouseLeave={(e) => search.trim().length >= 3 && !isSearching && (e.currentTarget.style.backgroundColor = 'transparent')}
-              title={search.trim().length >= 3 ? "Buscar en página de filtros" : "Escribe al menos 3 caracteres"}
-            >
-              {isSearching ? (
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-500"></div>
-              ) : (
-                <MagnifyingGlassIcon className="h-5 w-5" />
-              )}
-            </button>
-          </div>
-        </form>
-
-        {/* ✅ Dropdown de resultados - se esconde al buscar */}
-        {showResults && !showHelper && (
-          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-            <div className="p-3 bg-blue-50 border-b border-blue-200">
-              <p className="text-sm text-blue-700 flex items-center gap-2">
-                <MagnifyingGlassIcon className="h-4 w-4" />
-                Vista rápida - <button 
-                  onClick={() => {
-                    // ✅ NUEVO: Esconder resultados al hacer clic en "Ver todos los resultados"
-                    setShowResults(false);
-                    router.push(`/public/filtros?search=${encodeURIComponent(search.trim())}`);
-                  }}
-                  className="underline font-medium hover:text-blue-800"
-                >
-                  Ver todos los resultados
-                </button>
-              </p>
-            </div>
-            <SearchResults
-              results={results.slice(0, 5)} // ✅ Mostrar solo primeros 5 resultados
-              query={search}
-              onItemClick={handleItemClick}
-              onAddToCart={handleAddToCart}
-            />
+    <div ref={searchRef} className="relative w-full">
+      <form onSubmit={handleSubmit} className="relative">
+        <input
+          type="text"
+          placeholder={getPlaceholderText()}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className={`w-full rounded-lg border bg-white px-4 py-2 pr-36 text-sm text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-orange-600 transition-colors ${
+            showHelper 
+              ? 'border-yellow-300 focus:ring-yellow-500' 
+              : 'border-neutral-200 focus:ring-orange-600'
+          }`}
+        />
+        
+        {showHelper && (
+          <div className="absolute top-full left-0 right-0 mt-1 px-3 py-2 bg-yellow-50 border border-yellow-200 rounded-md text-xs text-yellow-700 z-40">
+            💡 Escribe al menos 3 caracteres para buscar
           </div>
         )}
-      </div>
+        
+        <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
+          <button
+            type="button"
+            onClick={handleFilterClick}
+            className="flex items-center gap-1 text-gray-500 hover:text-orange-600 px-2 py-1 text-xs transition-colors bg-gray-50 hover:bg-orange-50 rounded-md"
+            title="Filtros avanzados"
+          >
+            <FunnelIcon className="h-3 w-3" />
+            <span className="whitespace-nowrap">Filtros</span>
+          </button>
+          
+          {search && (
+            <button
+              type="button"
+              onClick={clearSearch}
+              className="text-gray-400 hover:text-gray-600 p-1"
+            >
+              <XMarkIcon className="h-4 w-4" />
+            </button>
+          )}
+          
+          {/* ✅ ACTUALIZADO: Click en lupa esconde resultados y redirige a filtros */}
+          <button 
+            type="button"
+            onClick={handleSearchClick}
+            disabled={isSearching || search.trim().length < 3}
+            className={`rounded-full p-1 transition-colors duration-200 ${
+              search.trim().length >= 3 && !isSearching
+                ? 'text-gray-500 hover:text-white'
+                : 'text-gray-300 cursor-not-allowed'
+            }`}
+            onMouseEnter={(e) => search.trim().length >= 3 && !isSearching && (e.currentTarget.style.backgroundColor = '#ea580c')}
+            onMouseLeave={(e) => search.trim().length >= 3 && !isSearching && (e.currentTarget.style.backgroundColor = 'transparent')}
+            title={search.trim().length >= 3 ? "Buscar en página de filtros" : "Escribe al menos 3 caracteres"}
+          >
+            {isSearching ? (
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-500"></div>
+            ) : (
+              <MagnifyingGlassIcon className="h-5 w-5" />
+            )}
+          </button>
+        </div>
+      </form>
 
-      {selectedProductId && isModalOpen && typeof window !== 'undefined' && (
-        createPortal(
-          <DetalleProductoModal
-            itemId={selectedProductId}
-            isOpen={isModalOpen}
-            onClose={handleCloseModal}
-          />,
-          document.body
-        )
+      {/* ✅ Dropdown de resultados - se esconde al buscar */}
+      {showResults && !showHelper && (
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+          <div className="p-3 bg-blue-50 border-b border-blue-200">
+            <p className="text-sm text-blue-700 flex items-center gap-2">
+              <MagnifyingGlassIcon className="h-4 w-4" />
+              Vista rápida - <button 
+                onClick={() => {
+                  // ✅ NUEVO: Esconder resultados al hacer clic en "Ver todos los resultados"
+                  setShowResults(false);
+                  router.push(`/public/filtros?search=${encodeURIComponent(search.trim())}`);
+                }}
+                className="underline font-medium hover:text-blue-800"
+              >
+                Ver todos los resultados
+              </button>
+            </p>
+          </div>
+          <SearchResults
+            results={results.slice(0, 5)} // ✅ Mostrar solo primeros 5 resultados
+            query={search}
+            onItemClick={handleItemClick}
+            onAddToCart={handleAddToCart}
+          />
+        </div>
       )}
-    </>
+    </div>
   );
 }
 
