@@ -1,6 +1,16 @@
 export const runtime = 'edge';
 
-export async function POST(req: Request) {
+import { NextRequest, NextResponse } from 'next/server';
+
+// 🚨 API BLOQUEADA - Vulnerabilidad de seguridad detectada
+// Esta API permite ejecutar llamadas externas sin autenticación
+export async function POST(req: NextRequest) {
+  return NextResponse.json(
+    { error: 'API temporalmente deshabilitada por seguridad' },
+    { status: 503 }
+  );
+  
+  /* CÓDIGO ORIGINAL DESHABILITADO HASTA IMPLEMENTAR AUTENTICACIÓN
   const { messages } = await req.json();
 
   const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -28,4 +38,5 @@ export async function POST(req: Request) {
       headers: { 'Content-Type': 'application/json' }
     }
   );
+  */
 }

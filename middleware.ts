@@ -4,25 +4,88 @@ import type { NextRequest } from 'next/server';
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
-  // Rutas que NO requieren autenticación
-  const publicPaths = [
-    '/api',
+  // 🔓 APIs de autenticación (se llaman ANTES de tener cookies)
+  // IMPORTANTE: Estas deben tener rate limiting implementado en la API
+  const authAPIs = [
+    '/api/auth/login',
+    '/api/auth/forgot-password',
+    '/api/auth/reset-password', 
+    '/api/auth/set-password',
+  ];
+  
+  // 🔐 APIs QUE REQUIEREN TOKEN DE PROSPECTO VÁLIDO
+  const prospectoAPIs = [
+    '/api/prospectos/validate-token',
+  ];
+
+  // 🛡️ TODAS LAS DEMÁS APIs REQUIEREN AUTENTICACIÓN
+  // Esto incluye:
+  // - /api/pedidos-preliminares (requiere auth de usuario)
+  // - /api/actualizar (requiere admin)
+  // - /api/upload-image (requiere admin)
+  // - /api/recomendaciones POST (requiere admin)
+  // - /api/admin/* (requiere admin)
+  // - /api/prospecto-to-cliente (requiere admin)
+  // - /api/chat (BLOQUEADA)
+  
+  // Rutas estáticas permitidas
+  const staticPaths = [
     '/_next',
     '/favicon.ico',
     '/static',
     '/images',
-    // ✅ AGREGAR: Rutas de autenticación
     '/auth/forgot-password',
     '/auth/set-password',
     '/auth/reset-password'
   ];
   
-  // Si es una ruta pública, permitir acceso
-  if (publicPaths.some(path => pathname.startsWith(path))) {
+  // Permitir rutas estáticas
+  if (staticPaths.some(path => pathname.startsWith(path))) {
     return NextResponse.next();
   }
+
+  // 🔒 Verificar si es una API
+  if (pathname.startsWith('/api/')) {
+    // 🔓 Permitir APIs de autenticación (se ejecutan ANTES de login)
+    const isAuthAPI = authAPIs.some(path => pathname.startsWith(path));
+    if (isAuthAPI) {
+      // ⚠️ Rate limiting debería estar implementado en estas APIs
+      return NextResponse.next();
+    }
+
+    // 🔐 Verificar autenticación de USUARIO
+    const userCookie = request.cookies.get('auth_user');
+    const tokenCookie = request.cookies.get('auth_token');
+    const hasUserAuth = userCookie && tokenCookie;
+
+    // 🔐 Verificar token de PROSPECTO (solo para APIs específicas)
+    const isProspectoAPI = prospectoAPIs.some(path => pathname.startsWith(path));
+    const prospectoToken = request.cookies.get('prospecto_token');
+    const hasProspectoAuth = isProspectoAPI && prospectoToken;
+
+    // ✅ Permitir si tiene autenticación válida
+    if (hasUserAuth || hasProspectoAuth) {
+      return NextResponse.next();
+    }
+
+    // 🚨 NO AUTENTICADO - BLOQUEAR ACCESO
+    console.warn('🚨 INTENTO DE ACCESO NO AUTORIZADO A API:', {
+      path: pathname,
+      method: request.method,
+      ip: request.headers.get('x-forwarded-for') || 'unknown',
+      userAgent: request.headers.get('user-agent')
+    });
+
+    return NextResponse.json(
+      { 
+        error: 'No autorizado',
+        message: 'Se requiere autenticación para acceder a este recurso'
+      },
+      { status: 401 }
+    );
+  }
   
-  // Verificar autenticación en cookies
+  // Verificar autenticación para rutas de página
   const userCookie = request.cookies.get('auth_user');
   const tokenCookie = request.cookies.get('auth_token');
   

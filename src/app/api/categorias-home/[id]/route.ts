@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import mysql from 'mysql2/promise';
+import { requireAdmin } from '@/lib/auth';
 
 const dbConfig = {
   host: process.env.DATABASE_HOST,
@@ -17,6 +18,10 @@ interface RouteParams {
 
 // PUT - Actualizar categoría
 export async function PUT(request: NextRequest, context: RouteParams) {
+  // 🔒 PROTECCIÓN: Solo administradores pueden editar categorías
+  const authResult = requireAdmin(request);
+  if (authResult instanceof Response) return authResult;
+
   try {
     const { nombre, imagen, url, orden, activo } = await request.json();
     const params = await context.params;
@@ -40,6 +45,10 @@ export async function PUT(request: NextRequest, context: RouteParams) {
 
 // DELETE - Eliminar categoría
 export async function DELETE(request: NextRequest, context: RouteParams) {
+  // 🔒 PROTECCIÓN: Solo administradores pueden eliminar categorías
+  const authResult = requireAdmin(request);
+  if (authResult instanceof Response) return authResult;
+
   try {
     const params = await context.params;
     const connection = await mysql.createConnection(dbConfig);

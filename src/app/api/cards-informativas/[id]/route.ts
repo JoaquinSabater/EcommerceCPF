@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import mysql from 'mysql2/promise';
+import { requireAdmin } from '@/lib/auth';
 
 const dbConfig = {
   host: process.env.DATABASE_HOST,
@@ -16,6 +17,10 @@ interface RouteParams {
 }
 
 export async function PUT(request: NextRequest, context: RouteParams) {
+  // 🔒 PROTECCIÓN: Solo administradores pueden editar cards
+  const authResult = requireAdmin(request);
+  if (authResult instanceof Response) return authResult;
+
   try {
     const { titulo, subtitulo, imagen, enlace, orden, activo } = await request.json();
     const params = await context.params;
@@ -38,6 +43,10 @@ export async function PUT(request: NextRequest, context: RouteParams) {
 }
 
 export async function DELETE(request: NextRequest, context: RouteParams) {
+  // 🔒 PROTECCIÓN: Solo administradores pueden eliminar cards
+  const authResult = requireAdmin(request);
+  if (authResult instanceof Response) return authResult;
+
   try {
     const params = await context.params;
     const connection = await mysql.createConnection(dbConfig);

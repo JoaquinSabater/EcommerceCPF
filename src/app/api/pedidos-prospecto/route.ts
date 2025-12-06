@@ -1,10 +1,22 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/data/mysql';
+import { sanitizeInput } from '@/lib/auth';
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   let connection;
   
   try {
+    // 🔒 PROTECCIÓN: Verificar token de prospecto
+    const prospectoToken = request.cookies.get('prospecto_token')?.value;
+    
+    if (!prospectoToken) {
+      console.warn('🚨 INTENTO DE CREAR PEDIDO DE PROSPECTO SIN TOKEN');
+      return NextResponse.json(
+        { error: 'Token de prospecto requerido' },
+        { status: 401 }
+      );
+    }
+
     const {
       prospectoData,
       itemsCarrito,
@@ -19,6 +31,24 @@ export async function POST(request: Request) {
     }
 
     connection = await db.getConnection();
+
+    // Validar que el token pertenece al prospecto
+    const [prospectos]: any = await connection.query(
+      'SELECT id, nombre, token FROM prospectos WHERE token = ? AND id = ?',
+      [prospectoToken, prospectoData?.id]
+    );
+
+    if (prospectos.length === 0) {
+      console.error('🚨 TOKEN DE PROSPECTO INVÁLIDO:', {
+        providedToken: prospectoToken?.substring(0, 10) + '...',
+        prospectoId: prospectoData?.id
+      });
+      return NextResponse.json(
+        { error: 'Token de prospecto inválido' },
+        { status: 403 }
+      );
+    }
+
     await connection.beginTransaction();
 
   // console.log('🟡 === CREANDO PEDIDO PRELIMINAR DE PROSPECTO ===');

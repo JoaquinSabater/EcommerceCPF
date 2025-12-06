@@ -1,8 +1,13 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/data/mysql';
 import { crearPedidoPreliminar } from '@/data/data';
+import { requireAdmin, sanitizeInput, validateId } from '@/lib/auth';
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  // 🔒 PROTECCIÓN: Solo administradores pueden convertir prospectos a clientes
+  const authResult = requireAdmin(request);
+  if (authResult instanceof Response) return authResult;
+
   let connection;
   
   try {

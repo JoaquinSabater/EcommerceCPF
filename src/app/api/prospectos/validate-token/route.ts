@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/data/mysql';
 import { isTokenExpired } from '@/lib/tokens';
+import { sanitizeInput } from '@/lib/auth';
 
 // ✅ Token fijo para chatbot
 const CHATBOT_TOKEN = 'chatbot_access_token_2025_permanent';
@@ -9,7 +10,8 @@ export async function POST(request: NextRequest) {
   let connection;
   
   try {
-    const { token } = await request.json();
+    const body = await request.json();
+    const token = sanitizeInput(body.token || '');
 
     if (!token) {
       return NextResponse.json(

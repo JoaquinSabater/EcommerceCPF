@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import mysql from 'mysql2/promise';
+import { requireAdmin } from '@/lib/auth';
 
 const dbConfig = {
   host: process.env.DATABASE_HOST,
@@ -36,6 +37,10 @@ export async function GET() {
 
 // POST - Crear nueva slide (solo admin, máximo 4)
 export async function POST(request: NextRequest) {
+  // 🔒 PROTECCIÓN: Solo administradores pueden crear slides
+  const authResult = requireAdmin(request);
+  if (authResult instanceof Response) return authResult;
+
   try {
     const body = await request.json();
     const { titulo, descripcion, imagen_desktop, imagen_mobile, enlace, orden } = body;

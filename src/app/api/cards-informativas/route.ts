@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import mysql from 'mysql2/promise';
+import { requireAdmin } from '@/lib/auth';
 
 const dbConfig = {
   host: process.env.DATABASE_HOST,
@@ -31,6 +32,10 @@ export async function GET() {
 
 // POST - Crear nueva card
 export async function POST(request: NextRequest) {
+  // 🔒 PROTECCIÓN: Solo administradores pueden crear cards
+  const authResult = requireAdmin(request);
+  if (authResult instanceof Response) return authResult;
+
   try {
     const { titulo, subtitulo, imagen, enlace, orden } = await request.json();
     

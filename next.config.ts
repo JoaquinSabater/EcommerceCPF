@@ -10,7 +10,8 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: false,
   },
-  output: 'standalone',
+  // ⚠️ DESHABILITADO: output: 'standalone' causa problemas de permisos en Windows con pnpm
+  // output: 'standalone',
 };
 
 export default nextConfig;

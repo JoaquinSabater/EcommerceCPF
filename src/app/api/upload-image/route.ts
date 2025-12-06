@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v2 as cloudinary } from 'cloudinary';
+import { requireAdmin } from '@/lib/auth';
 
 // Configurar Cloudinary
 cloudinary.config({
@@ -9,6 +10,12 @@ cloudinary.config({
 });
 
 export async function POST(request: NextRequest) {
+  // 🔒 PROTECCIÓN: Solo administradores pueden subir imágenes
+  const authResult = requireAdmin(request);
+  if (authResult instanceof Response) return authResult;
+
+  const { user } = authResult;
+
   try {
     const data = await request.formData();
     const file: File | null = data.get('file') as unknown as File;

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import mysql from 'mysql2/promise';
+import { requireAdmin } from '@/lib/auth';
 
 const dbConfig = {
   host: process.env.DATABASE_HOST,
@@ -17,6 +18,10 @@ interface RouteParams {
 
 // PUT - Actualizar slide existente
 export async function PUT(request: NextRequest, context: RouteParams) {
+  // 🔒 PROTECCIÓN: Solo administradores pueden editar slides
+  const authResult = requireAdmin(request);
+  if (authResult instanceof Response) return authResult;
+
   try {
     const body = await request.json();
     const { titulo, descripcion, imagen_desktop, imagen_mobile, enlace, orden, activo } = body;
@@ -45,6 +50,10 @@ export async function PUT(request: NextRequest, context: RouteParams) {
 
 // DELETE - Eliminar slide
 export async function DELETE(request: NextRequest, context: RouteParams) {
+  // 🔒 PROTECCIÓN: Solo administradores pueden eliminar slides
+  const authResult = requireAdmin(request);
+  if (authResult instanceof Response) return authResult;
+
   try {
     const params = await context.params;
     const connection = await mysql.createConnection(dbConfig);

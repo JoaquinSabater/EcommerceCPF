@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/data/mysql';
+import { requireAdmin, validateId } from '@/lib/auth';
 
 // GET - Obtener recomendaciones por item_id
 export async function GET(request: NextRequest) {
@@ -41,6 +42,10 @@ export async function GET(request: NextRequest) {
 
 // POST - Guardar recomendaciones (hasta 5)
 export async function POST(request: NextRequest) {
+  // 🔒 PROTECCIÓN: Solo administradores pueden modificar recomendaciones
+  const authResult = requireAdmin(request);
+  if (authResult instanceof Response) return authResult;
+
   try {
     const { itemId, recomendaciones } = await request.json();
 

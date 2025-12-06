@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/data/mysql';
+import { requireAdmin, validateId } from '@/lib/auth';
 
 export async function PUT(request: NextRequest) {
+  // 🔒 PROTECCIÓN: Solo administradores pueden actualizar productos
+  const authResult = requireAdmin(request);
+  if (authResult instanceof Response) return authResult;
+
+  const { user } = authResult;
+
   try {
     const url = new URL(request.url);
     const productId = url.searchParams.get('id');

@@ -1,11 +1,17 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { updateItemDisponible } from '@/data/data';
+import { requireAdmin, validateId } from '@/lib/auth';
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  // 🔒 PROTECCIÓN: Solo administradores pueden cambiar disponibilidad de items
+  const authResult = requireAdmin(request);
+  if (authResult instanceof Response) return authResult;
+
   try {
     const { itemId, disponible } = await request.json();
 
-    if (!itemId) {
+    const validItemId = validateId(itemId);
+    if (!validItemId) {
       return NextResponse.json(
         { success: false, error: 'itemId es requerido' },
         { status: 400 }
