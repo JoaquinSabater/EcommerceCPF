@@ -6,6 +6,7 @@ import { CldImage } from 'next-cloudinary';
 import { useRouter } from 'next/navigation';
 import CategoriaCardSkeleton from "@/components/Skeletons/CategoriaCardSkeleton";
 import { useAuth } from "@/hooks/useAuth";
+import { useDolar } from "@/contexts/DolarContext";
 
 interface CategoriaCardProps {
   categoria: categorias;
@@ -26,9 +27,9 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
   const [imagenPrincipal, setImagenPrincipal] = useState<string>('');
   const [imageError, setImageError] = useState(false);
   const [descripcion, setDescripcion] = useState<string>('');
-  const [dolar, setDolar] = useState<number>(1);
 
   const { getPrecioConDescuento, isDistribuidor, esCategoriaExcluida } = useAuth();
+  const { dolar } = useDolar(); // ✅ Usar contexto compartido
   const router = useRouter();
 
   // ✅ CORREGIDO: Usar subcategoria_id en lugar de id
@@ -36,19 +37,6 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
   
   // ✅ Log corregido para debugging
   console.log(`🔍 ${categoria.nombre} (item_id: ${categoria.id}, subcategoria_id: ${categoria.subcategoria_id}) - Excluido: ${itemExcluido} - Es distribuidor: ${isDistribuidor()}`);
-
-  useEffect(() => {
-    async function fetchDolar() {
-      try {
-        const res = await fetch('/api/dolar');
-        const data = await res.json();
-        setDolar(data.dolar || 1);
-      } catch (e) {
-        setDolar(1);
-      }
-    }
-    fetchDolar();
-  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -215,8 +203,10 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
             height={600}
             className="object-contain w-full h-full transition-transform duration-300 hover:scale-105"
             crop="fit"
-            quality="auto"
-            format="auto"
+            quality="auto:eco" // ✅ OPTIMIZADO: Reduce tamaño ~40%
+            format="auto" // ✅ OPTIMIZADO: WebP/AVIF automático
+            loading="lazy" // ✅ OPTIMIZADO: Carga diferida
+            sizes="(max-width: 640px) 150px, (max-width: 1024px) 250px, 300px" // ✅ OPTIMIZADO: Tamaños responsive
             onError={() => {
               console.warn(`❌ Error cargando imagen: ${imagenPrincipal}`);
               setImageError(true);

@@ -36,11 +36,13 @@ export default function LoginPage() {
       const data: LoginResponse = await response.json();
 
       if (response.ok && data.success) {
-        // ✅ USAR EL HOOK PARA ESTABLECER COOKIES Y USUARIO
-        if (data.cliente) {
-          login(data.cliente);
+        // ✅ CORREGIDO: Pasar token JWT del servidor a la función login
+        if (data.cliente && data.token) {
+          login(data.cliente, data.token); // ✅ Pasar el token JWT real
+        } else if (data.cliente) {
+          login(data.cliente); // Fallback sin token (no debería pasar)
+          console.warn('Login succeeded but no token returned from API');
         } else {
-          // Si la respuesta fue exitosa pero no viene cliente, evitar llamar a login con undefined
           console.warn('Login succeeded but no cliente returned from API');
         }
         

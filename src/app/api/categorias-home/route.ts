@@ -10,6 +10,9 @@ const dbConfig = {
   ssl: { rejectUnauthorized: false }
 };
 
+// ✅ OPTIMIZADO: Cache ISR de 1 hora (categorías cambian poco)
+export const revalidate = 3600;
+
 // GET - Obtener categorías activas
 export async function GET() {
   try {

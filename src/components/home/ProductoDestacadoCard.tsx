@@ -169,8 +169,10 @@ export default function ProductoDestacadoCard({ categoria, onClick }: ProductoDe
             height={600}
             className="object-contain w-full h-full transition-transform duration-300 hover:scale-105"
             crop="fit"
-            quality="auto"
-            format="auto"
+            quality="auto:eco" // ✅ OPTIMIZADO: Reduce tamaño ~40%
+            format="auto" // ✅ OPTIMIZADO: WebP/AVIF automático
+            loading="lazy" // ✅ OPTIMIZADO: Carga diferida
+            sizes="(max-width: 640px) 200px, (max-width: 1024px) 300px, 400px" // ✅ OPTIMIZADO: Responsive
             onError={() => {
               console.warn(`❌ Error cargando imagen destacada: ${imagenPrincipal}`);
               setImageError(true);

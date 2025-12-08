@@ -2,10 +2,46 @@ import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { db } from '@/data/mysql';
+import { getRateLimiter, RateLimitConfigs } from '@/lib/rate-limit';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'tu-secret-key';
 
 export async function POST(request: Request) {
+  // 🔥 CRÍTICO: Rate limiting para prevenir ataques de fuerza bruta
+  const ip = request.headers.get('x-forwarded-for') || 
+             request.headers.get('x-real-ip') || 
+             'unknown';
+  
+  const limiter = getRateLimiter();
+  const { allowed, remaining, resetAt } = limiter.check(
+    `login:${ip}`,
+    RateLimitConfigs.login.maxRequests,
+    RateLimitConfigs.login.windowMs,
+    RateLimitConfigs.login.blockDurationMs
+  );
+
+  if (!allowed) {
+    const resetDate = new Date(resetAt);
+    console.warn(`🚨 LOGIN BLOQUEADO - IP: ${ip} - Desbloqueará: ${resetDate.toISOString()}`);
+    
+    return NextResponse.json(
+      { 
+        success: false, 
+        message: RateLimitConfigs.login.message,
+        retryAfter: resetDate.toISOString()
+      },
+      { 
+        status: 429,
+        headers: {
+          'Retry-After': Math.ceil((resetAt - Date.now()) / 1000).toString(),
+          'X-RateLimit-Limit': RateLimitConfigs.login.maxRequests.toString(),
+          'X-RateLimit-Remaining': '0',
+          'X-RateLimit-Reset': resetAt.toString()
+        }
+      }
+    );
+  }
+
   try {
     const { cuil, password } = await request.json();
 
@@ -77,17 +113,19 @@ export async function POST(request: Request) {
     const auth = authRows[0] || { password_hash: null };
 
     if (!password) {
-      // ✅ Generar token JWT CON contenidoEspecial
+      // ✅ Generar token JWT CON contenidoEspecial (ESTRUCTURA CORREGIDA)
       const token = jwt.sign(
         { 
-          clienteId: cliente.id,
+          id: cliente.id, // ✅ CORREGIDO: id en vez de clienteId
           cuil: cliente.cuit_dni,
           nombre: cliente.nombre,
           apellido: cliente.apellido,
-          vendedorId: cliente.vendedor_id,
+          email: cliente.email,
+          telefono: cliente.telefono,
+          vendedor_id: cliente.vendedor_id, // ✅ CORREGIDO: vendedor_id en vez de vendedorId
           isAdmin,
           Distribuidor: cliente.Distribuidor,
-          contenidoEspecial: cliente.contenidoEspecial // ✅ NUEVO CAMPO
+          contenidoEspecial: cliente.contenidoEspecial
         },
         JWT_SECRET,
         { expiresIn: '24h' }
@@ -129,17 +167,19 @@ export async function POST(request: Request) {
       );
     }
 
-    // ✅ Generar token JWT CON DISTRIBUIDOR
+    // ✅ Generar token JWT CON DISTRIBUIDOR (ESTRUCTURA CORREGIDA)
     const token = jwt.sign(
       { 
-        clienteId: cliente.id,
+        id: cliente.id, // ✅ CORREGIDO: id en vez de clienteId
         cuil: cliente.cuit_dni,
         nombre: cliente.nombre,
         apellido: cliente.apellido,
-        vendedorId: cliente.vendedor_id,
+        email: cliente.email,
+        telefono: cliente.telefono,
+        vendedor_id: cliente.vendedor_id, // ✅ CORREGIDO: vendedor_id en vez de vendedorId
         isAdmin,
         Distribuidor: cliente.Distribuidor,
-        contenidoEspecial: cliente.contenidoEspecial // ✅ NUEVO CAMPO
+        contenidoEspecial: cliente.contenidoEspecial
       },
       JWT_SECRET,
       { expiresIn: '24h' }

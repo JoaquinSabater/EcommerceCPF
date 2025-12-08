@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCategorias } from '@/data/data';
 import { db } from '@/data/mysql';
 
+// ✅ OPTIMIZADO: Cache ISR de 30 minutos (productos destacados cambian poco)
+export const revalidate = 1800;
+
 export async function GET(request: NextRequest) {
   try {
     const query = `

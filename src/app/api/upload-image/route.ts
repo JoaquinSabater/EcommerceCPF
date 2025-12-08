@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v2 as cloudinary } from 'cloudinary';
 import { requireAdmin } from '@/lib/auth';
+import { getRateLimiter, RateLimitConfigs } from '@/lib/rate-limit';
 
 // Configurar Cloudinary
 cloudinary.config({
@@ -15,6 +16,27 @@ export async function POST(request: NextRequest) {
   if (authResult instanceof Response) return authResult;
 
   const { user } = authResult;
+
+  // 🔥 CRÍTICO: Rate limiting para uploads (incluso para admins)
+  const ip = request.headers.get('x-forwarded-for') || 
+             request.headers.get('x-real-ip') || 
+             'unknown';
+  
+  const limiter = getRateLimiter();
+  const { allowed } = limiter.check(
+    `upload:${ip}`,
+    RateLimitConfigs.upload.maxRequests,
+    RateLimitConfigs.upload.windowMs,
+    RateLimitConfigs.upload.blockDurationMs
+  );
+
+  if (!allowed) {
+    console.warn(`🚨 UPLOAD BLOQUEADO - Admin: ${user.id} - IP: ${ip}`);
+    return NextResponse.json(
+      { error: RateLimitConfigs.upload.message },
+      { status: 429 }
+    );
+  }
 
   try {
     const data = await request.formData();

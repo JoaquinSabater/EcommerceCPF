@@ -84,16 +84,28 @@ export function useAuth() {
     setLoading(false);
   };
 
-  const setCookies = (userData: User) => {
-    const token = `${userData.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+  const setCookies = (userData: User, jwtToken?: string) => {
     const maxAge = 86400; // 24 horas
     const cookieOptions = `path=/; max-age=${maxAge}; SameSite=Strict; ${
       typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'Secure;' : ''
     }`;
     
     document.cookie = `auth_user=${encodeURIComponent(JSON.stringify(userData))}; ${cookieOptions}`;
-    document.cookie = `auth_token=${token}; ${cookieOptions}`;
+    
+    // ✅ CORREGIDO: Usar el token JWT real si existe, o regenerar basado en localStorage
+    if (jwtToken) {
+      document.cookie = `auth_token=${jwtToken}; ${cookieOptions}`;
+    } else {
+      // Si no hay token (ej: al recargar página), intentar obtenerlo de las cookies existentes
+      const existingToken = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('auth_token='))
+        ?.split('=')[1];
+      
+      if (existingToken) {
+        document.cookie = `auth_token=${existingToken}; ${cookieOptions}`;
+      }
+    }
   };
 
   const clearAuthData = () => {
@@ -119,17 +131,17 @@ export function useAuth() {
     router.push('/');
   };
 
-  const updateUser = (userData: User) => {
+  const updateUser = (userData: User, jwtToken?: string) => {
     setUser(userData);
     localStorage.setItem('user', JSON.stringify(userData));
-    setCookies(userData);
+    setCookies(userData, jwtToken);
     clearProspectoMode();
   };
 
-  const login = (userData: User) => {
+  const login = (userData: User, jwtToken?: string) => {
     setUser(userData);
     localStorage.setItem('user', JSON.stringify(userData));
-    setCookies(userData);
+    setCookies(userData, jwtToken);
     clearProspectoMode();
   };
 

@@ -9,6 +9,7 @@ import QuantityButton from '../QuantityButton';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useProspectoMode } from '@/hooks/useProspectoMode';
+import { useDolar } from '@/contexts/DolarContext';
 
 export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const sidebarRef = useRef<HTMLDivElement>(null);
@@ -16,27 +17,14 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
   const { user, getPrecioConDescuento, isDistribuidor, esCategoriaExcluida } = useAuth(); // ✅ NUEVO: Agregar esCategoriaExcluida
   const { isProspectoMode, isChatbotMode, prospectoData } = useProspectoMode();
   const router = useRouter();
+  const { dolar } = useDolar(); // ✅ Usar contexto compartido
 
-  const [dolar, setDolar] = useState<number>(1);
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
 
   // ✅ Estados para swipe
   const [touchStart, setTouchStart] = useState(0);
   const [touchEnd, setTouchEnd] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
-
-  useEffect(() => {
-    async function fetchDolar() {
-      try {
-        const res = await fetch('/api/dolar');
-        const data = await res.json();
-        setDolar(data.dolar || 1);
-      } catch (e) {
-        setDolar(1);
-      }
-    }
-    fetchDolar();
-  }, []);
 
   // ✅ Obtener advertencias de stock
   const stockValidation = getStockWarnings();

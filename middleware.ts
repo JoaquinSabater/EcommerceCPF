@@ -4,6 +4,40 @@ import type { NextRequest } from 'next/server';
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
+  // 🛡️ PROTECCIÓN ANTI-BOT: Bloquear user-agents sospechosos
+  const userAgent = request.headers.get('user-agent') || '';
+  const suspiciousAgents = [
+    'python-requests',
+    'curl/',
+    'wget/',
+    'scrapy',
+    'bot',
+    'crawler',
+    'spider',
+    'nikto',
+    'sqlmap',
+    'nmap'
+  ];
+  
+  const isSuspicious = suspiciousAgents.some(agent => 
+    userAgent.toLowerCase().includes(agent.toLowerCase())
+  );
+  
+  // Permitir curl/wget solo en desarrollo
+  const isDev = process.env.NODE_ENV === 'development';
+  if (isSuspicious && !isDev && pathname.startsWith('/api/')) {
+    const ip = request.headers.get('x-forwarded-for') || 
+               request.headers.get('x-real-ip') || 
+               'unknown';
+    
+    console.error(`🚨 BOT BLOQUEADO - IP: ${ip} - User-Agent: ${userAgent} - Path: ${pathname}`);
+    
+    return NextResponse.json(
+      { error: 'Forbidden' },
+      { status: 403 }
+    );
+  }
+  
   // 🔓 APIs de autenticación (se llaman ANTES de tener cookies)
   // IMPORTANTE: Estas deben tener rate limiting implementado en la API
   const authAPIs = [
@@ -65,7 +99,15 @@ export function middleware(request: NextRequest) {
 
     // ✅ Permitir si tiene autenticación válida
     if (hasUserAuth || hasProspectoAuth) {
-      return NextResponse.next();
+      const response = NextResponse.next();
+      
+      // 🔒 Agregar headers de seguridad
+      response.headers.set('X-Content-Type-Options', 'nosniff');
+      response.headers.set('X-Frame-Options', 'DENY');
+      response.headers.set('X-XSS-Protection', '1; mode=block');
+      response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+      
+      return response;
     }
 
     // 🚨 NO AUTENTICADO - BLOQUEAR ACCESO
@@ -107,12 +149,15 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Match all request paths except:
-     * - api routes
+     * ✅ OPTIMIZADO: Match all request paths except:
      * - _next/static (static files)
      * - _next/image (image optimization)
-     * - favicon.ico
+     * - favicon.ico, *.png, *.jpg, *.jpeg, *.svg, *.webp (imágenes)
+     * - *.woff, *.woff2, *.ttf (fuentes)
+     * - *.css, *.js (assets compilados)
+     * 
+     * Esto reduce latencia en cada request y ahorra Edge Requests
      */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.png|.*\\.jpg|.*\\.jpeg|.*\\.svg|.*\\.webp|.*\\.woff|.*\\.woff2|.*\\.ttf|.*\\.ico).*)',
   ],
 };

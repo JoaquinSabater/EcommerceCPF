@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/data/mysql';
 import jwt from 'jsonwebtoken';
+import { getRateLimiter, RateLimitConfigs } from '@/lib/rate-limit';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'tu-secret-key';
 
@@ -23,6 +24,27 @@ async function verificarContenidoEspecial(request: NextRequest): Promise<boolean
 }
 
 export async function GET(request: NextRequest) {
+  // 🔥 CRÍTICO: Rate limiting para prevenir DoS por búsquedas masivas
+  const ip = request.headers.get('x-forwarded-for') || 
+             request.headers.get('x-real-ip') || 
+             'unknown';
+  
+  const limiter = getRateLimiter();
+  const { allowed, remaining } = limiter.check(
+    `search:${ip}`,
+    RateLimitConfigs.search.maxRequests,
+    RateLimitConfigs.search.windowMs,
+    RateLimitConfigs.search.blockDurationMs
+  );
+
+  if (!allowed) {
+    console.warn(`🚨 BÚSQUEDA BLOQUEADA - IP: ${ip}`);
+    return NextResponse.json(
+      { error: RateLimitConfigs.search.message, results: [] },
+      { status: 429 }
+    );
+  }
+
   try {
     const url = new URL(request.url);
     const query = url.searchParams.get('q');

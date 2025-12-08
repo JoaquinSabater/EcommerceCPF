@@ -89,6 +89,10 @@ export default function SearchResults({
                     width={48}
                     height={48}
                     className="w-full h-full object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                    quality="auto:eco" // ✅ OPTIMIZADO
+                    format="auto" // ✅ OPTIMIZADO
+                    loading="lazy" // ✅ OPTIMIZADO
+                    sizes="48px" // ✅ OPTIMIZADO: Tamaño fijo pequeño
                     onClick={(e) => handleItemClick(result, e)}
                   />
                 ) : (

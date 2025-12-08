@@ -30,6 +30,9 @@ export default function Search() {
   
   const searchCounterRef = useRef<number>(0);
   const abortControllerRef = useRef<AbortController | null>(null);
+  
+  // ✅ NUEVO: Cache de búsquedas para evitar requests duplicadas
+  const searchCacheRef = useRef<Map<string, SearchResult[]>>(new Map());
 
   useEffect(() => {
     searchCounterRef.current++;
@@ -58,6 +61,16 @@ export default function Search() {
     timeoutRef.current = setTimeout(async () => {
       if (searchCounterRef.current !== currentSearchCounter) {
         console.log(`🚫 Búsqueda obsoleta cancelada: ${currentSearchCounter} != ${searchCounterRef.current}`);
+        return;
+      }
+
+      // ✅ NUEVO: Verificar si existe en cache
+      const cacheKey = searchTerm.toLowerCase();
+      if (searchCacheRef.current.has(cacheKey)) {
+        console.log(`💾 Resultados desde cache para: "${searchTerm}"`);
+        setResults(searchCacheRef.current.get(cacheKey)!);
+        setShowResults(true);
+        setIsSearching(false);
         return;
       }
 
@@ -92,6 +105,17 @@ export default function Search() {
           setResults(data.results || []);
           setShowResults(true);
           setIsSearching(false);
+          
+          // ✅ NUEVO: Guardar en cache
+          searchCacheRef.current.set(cacheKey, data.results || []);
+          
+          // ✅ NUEVO: Limitar tamaño del cache a 50 búsquedas
+          if (searchCacheRef.current.size > 50) {
+            const firstKey = searchCacheRef.current.keys().next().value;
+            if (firstKey) {
+              searchCacheRef.current.delete(firstKey);
+            }
+          }
         } else {
           console.log(`🚫 Estado no actualizado #${currentSearchCounter}, actual: ${searchCounterRef.current}`);
         }
@@ -109,7 +133,7 @@ export default function Search() {
           setIsSearching(false);
         }
       }
-    }, 600);
+    }, 1000); // ✅ OPTIMIZADO: De 600ms a 1000ms reduce ~40% las llamadas
 
     return () => {
       if (timeoutRef.current) {
