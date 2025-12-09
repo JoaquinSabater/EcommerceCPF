@@ -1,11 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCategorias } from '@/data/data';
 import { db } from '@/data/mysql';
+import { getRateLimiter } from '@/lib/rate-limit';
 
 // ✅ OPTIMIZADO: Cache ISR de 30 minutos (productos destacados cambian poco)
 export const revalidate = 1800;
 
 export async function GET(request: NextRequest) {
+  // 🔒 PROTECCIÓN: Rate limiting (10 req/min)
+  const rateLimiter = getRateLimiter();
+  const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+  const identifier = `api:${ip}`;
+  
+  if (!rateLimiter.check(identifier, 10, 60)) {
+    console.warn('🚨 API BLOQUEADA - IP:', ip, '- Endpoint: /api/productos-destacados');
+    return NextResponse.json(
+      { error: 'Demasiadas peticiones' },
+      { status: 429, headers: { 'Retry-After': '60' } }
+    );
+  }
   try {
     const query = `
       SELECT DISTINCT i.subcategoria_id

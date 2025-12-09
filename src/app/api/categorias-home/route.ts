@@ -10,11 +10,25 @@ const dbConfig = {
   ssl: { rejectUnauthorized: false }
 };
 
+import { getRateLimiter } from '@/lib/rate-limit';
+
 // ✅ OPTIMIZADO: Cache ISR de 1 hora (categorías cambian poco)
 export const revalidate = 3600;
 
 // GET - Obtener categorías activas
-export async function GET() {
+export async function GET(request: NextRequest) {
+  // 🔒 PROTECCIÓN: Rate limiting (10 req/min)
+  const rateLimiter = getRateLimiter();
+  const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+  const identifier = `api:${ip}`;
+  
+  if (!rateLimiter.check(identifier, 10, 60)) {
+    console.warn('🚨 API BLOQUEADA - IP:', ip, '- Endpoint: /api/categorias-home');
+    return NextResponse.json(
+      { error: 'Demasiadas peticiones' },
+      { status: 429, headers: { 'Retry-After': '60' } }
+    );
+  }
   try {
     const connection = await mysql.createConnection(dbConfig);
     

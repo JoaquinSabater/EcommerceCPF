@@ -1,7 +1,20 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/data/mysql';
+import { getRateLimiter } from '@/lib/rate-limit';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  // 🔒 PROTECCIÓN: Rate limiting (15 req/min)
+  const rateLimiter = getRateLimiter();
+  const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+  const identifier = `api:${ip}`;
+  
+  if (!rateLimiter.check(identifier, 15, 60)) {
+    console.warn('🚨 API BLOQUEADA - IP:', ip, '- Endpoint: /api/filtros/marcas');
+    return NextResponse.json(
+      { error: 'Demasiadas peticiones' },
+      { status: 429, headers: { 'Retry-After': '60' } }
+    );
+  }
   try {
     // ✅ OPTIMIZADO: Consulta simple sin cálculos de stock
     const [rows]: any = await db.query(`

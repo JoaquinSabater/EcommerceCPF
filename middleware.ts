@@ -83,11 +83,11 @@ export function middleware(request: NextRequest) {
     // 🔓 Permitir APIs de autenticación (se ejecutan ANTES de login)
     const isAuthAPI = authAPIs.some(path => pathname.startsWith(path));
     if (isAuthAPI) {
-      // ⚠️ Rate limiting debería estar implementado en estas APIs
+      // ⚠️ Rate limiting implementado en estas APIs
       return NextResponse.next();
     }
 
-    // 🔐 Verificar autenticación de USUARIO
+    // 🔐 Verificar autenticación de USUARIO (OBLIGATORIO PARA TODAS LAS DEMÁS APIs)
     const userCookie = request.cookies.get('auth_user');
     const tokenCookie = request.cookies.get('auth_token');
     const hasUserAuth = userCookie && tokenCookie;
@@ -110,7 +110,7 @@ export function middleware(request: NextRequest) {
       return response;
     }
 
-    // 🚨 NO AUTENTICADO - BLOQUEAR ACCESO
+    // 🚨 NO AUTENTICADO - BLOQUEAR COMPLETAMENTE (404 para ocultar existencia)
     console.warn('🚨 INTENTO DE ACCESO NO AUTORIZADO A API:', {
       path: pathname,
       method: request.method,
@@ -118,12 +118,13 @@ export function middleware(request: NextRequest) {
       userAgent: request.headers.get('user-agent')
     });
 
+    // 🔒 SEGURIDAD: Retornar 404 en lugar de 401 para ocultar la API
     return NextResponse.json(
       { 
-        error: 'No autorizado',
-        message: 'Se requiere autenticación para acceder a este recurso'
+        error: 'Not Found',
+        message: 'La ruta solicitada no existe'
       },
-      { status: 401 }
+      { status: 404 }
     );
   }
   

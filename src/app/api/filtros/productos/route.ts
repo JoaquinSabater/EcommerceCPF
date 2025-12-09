@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/data/mysql';
+import { getRateLimiter } from '@/lib/rate-limit';
 
 // ✅ NUEVA FUNCIÓN: Verificar si el usuario tiene contenido especial
 async function verificarContenidoEspecial(request: NextRequest): Promise<boolean> {
@@ -19,6 +20,18 @@ async function verificarContenidoEspecial(request: NextRequest): Promise<boolean
 }
 
 export async function GET(request: NextRequest) {
+  // 🔒 PROTECCIÓN: Rate limiting (15 req/min)
+  const rateLimiter = getRateLimiter();
+  const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+  const identifier = `api:${ip}`;
+  
+  if (!rateLimiter.check(identifier, 15, 60)) {
+    console.warn('🚨 API BLOQUEADA - IP:', ip, '- Endpoint: /api/filtros/productos');
+    return NextResponse.json(
+      { error: 'Demasiadas peticiones' },
+      { status: 429, headers: { 'Retry-After': '60' } }
+    );
+  }
   try {
     const url = new URL(request.url);
     const marcaIds = url.searchParams.get('marcas');
