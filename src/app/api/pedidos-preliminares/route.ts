@@ -52,11 +52,26 @@ export async function POST(request: NextRequest) {
       message: 'Pedido preliminar creado exitosamente' 
     });
 
-  } catch (error) {
-    console.error('Error creating pedido preliminar:', error);
-    return NextResponse.json(
-      { error: 'Error al crear el pedido preliminar' },
-      { status: 500 }
-    );
+} catch (error) {
+  console.error('❌ Error creating pedido preliminar:', error);
+  
+  let errorMessage = 'Error al crear el pedido preliminar';
+  
+  if (error instanceof Error) {
+    if (error.message.includes('timeout')) {
+      errorMessage = 'Tiempo de espera agotado. El servidor está saturado.';
+    } else if (error.message.includes('Too many connections')) {
+      errorMessage = 'Base de datos saturada. Intenta en unos minutos.';
+    } else if (error.message.includes('Cliente no encontrado')) {
+      errorMessage = 'Tu cuenta no fue encontrada. Contacta al administrador.';
+    } else if (error.message.includes('no encontrado')) {
+      errorMessage = 'Algunos productos ya no están disponibles.';
+    }
   }
+  
+  return NextResponse.json(
+    { error: errorMessage },
+    { status: 500 }
+  );
+}
 }

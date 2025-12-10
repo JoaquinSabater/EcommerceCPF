@@ -38,31 +38,19 @@ export function middleware(request: NextRequest) {
     );
   }
   
-  // 🔓 APIs de autenticación (se llaman ANTES de tener cookies)
-  // IMPORTANTE: Estas deben tener rate limiting implementado en la API
+
   const authAPIs = [
     '/api/auth/login',
     '/api/auth/forgot-password',
     '/api/auth/reset-password', 
     '/api/auth/set-password',
+    '/api/detalle',
   ];
   
-  // 🔐 APIs QUE REQUIEREN TOKEN DE PROSPECTO VÁLIDO
   const prospectoAPIs = [
     '/api/prospectos/validate-token',
   ];
 
-  // 🛡️ TODAS LAS DEMÁS APIs REQUIEREN AUTENTICACIÓN
-  // Esto incluye:
-  // - /api/pedidos-preliminares (requiere auth de usuario)
-  // - /api/actualizar (requiere admin)
-  // - /api/upload-image (requiere admin)
-  // - /api/recomendaciones POST (requiere admin)
-  // - /api/admin/* (requiere admin)
-  // - /api/prospecto-to-cliente (requiere admin)
-  // - /api/chat (BLOQUEADA)
-  
-  // Rutas estáticas permitidas
   const staticPaths = [
     '/_next',
     '/favicon.ico',
@@ -73,17 +61,13 @@ export function middleware(request: NextRequest) {
     '/auth/reset-password'
   ];
   
-  // Permitir rutas estáticas
   if (staticPaths.some(path => pathname.startsWith(path))) {
     return NextResponse.next();
   }
 
-  // 🔒 Verificar si es una API
   if (pathname.startsWith('/api/')) {
-    // 🔓 Permitir APIs de autenticación (se ejecutan ANTES de login)
     const isAuthAPI = authAPIs.some(path => pathname.startsWith(path));
     if (isAuthAPI) {
-      // ⚠️ Rate limiting implementado en estas APIs
       return NextResponse.next();
     }
 

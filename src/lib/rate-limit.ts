@@ -1,6 +1,3 @@
-// Rate limiter simple en memoria para VPS
-// No requiere Redis - funciona con Map de Node.js
-
 interface RateLimitEntry {
   count: number;
   resetAt: number;
