@@ -180,7 +180,6 @@ export default function ModelosRecomendados({
           })}
         </div>
 
-        {/* Panel de edición para admin */}
         {isEditingRecomendados && (
           <div className="mt-4 pt-4 border-t border-gray-200">
             <div className="flex items-center justify-between mb-3">

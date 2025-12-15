@@ -85,7 +85,7 @@ export function useAuth() {
   };
 
   const setCookies = (userData: User, jwtToken?: string) => {
-    const maxAge = 86400; // 24 horas
+    const maxAge = 2592000; // 30 días (30 * 24 * 60 * 60)
     const cookieOptions = `path=/; max-age=${maxAge}; SameSite=Strict; ${
       typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'Secure;' : ''
     }`;

@@ -71,21 +71,17 @@ export function middleware(request: NextRequest) {
       return NextResponse.next();
     }
 
-    // 🔐 Verificar autenticación de USUARIO (OBLIGATORIO PARA TODAS LAS DEMÁS APIs)
     const userCookie = request.cookies.get('auth_user');
     const tokenCookie = request.cookies.get('auth_token');
     const hasUserAuth = userCookie && tokenCookie;
 
-    // 🔐 Verificar token de PROSPECTO (solo para APIs específicas)
     const isProspectoAPI = prospectoAPIs.some(path => pathname.startsWith(path));
     const prospectoToken = request.cookies.get('prospecto_token');
     const hasProspectoAuth = isProspectoAPI && prospectoToken;
 
-    // ✅ Permitir si tiene autenticación válida
     if (hasUserAuth || hasProspectoAuth) {
       const response = NextResponse.next();
       
-      // 🔒 Agregar headers de seguridad
       response.headers.set('X-Content-Type-Options', 'nosniff');
       response.headers.set('X-Frame-Options', 'DENY');
       response.headers.set('X-XSS-Protection', '1; mode=block');
@@ -94,7 +90,6 @@ export function middleware(request: NextRequest) {
       return response;
     }
 
-    // 🚨 NO AUTENTICADO - BLOQUEAR COMPLETAMENTE (404 para ocultar existencia)
     console.warn('🚨 INTENTO DE ACCESO NO AUTORIZADO A API:', {
       path: pathname,
       method: request.method,
@@ -102,7 +97,6 @@ export function middleware(request: NextRequest) {
       userAgent: request.headers.get('user-agent')
     });
 
-    // 🔒 SEGURIDAD: Retornar 404 en lugar de 401 para ocultar la API
     return NextResponse.json(
       { 
         error: 'Not Found',

@@ -128,7 +128,7 @@ export async function POST(request: Request) {
           contenidoEspecial: cliente.contenidoEspecial
         },
         JWT_SECRET,
-        { expiresIn: '24h' }
+        { expiresIn: '30d' }
       );
 
       return NextResponse.json({
@@ -182,7 +182,7 @@ export async function POST(request: Request) {
         contenidoEspecial: cliente.contenidoEspecial
       },
       JWT_SECRET,
-      { expiresIn: '24h' }
+      { expiresIn: '30d' }
     );
 
     return NextResponse.json({
