@@ -9,6 +9,7 @@ interface ItemAdmin {
   nombre: string;
   subcategoria_id: number;
   disponible: boolean | null;
+  contenido_especial: boolean | null;
   subcategoria_nombre?: string;
   total_articulos?: number;
 }
@@ -133,6 +134,40 @@ const loadItems = async () => {
     } catch (error) {
       console.error('Error actualizando item:', error);
       alert('Error al actualizar el item');
+    }
+  };
+
+  const handleToggleContenidoEspecial = async (itemId: number, currentValue: boolean | null) => {
+    try {
+      const newValue = !currentValue;
+
+      const response = await fetch('/api/admin/items/toggle-contenido', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          itemId,
+          contenidoEspecial: newValue
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setItems(prevItems => 
+          prevItems.map(item => 
+            item.id === itemId 
+              ? { ...item, contenido_especial: newValue }
+              : item
+          )
+        );
+      } else {
+        alert('Error al actualizar contenido especial');
+      }
+    } catch (error) {
+      console.error('Error actualizando contenido especial:', error);
+      alert('Error al actualizar contenido especial');
     }
   };
 
@@ -277,6 +312,9 @@ const loadItems = async () => {
                   Estado
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Contenido Especial
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Acciones
                 </th>
               </tr>
@@ -284,7 +322,7 @@ const loadItems = async () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {loadingItems ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center">
+                  <td colSpan={6} className="px-6 py-12 text-center">
                     <div className="flex items-center justify-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
                       <span className="ml-2 text-gray-600">Cargando items...</span>
@@ -293,7 +331,7 @@ const loadItems = async () => {
                 </tr>
               ) : filteredItems.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
                     No se encontraron items con los filtros aplicados
                   </td>
                 </tr>
@@ -322,6 +360,23 @@ const loadItems = async () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getDisponibleBadge(item.disponible)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <button
+                        onClick={() => handleToggleContenidoEspecial(item.id, item.contenido_especial)}
+                        className={`px-3 py-1 rounded-md text-xs font-medium transition-all hover:scale-105 ${
+                          item.contenido_especial
+                            ? 'bg-purple-500 hover:bg-purple-600 text-white'
+                            : 'bg-gray-300 hover:bg-gray-400 text-gray-700'
+                        }`}
+                        title={
+                          item.contenido_especial
+                            ? 'Es contenido especial (📱 Celulares)'
+                            : 'No es contenido especial'
+                        }
+                      >
+                        {item.contenido_especial ? '📱 Especial' : 'Normal'}
+                      </button>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getToggleButton(item)}

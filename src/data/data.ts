@@ -44,6 +44,7 @@ export interface ItemAdmin {
   nombre: string;
   subcategoria_id: number;
   disponible: boolean | null;
+  contenido_especial: boolean | null;
   subcategoria_nombre?: string;
   total_articulos?: number;
 }
@@ -59,12 +60,14 @@ export async function getAllItems(): Promise<ItemAdmin[]> {
         i.nombre,
         i.subcategoria_id,
         i.disponible,
+        COALESCE(id.contenido_especial, 0) AS contenido_especial,
         s.nombre AS subcategoria_nombre,
         COUNT(a.codigo_interno) AS total_articulos
       FROM items i
       LEFT JOIN subcategorias s ON i.subcategoria_id = s.id
       LEFT JOIN articulos a ON i.id = a.item_id
-      GROUP BY i.id, i.nombre, i.subcategoria_id, i.disponible, s.nombre
+      LEFT JOIN item_detalle id ON i.id = id.item_id
+      GROUP BY i.id, i.nombre, i.subcategoria_id, i.disponible, id.contenido_especial, s.nombre
       ORDER BY s.nombre ASC, i.nombre ASC
     `;
 
@@ -74,7 +77,9 @@ export async function getAllItems(): Promise<ItemAdmin[]> {
     const items = rows.map(row => ({
       ...row,
       // Convertir disponible: 1 -> true, 0 -> false, null -> false
-      disponible: row.disponible === 1 ? true : row.disponible === 0 ? false : false
+      disponible: row.disponible === 1 ? true : row.disponible === 0 ? false : false,
+      // Convertir contenido_especial: 1 -> true, 0 -> false
+      contenido_especial: row.contenido_especial === 1 ? true : false
     })) as ItemAdmin[];
 
     // console.log('📊 Items cargados desde BD:', items.length);
@@ -110,6 +115,28 @@ export async function updateItemDisponible(itemId: number, disponible: boolean |
     // console.log('📊 Resultado de la actualización:', result);
   } catch (error) {
     console.error('Error en updateItemDisponible:', error);
+    throw error;
+  } finally {
+    if (connection) {
+      connection.release();
+    }
+  }
+}
+
+export async function updateItemContenidoEspecial(itemId: number, contenidoEspecial: boolean): Promise<void> {
+  let connection;
+  try {
+    connection = await db.getConnection();
+    
+    const mysqlValue = contenidoEspecial ? 1 : 0;
+    
+    await connection.query(
+      'UPDATE item_detalle SET contenido_especial = ? WHERE item_id = ?',
+      [mysqlValue, itemId]
+    );
+    
+  } catch (error) {
+    console.error('Error en updateItemContenidoEspecial:', error);
     throw error;
   } finally {
     if (connection) {

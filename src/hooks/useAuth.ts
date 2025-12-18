@@ -188,7 +188,7 @@ export function useAuth() {
     isAuthenticated: !!user,
     isAdmin: user?.isAdmin || user?.id === 2223,
     getPrecioConDescuento,
-    esCategoriaExcluida, // ✅ NUEVA FUNCIÓN EXPORTADA
+    esCategoriaExcluida,
     isDistribuidor,
     checkAuth,
     tieneContenidoEspecial 

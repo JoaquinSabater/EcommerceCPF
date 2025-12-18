@@ -29,7 +29,7 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
   const [descripcion, setDescripcion] = useState<string>('');
 
   const { getPrecioConDescuento, isDistribuidor, esCategoriaExcluida } = useAuth();
-  const { dolar } = useDolar(); // ✅ Usar contexto compartido
+  const { dolar } = useDolar(); 
   const router = useRouter();
 
   // ✅ CORREGIDO: Usar subcategoria_id en lugar de id

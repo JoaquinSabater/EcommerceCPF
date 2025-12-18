@@ -30,6 +30,7 @@ export default function NavBar() {
   // ✅ MENÚ DINÁMICO: Incluir "Otros" solo si tiene contenido especial
   const menu = [
     { title: 'Cables', path: '/public/cables' },
+    { title: 'Cargadores', path: '/public/cargadores' },
     { title: 'Vidrios', path: '/public/vidrios' },
     {
       title: 'Fundas',
