@@ -7,7 +7,12 @@ const JWT_SECRET = process.env.JWT_SECRET || 'tu-secret-key';
 
 async function verificarContenidoEspecial(request: NextRequest): Promise<boolean> {
   try {
-    const authToken = request.cookies.get('auth_token')?.value;
+    const prospectoToken = request.cookies.get('prospecto_token')?.value;
+    if (prospectoToken) {
+      console.log('🚫 Prospecto detectado - Contenido especial BLOQUEADO');
+      return false;
+    }
+    
     const authUser = request.cookies.get('auth_user')?.value;
     
     if (!authUser) {
@@ -15,7 +20,9 @@ async function verificarContenidoEspecial(request: NextRequest): Promise<boolean
     }
     
     const userData = JSON.parse(decodeURIComponent(authUser));
-    return userData.contenidoEspecial === 1;
+    const tieneAcceso = userData.contenidoEspecial === 1;
+    console.log(`🔒 Usuario autenticado - Contenido especial: ${tieneAcceso ? 'PERMITIDO' : 'BLOQUEADO'}`);
+    return tieneAcceso;
     
   } catch (error) {
     console.error('Error verificando contenido especial:', error);
