@@ -27,12 +27,27 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // ✅ Determinar si el usuario tiene contenido especial
+    const authUserCookie = request.cookies.get('auth_user');
+    const prospectoTokenCookie = request.cookies.get('prospecto_token');
+    
+    let tieneContenidoEspecial = false;
+    
+    if (authUserCookie && !prospectoTokenCookie) {
+      try {
+        const userData = JSON.parse(decodeURIComponent(authUserCookie.value));
+        tieneContenidoEspecial = userData.contenidoEspecial === 1;
+      } catch (error) {
+        console.error('❌ Error parseando auth_user:', error);
+      }
+    }
+
     let categorias;
     
     if (marcaId) {
-      categorias = await getCategoriasPorMarca(parseInt(subcategoriaId), parseInt(marcaId));
+      categorias = await getCategoriasPorMarca(parseInt(subcategoriaId), parseInt(marcaId), tieneContenidoEspecial);
     } else {
-      categorias = await getCategorias(parseInt(subcategoriaId));
+      categorias = await getCategorias(parseInt(subcategoriaId), tieneContenidoEspecial);
     }
     
     return NextResponse.json({

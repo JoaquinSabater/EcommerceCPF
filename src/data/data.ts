@@ -212,20 +212,27 @@ export async function getArticulosDePedido(pedidoId: number): Promise<ArticuloPe
   return rows as ArticuloPedido[];
 }
 
-export async function getCategorias(subcategoriaId: number): Promise<categorias[]> {
+export async function getCategorias(subcategoriaId: number, mostrarContenidoEspecial: boolean = false): Promise<categorias[]> {
   let connection;
   try {
     connection = await db.getConnection();
+    
+    // ✅ FILTRADO POR CONTENIDO ESPECIAL:
+    // - Si mostrarContenidoEspecial = true: Muestra TODO (normales + especiales)
+    // - Si mostrarContenidoEspecial = false: Solo muestra contenido_especial = 0 (normales)
+    const mostrarEspecial = mostrarContenidoEspecial ? 1 : 0;
     
     const [rows] = await connection.query(
       `SELECT DISTINCT i.* 
        FROM items i
        INNER JOIN articulos a ON i.id = a.item_id
+       LEFT JOIN item_detalle id ON i.id = id.item_id
        WHERE i.subcategoria_id = ? 
          AND i.disponible = 1 
          AND (calcular_stock_fisico(a.codigo_interno) - calcular_stock_comprometido(a.codigo_interno)) > 0
+         AND (? = 1 OR COALESCE(id.contenido_especial, 0) = 0)
        ORDER BY i.nombre ASC`,
-      [subcategoriaId]
+      [subcategoriaId, mostrarEspecial]
     );
     
     return rows as categorias[];
@@ -410,23 +417,28 @@ export async function getMarcasConStock(subcategoriaId: number): Promise<{id: nu
   }
 }
 
-export async function getCategoriasPorMarca(subcategoriaId: number, marcaId: number): Promise<categorias[]> {
+export async function getCategoriasPorMarca(subcategoriaId: number, marcaId: number, mostrarContenidoEspecial: boolean = false): Promise<categorias[]> {
   let connection;
   try {
     connection = await db.getConnection();
+    
+    // ✅ FILTRADO POR CONTENIDO ESPECIAL (igual que getCategorias)
+    const mostrarEspecial = mostrarContenidoEspecial ? 1 : 0;
     
     const [rows] = await connection.query(
       `SELECT DISTINCT i.* 
        FROM items i
        INNER JOIN articulos a ON i.id = a.item_id
        INNER JOIN marcas m ON a.marca_id = m.id
+       LEFT JOIN item_detalle id ON i.id = id.item_id
        WHERE i.subcategoria_id = ? 
          AND m.id = ?
          AND i.disponible = 1 
          AND a.ubicacion <> 'SIN STOCK'
          AND (calcular_stock_fisico(a.codigo_interno) - calcular_stock_comprometido(a.codigo_interno)) > 0
+         AND (? = 1 OR COALESCE(id.contenido_especial, 0) = 0)
        ORDER BY i.nombre ASC`,
-      [subcategoriaId, marcaId]
+      [subcategoriaId, marcaId, mostrarEspecial]
     );
     
     return rows as categorias[];

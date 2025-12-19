@@ -3,6 +3,7 @@ import CollectionsDropdown from "@/components/Filters/CollectionsDropdown";
 import { getCategorias } from "@/data/data";
 import CategoriaCard from "@/components/Products/CategoriaCard";
 import CategoriaCardSkeleton from "@/components/Skeletons/CategoriaCardSkeleton";
+import { cookies } from 'next/headers';
 export const dynamic = 'force-dynamic';
 
 export default async function earbuds() {
@@ -10,9 +11,26 @@ export default async function earbuds() {
     23   
   ];
   
+  // ✅ Por defecto false (prospecto/cliente normal)
+  let tieneContenidoEspecial = false;
+  
+  try {
+    const cookieStore = await cookies();
+    const authUserCookie = cookieStore.get('auth_user');
+    const prospectoTokenCookie = cookieStore.get('prospecto_token');
+    
+    // Solo true si NO es prospecto Y tiene contenidoEspecial = 1
+    if (authUserCookie && !prospectoTokenCookie) {
+      const userData = JSON.parse(decodeURIComponent(authUserCookie.value));
+      tieneContenidoEspecial = userData.contenidoEspecial === 1;
+    }
+  } catch (error) {
+    console.error('❌ Error leyendo cookies:', error);
+  }
+  
   try {
     const promesasCategorias = subcategoriasEarbuds.map(subcategoriaId => 
-      getCategorias(subcategoriaId)
+      getCategorias(subcategoriaId, tieneContenidoEspecial)
     );
     
     const resultadosCategorias = await Promise.all(promesasCategorias);
