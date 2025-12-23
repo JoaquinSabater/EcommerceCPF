@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import Image from 'next/image';
-import { CldImage } from 'next-cloudinary'; // ✅ NUEVO: Importar CldImage
+import { CldImage } from 'next-cloudinary'; 
 import { useCart } from '@/components/CartContext';
 import QuantityButton from '../QuantityButton';
 import { useRouter } from 'next/navigation';
@@ -200,10 +200,11 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
 
   return (
     <>
-      {/* ✅ Overlay con backdrop blur */}
+      {/* ✅ Overlay */}
       {isOpen && (
         <div 
-          className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm transition-opacity duration-300"
+          className="fixed inset-0 z-40"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.2)' }}
           onClick={onClose}
         />
       )}
@@ -211,50 +212,53 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
       {/* ✅ Panel del carrito CON SWIPE */}
       <div
         ref={sidebarRef}
-        className={`fixed top-0 right-0 z-50 h-full w-96 max-w-full bg-white text-black shadow-2xl transition-transform duration-300 ${
-          isOpen ? 'translate-x-0' : 'translate-x-full'
-        }`}
+        className="fixed top-0 right-0 z-50 h-full w-96 max-w-full bg-white text-black"
+        style={{
+          transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
+          transition: 'transform 0.3s',
+          boxShadow: '0 0 20px rgba(0,0,0,0.3)'
+        }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
         {/* ✅ HEADER CON BADGES */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-orange-50 to-orange-100">
-          <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+        <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: '#e5e7eb', background: 'linear-gradient(to right, #fff7ed, #ffedd5)' }}>
+          <h2 className="text-lg font-bold flex items-center gap-2" style={{ color: '#1f2937' }}>
             🛒 Mi carrito
             {isDistribuidor() && (
-              <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+              <span className="text-xs px-2 py-1 rounded-full" style={{ backgroundColor: '#dcfce7', color: '#166534' }}>
                 20% OFF
               </span>
             )}
-            <span className="text-xs text-gray-500 ml-2">Desliza para cerrar →</span>
+            <span className="text-xs ml-2" style={{ color: '#6b7280' }}>Desliza para cerrar →</span>
           </h2>
           <button 
             onClick={onClose}
-            className="p-1 hover:bg-white rounded-full transition-colors"
+            className="p-1 rounded-full"
           >
-            <XMarkIcon className="h-5 w-5 text-gray-600" />
+            <XMarkIcon className="h-5 w-5" style={{ color: '#4b5563' }} />
           </button>
         </div>
 
         {/* ✅ Advertencias de stock */}
         {stockValidation.hasWarnings && (
-          <div className="p-3 bg-red-50 border-b border-red-200">
-            <div className="text-red-800 text-sm font-medium mb-1">⚠️ Problemas de stock:</div>
+          <div className="p-3 border-b" style={{ backgroundColor: '#fef2f2', borderColor: '#fecaca' }}>
+            <div className="text-sm font-medium mb-1" style={{ color: '#991b1b' }}>⚠️ Problemas de stock:</div>
             {stockValidation.warnings.map((warning, index) => (
-              <div key={index} className="text-red-700 text-xs">{warning}</div>
+              <div key={index} className="text-xs" style={{ color: '#b91c1c' }}>{warning}</div>
             ))}
           </div>
         )}
 
         {cart.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full space-y-6 p-8">
-            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center">
+            <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ backgroundColor: '#f3f4f6' }}>
               <Image src="/cart.svg" width={40} height={40} alt="Empty cart" className="opacity-50" />
             </div>
             <div className="text-center">
-              <p className="text-lg font-semibold text-gray-700 mb-1">Tu carrito está vacío</p>
-              <p className="text-sm text-gray-500">Agrega algunos productos para comenzar</p>
+              <p className="text-lg font-semibold mb-1" style={{ color: '#374151' }}>Tu carrito está vacío</p>
+              <p className="text-sm" style={{ color: '#6b7280' }}>Agrega algunos productos para comenzar</p>
             </div>
           </div>
         ) : (
@@ -266,21 +270,21 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
                   const precioConDescuento = calcularPrecioFinal(item);
                   const precioFinalPesos = Math.round(precioConDescuento * dolar);
                   const stockDisponible = Number(item.stock_real || 0);
-                  const stockColor = item.cantidad > stockDisponible ? 'text-red-600' : 
-                                   stockDisponible > 10 ? 'text-green-600' : 'text-yellow-600';
+                  const stockColor = item.cantidad > stockDisponible ? '#dc2626' : 
+                                   stockDisponible > 10 ? '#16a34a' : '#ca8a04';
                   
                   // ✅ NUEVO: Verificar si el item está excluido del descuento
                   const itemExcluido = item.item_id ? esCategoriaExcluida(item.item_id) : false;
                   const hayDescuentoAplicado = isDistribuidor() && !itemExcluido && (precioConDescuento < item.precio_venta);
                   
                   return (
-                    <li key={item.codigo_interno} className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
+                    <li key={item.codigo_interno} className="bg-white border rounded p-3" style={{ borderColor: '#e5e7eb' }}>
                       {/* ✅ MODIFICADO: Layout reorganizado */}
                       <div className="flex flex-col gap-3">
                         {/* ✅ Fila superior: Imagen + Info + QuantityButton */}
                         <div className="flex items-start justify-between gap-3">
                           {/* ✅ Imagen del producto */}
-                          <div className="flex-shrink-0 w-16 h-16 bg-gray-100 rounded-lg overflow-hidden">
+                          <div className="flex-shrink-0 w-16 h-16 rounded overflow-hidden" style={{ backgroundColor: '#f3f4f6' }}>
                             {item.foto_portada || item.foto1_url ? (
                               <CldImage
                                 src={item.foto_portada || item.foto1_url || ''}
@@ -313,21 +317,21 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
                           
                           {/* ✅ Info del producto (sin descripción) */}
                           <div className="flex-1 min-w-0">
-                            <div className="font-semibold text-gray-900 text-sm leading-tight mb-1">{item.modelo}</div>
+                            <div className="font-semibold text-sm leading-tight mb-1" style={{ color: '#111827' }}>{item.modelo}</div>
                             <div className="flex items-center gap-2">
-                              <span className="text-orange-600 font-bold text-sm">
+                              <span className="font-bold text-sm" style={{ color: '#ea580c' }}>
                                 ${precioFinalPesos.toLocaleString()}
                               </span>
-                              <span className="text-xs text-gray-500">c/u</span>
+                              <span className="text-xs" style={{ color: '#6b7280' }}>c/u</span>
                               {/* ✅ Mostrar descuento solo si aplica */}
                               {hayDescuentoAplicado && (
-                                <span className="text-xs bg-green-100 text-green-800 px-1 py-0.5 rounded">
+                                <span className="text-xs px-1 py-0.5 rounded" style={{ backgroundColor: '#dcfce7', color: '#166534' }}>
                                   -20%
                                 </span>
                               )}
                               {/* ✅ Mostrar badge para items excluidos */}
                               {itemExcluido && isDistribuidor() && (
-                                <span className="text-xs bg-orange-100 text-orange-800 px-1 py-0.5 rounded">
+                                <span className="text-xs px-1 py-0.5 rounded" style={{ backgroundColor: '#ffedd5', color: '#9a3412' }}>
                                   📱 Sin desc.
                                 </span>
                               )}
@@ -350,14 +354,14 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
                         </div>
                         
                         {/* ✅ NUEVO: Descripción del producto DEBAJO del QuantityButton */}
-                        <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
+                        <div className="text-xs p-2 rounded" style={{ color: '#6b7280', backgroundColor: '#f9fafb' }}>
                           {item.item_nombre}
                         </div>
                         
                         {/* ✅ Sugerencia (si existe) */}
                         {item.sugerencia && (
-                          <div className="bg-blue-50 border border-blue-200 rounded p-2">
-                            <div className="text-xs text-blue-700">
+                          <div className="border rounded p-2" style={{ backgroundColor: '#eff6ff', borderColor: '#bfdbfe' }}>
+                            <div className="text-xs" style={{ color: '#1d4ed8' }}>
                               <strong>Sugerencia:</strong> {item.sugerencia}
                             </div>
                           </div>
@@ -370,38 +374,42 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
             </div>
             
             {/* ✅ FOOTER CON TOTAL Y BOTONES */}
-            <div className="border-t border-gray-200 bg-gray-50 p-4">
+            <div className="border-t p-4" style={{ borderColor: '#e5e7eb', backgroundColor: '#f9fafb' }}>
               <div className="flex justify-between items-center mb-4">
-                <span className="font-bold text-gray-900">
+                <span className="font-bold" style={{ color: '#111827' }}>
                   Total
                   {isDistribuidor() && (
-                    <span className="ml-2 text-xs text-green-600">(con descuentos)</span>
+                    <span className="ml-2 text-xs" style={{ color: '#16a34a' }}>(con descuentos)</span>
                   )}
                 </span>
                 <div className="text-right">
-                  <div className="text-xl font-bold text-gray-900">
+                  <div className="text-xl font-bold" style={{ color: '#111827' }}>
                     ${Math.round(totalEnPesos).toLocaleString()} ARS
                   </div>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs" style={{ color: '#6b7280' }}>
                     USD ${cart.reduce((sum, item) => {
                       const precioConDescuento = calcularPrecioFinal(item);
                       return sum + (item.cantidad * precioConDescuento);
                     }, 0).toFixed(2)}
                     {isDistribuidor() && (
-                      <span className="ml-1 text-green-600">(con desc.)</span>
+                      <span className="ml-1" style={{ color: '#16a34a' }}>(con desc.)</span>
                     )}
                   </div>
                 </div>
               </div>
 
               <button
-                className={`w-full py-3 rounded-lg font-bold transition-all transform hover:scale-[1.02] disabled:transform-none shadow-md ${
-                  isChatbotMode
-                    ? 'bg-gray-400 text-gray-600 cursor-not-allowed opacity-75'
-                    : stockValidation.hasWarnings 
-                      ? 'bg-red-600 hover:bg-red-700 text-white cursor-not-allowed opacity-75'
-                      : 'bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white'
-                } disabled:opacity-50 disabled:cursor-not-allowed`}
+                className="w-full py-3 rounded font-bold text-white"
+                style={{
+                  background: isChatbotMode
+                    ? '#9ca3af'
+                    : stockValidation.hasWarnings
+                      ? '#dc2626'
+                      : '#ea580c',
+                  color: isChatbotMode ? '#4b5563' : 'white',
+                  cursor: (isCreatingOrder || cart.length === 0 || stockValidation.hasWarnings || isChatbotMode) ? 'not-allowed' : 'pointer',
+                  opacity: (isChatbotMode || stockValidation.hasWarnings) ? 0.75 : 1
+                }}
                 onClick={handleBuy}
                 disabled={isCreatingOrder || cart.length === 0 || stockValidation.hasWarnings || isChatbotMode}
               >
@@ -415,20 +423,20 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
                 ) : stockValidation.hasWarnings ? (
                   '⚠️ Ajustar cantidades'
                 ) : (
-                  isProspectoMode ? '📝 Enviar pedido al vendedor' : '💳 Realizar pedido'
+                  isProspectoMode ? 'Enviar pedido al vendedor' : 'Realizar pedido'
                 )}
               </button>
 
               {/* ✅ NUEVO: Mensaje para modo chatbot */}
               {isChatbotMode && (
-                <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="mt-3 p-3 border rounded" style={{ backgroundColor: '#eff6ff', borderColor: '#bfdbfe' }}>
                   <div className="flex items-center gap-2">
-                    <span className="text-blue-500 text-sm">💬</span>
+                    <span className="text-sm" style={{ color: '#3b82f6' }}>💬</span>
                     <div>
-                      <p className="text-blue-800 font-semibold text-xs">
+                      <p className="font-semibold text-xs" style={{ color: '#1e40af' }}>
                         Modo Consulta Activado
                       </p>
-                      <p className="text-blue-700 text-xs">
+                      <p className="text-xs" style={{ color: '#1d4ed8' }}>
                         Este carrito es solo para consultas. No se pueden realizar pedidos.
                       </p>
                     </div>
@@ -438,14 +446,14 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
 
               {/* ✅ MENSAJE PARA PROSPECTOS */}
               {isProspectoMode && !isChatbotMode && (
-                <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                <div className="mt-3 p-3 border rounded" style={{ backgroundColor: '#fff7ed', borderColor: '#fed7aa' }}>
                   <div className="flex items-center gap-2">
-                    <span className="text-orange-500 text-sm">👋</span>
+                    <span className="text-sm" style={{ color: '#f97316' }}>👋</span>
                     <div>
-                      <p className="text-orange-800 font-semibold text-xs">
+                      <p className="font-semibold text-xs" style={{ color: '#9a3412' }}>
                         ¡Hola {prospectoData?.nombre}!
                       </p>
-                      <p className="text-orange-700 text-xs">
+                      <p className="text-xs" style={{ color: '#c2410c' }}>
                         Tu pedido será enviado al vendedor para que se contacte contigo
                       </p>
                     </div>
@@ -454,14 +462,14 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
               )}
 
               {isDistribuidor() && !isProspectoMode && !isChatbotMode && (
-                <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                <div className="mt-3 p-3 border rounded" style={{ backgroundColor: '#f0fdf4', borderColor: '#bbf7d0' }}>
                   <div className="flex items-center gap-2">
-                    <span className="text-green-500 text-sm">🎉</span>
+                    <span className="text-sm" style={{ color: '#22c55e' }}>🎉</span>
                     <div>
-                      <p className="text-green-800 font-semibold text-xs">
+                      <p className="font-semibold text-xs" style={{ color: '#166534' }}>
                         Descuentos Aplicados
                       </p>
-                      <p className="text-green-700 text-xs">
+                      <p className="text-xs" style={{ color: '#15803d' }}>
                         Los precios mostrados incluyen descuentos donde aplica
                       </p>
                     </div>
