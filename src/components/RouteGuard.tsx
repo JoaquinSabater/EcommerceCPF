@@ -20,7 +20,8 @@ export default function RouteGuard({ children }: RouteGuardProps) {
     '/auth/forgot-password',
     '/auth/set-password', 
     '/auth/reset-password',
-    '/prospecto-order'
+    '/prospecto-order',
+    '/stock-ambulante'
   ], []);
   
   const isPublicRoute = useMemo(() => 

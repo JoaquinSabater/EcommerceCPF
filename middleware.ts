@@ -58,8 +58,17 @@ export function middleware(request: NextRequest) {
     '/images',
     '/auth/forgot-password',
     '/auth/set-password',
-    '/auth/reset-password'
+    '/auth/reset-password',
+    '/stock-ambulante'  // Permitir acceso sin autenticación (usa su propio sistema de tokens)
   ];
+  
+  // Debug log para stock-ambulante
+  if (pathname.includes('stock-ambulante')) {
+    console.log('🔍 Acceso a stock-ambulante:', {
+      pathname,
+      matchesStaticPath: staticPaths.some(path => pathname.startsWith(path))
+    });
+  }
   
   if (staticPaths.some(path => pathname.startsWith(path))) {
     return NextResponse.next();

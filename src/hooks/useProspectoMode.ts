@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 
 interface ProspectoData {
   id: number;
@@ -21,8 +21,17 @@ export function useProspectoMode() {
   const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
 
   useEffect(() => {
+    // ✅ IGNORAR VALIDACIÓN EN /stock-ambulante (usa su propio sistema de tokens)
+    if (pathname?.startsWith('/stock-ambulante')) {
+      setIsProspectoMode(false);
+      setIsChatbotMode(false);
+      setProspectoData(null);
+      return;
+    }
+
     // ✅ SI HAY UN USUARIO AUTENTICADO, NO ACTIVAR MODO PROSPECTO NI CHATBOT
     if (user) {
       setIsProspectoMode(false);

@@ -144,7 +144,6 @@ export async function GET(request: NextRequest) {
           ELSE 7
         END,
         m.nombre, a.modelo, i.nombre
-      LIMIT 70
     `;
 
     const terminoCompleto = termino.trim();

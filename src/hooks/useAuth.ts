@@ -40,7 +40,8 @@ export function useAuth() {
           '/auth/forgot-password',
           '/auth/set-password',
           '/auth/reset-password',
-          '/prospecto-order'
+          '/prospecto-order',
+          '/stock-ambulante'
         ];
         
         const shouldNotRedirect = publicRoutes.includes(pathname) || 
@@ -69,7 +70,8 @@ export function useAuth() {
         '/auth/forgot-password',
         '/auth/set-password',
         '/auth/reset-password',
-        '/prospecto-order'
+        '/prospecto-order',
+        '/stock-ambulante'
       ];
       
       const shouldNotRedirect = publicRoutes.includes(pathname) || 
@@ -150,7 +152,7 @@ export function useAuth() {
     if (!itemId) return false;
     
     // ✅ IDs de items excluidos del descuento de distribuidor
-    const itemsExcluidos = [18, 19, 20, 21, 22, 24, 25,323];
+    const itemsExcluidos = [18, 19, 20, 21, 22, 24];
     
     return itemsExcluidos.includes(itemId);
   };

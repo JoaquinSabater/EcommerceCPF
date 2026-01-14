@@ -17,7 +17,6 @@ export const revalidate = 3600;
 
 // GET - Obtener categorías activas
 export async function GET(request: NextRequest) {
-  // 🔒 PROTECCIÓN: Rate limiting (10 req/min)
   const rateLimiter = getRateLimiter();
   const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
   const identifier = `api:${ip}`;
