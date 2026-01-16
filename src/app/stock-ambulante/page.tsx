@@ -163,12 +163,10 @@ function StockAmbulanteContent() {
         throw new Error('usuario_id es requerido en la URL');
       }
 
-      // Token fijo del ERP para obtener el stock ambulante
-      const ERP_TOKEN = 'fe3493287c3a953cae08234baa2097ba896033989eb3f61fe6f6402ecbf465a7';
-
-      // 1. Obtener datos del stock ambulante usando el token del ERP y el usuario_id de la URL
+      // 1. Obtener datos del stock ambulante a través de nuestro API route
+      // Esto evita problemas de Mixed Content (HTTP/HTTPS) y CORS
       const stockResponse = await fetch(
-        `http://cellphonefree.com.ar/accesorios/Sistema/scrphp/api/stock/exportar_stock_ambulante.php?token=${ERP_TOKEN}&formato=json&usuario_id=${usuarioId}`
+        `/api/stock-ambulante/exportar?usuario_id=${usuarioId}`
       );
 
       if (!stockResponse.ok) {
@@ -220,7 +218,16 @@ function StockAmbulanteContent() {
       setArticulos(articulosConImagenes);
     } catch (error) {
       console.error('Error al cargar stock ambulante:', error);
-      setError(error instanceof Error ? error.message : 'Error desconocido');
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido al cargar el stock';
+      setError(errorMessage);
+      
+      // Log adicional para debugging
+      console.error('Detalles del error:', {
+        error,
+        usuarioId,
+        clienteId,
+        hasToken: !!token
+      });
     } finally {
       setIsLoading(false);
     }
