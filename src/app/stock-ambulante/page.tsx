@@ -65,6 +65,7 @@ function StockAmbulanteContent() {
   const [enviandoIntencion, setEnviandoIntencion] = useState<string | null>(null);
   const [mensajeConfirmacion, setMensajeConfirmacion] = useState<{codigo: string, mensaje: string} | null>(null);
   const [intencionesPrevias, setIntencionesPrevias] = useState<{[key: string]: IntencionCompra}>({});
+  const [searchTerm, setSearchTerm] = useState<string>('');
 
   useEffect(() => {
     // Solo validar que tengamos usuario_id (el token del link es opcional, solo para registro)
@@ -292,6 +293,19 @@ function StockAmbulanteContent() {
       : articulo.cotizacion_aplicar;
   };
 
+  // Filtrar artículos basado en el término de búsqueda
+  const articulosFiltrados = articulos.filter(articulo => {
+    if (!searchTerm.trim()) return true;
+    
+    const termino = searchTerm.toLowerCase();
+    return (
+      articulo.descripcion.toLowerCase().includes(termino) ||
+      articulo.modelo.toLowerCase().includes(termino) ||
+      articulo.codigo_interno.toLowerCase().includes(termino) ||
+      articulo.item_nombre.toLowerCase().includes(termino)
+    );
+  });
+
   const handleCantidadChange = (codigoInterno: string, cantidad: number | undefined) => {
     setCantidadesSeleccionadas(prev => ({
       ...prev,
@@ -468,6 +482,47 @@ function StockAmbulanteContent() {
             </div>
           </div>
         </div>
+
+        {/* Buscador */}
+        <div className="mb-4">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Buscar por descripción, modelo o código..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-4 py-3 pl-11 pr-10 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            />
+            <svg
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+          {searchTerm && (
+            <p className="text-sm text-gray-600 mt-2">
+              {articulosFiltrados.length} resultado{articulosFiltrados.length !== 1 ? 's' : ''} encontrado{articulosFiltrados.length !== 1 ? 's' : ''}
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Tabla de productos */}
@@ -475,6 +530,16 @@ function StockAmbulanteContent() {
         {articulos.length === 0 ? (
           <div className="bg-white rounded-lg shadow-sm p-8 text-center">
             <p className="text-gray-600">No hay artículos disponibles en el stock ambulante</p>
+          </div>
+        ) : articulosFiltrados.length === 0 ? (
+          <div className="bg-white rounded-lg shadow-sm p-8 text-center">
+            <p className="text-gray-600">No se encontraron artículos que coincidan con tu búsqueda</p>
+            <button
+              onClick={() => setSearchTerm('')}
+              className="mt-4 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+            >
+              Limpiar búsqueda
+            </button>
           </div>
         ) : (
           <div className="bg-white rounded-lg shadow-sm overflow-hidden">
@@ -504,7 +569,7 @@ function StockAmbulanteContent() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {articulos.map((articulo, index) => (
+                  {articulosFiltrados.map((articulo, index) => (
                     <tr 
                       key={`${articulo.codigo_interno}-${index}`}
                       className="hover:bg-gray-50 transition-colors"
@@ -621,7 +686,7 @@ function StockAmbulanteContent() {
 
             {/* Vista Mobile */}
             <div className="md:hidden divide-y divide-gray-200">
-              {articulos.map((articulo, index) => (
+              {articulosFiltrados.map((articulo, index) => (
                 <div
                   key={`${articulo.codigo_interno}-${index}`}
                   className="p-4 hover:bg-gray-50 transition-colors cursor-pointer"
@@ -695,7 +760,7 @@ function StockAmbulanteContent() {
                     </div>
                   </div>
                   {/* Controles de Intención de Compra - Mobile */}
-                  <div className="mt-3 pt-3 border-t border-gray-200">
+                  <div className="mt-3 pt-3 border-t border-gray-200" onClick={(e) => e.stopPropagation()}>
                     {mensajeConfirmacion?.codigo === articulo.codigo_interno ? (
                       <div className="flex items-center justify-center gap-2 text-green-600 text-sm font-medium py-2">
                         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -746,7 +811,7 @@ function StockAmbulanteContent() {
             {/* Botón cerrar mejorado */}
             <button
               onClick={handleCloseCarrusel}
-              className="absolute -top-12 right-0 bg-white hover:bg-gray-100 rounded-full p-2 shadow-lg transition-all z-10 group"
+              className="absolute -top-2 -right-2 md:-top-12 md:right-0 bg-white hover:bg-gray-100 rounded-full p-2 shadow-lg transition-all z-10 group"
               aria-label="Cerrar"
             >
               <svg className="w-6 h-6 text-gray-800 group-hover:text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
