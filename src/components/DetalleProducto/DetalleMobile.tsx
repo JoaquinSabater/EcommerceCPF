@@ -226,29 +226,11 @@ export default function DetalleMobile({ producto, onSugerenciaChange }: DetalleM
         )}
       </div>
 
-      {/* ...existing code... */}
-      <div className="font-bold text-xl mb-1">{producto.nombre}</div>
-      <div className="text-gray-700 mb-2">{producto.descripcion}</div>
+      {/* Nombre y descripción */}
+      <div className="font-bold text-xl mb-1 break-words">{producto.nombre}</div>
+      <div className="text-gray-700 mb-2 break-words overflow-hidden">{producto.descripcion}</div>
 
-      <div className="mb-4">
-        <label 
-          className="block text-sm font-bold mb-2"
-          style={{ color: '#ea580c' }}
-        >
-          SUGERENCIAS ESPECIALES
-        </label>
-        <textarea
-          value={sugerencia}
-          onChange={(e) => handleSugerenciaChange(e.target.value)}
-          placeholder="Escribe aquí cualquier sugerencia especial..."
-          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 resize-none text-sm"
-          rows={3}
-        />
-        <div className="text-xs text-gray-500 mt-1">
-          Opcional: Agrega detalles específicos sobre este producto
-        </div>
-      </div>
-
+      {/* Características */}
       {producto.mostrarCaracteristicas && (
         <>
           <div 
@@ -269,6 +251,26 @@ export default function DetalleMobile({ producto, onSugerenciaChange }: DetalleM
           </table>
         </>
       )}
+
+      {/* Sugerencias especiales - AHORA AL FINAL */}
+      <div className="mb-4">
+        <label 
+          className="block text-sm font-bold mb-2"
+          style={{ color: '#ea580c' }}
+        >
+          SUGERENCIAS ESPECIALES
+        </label>
+        <textarea
+          value={sugerencia}
+          onChange={(e) => handleSugerenciaChange(e.target.value)}
+          placeholder="Escribe aquí cualquier sugerencia especial..."
+          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 resize-none text-sm"
+          rows={3}
+        />
+        <div className="text-xs text-gray-500 mt-1">
+          Opcional: Agrega detalles específicos sobre este producto
+        </div>
+      </div>
     </div>
   );
 }

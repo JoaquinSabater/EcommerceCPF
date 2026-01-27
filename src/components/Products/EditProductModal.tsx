@@ -20,6 +20,48 @@ interface DetalleProducto {
   foto_portada?: string;
   destacar?: boolean;
   activo?: boolean;
+  // Campos nuevos - Fundas
+  interior?: string;
+  protector_camara?: string;
+  flexibilidad?: string;
+  colores_disenos?: string;
+  // Campos nuevos - Popsockets
+  adhesivo?: string;
+  compatibilidad_magsafe?: string;
+  soporte?: string;
+  // Campos nuevos - Auriculares
+  bluetooth?: string;
+  duracion_bateria?: string;
+  cancelacion_ruido?: string;
+  resistencia_agua?: string;
+  rgb?: string;
+  respuesta_frecuencia?: string;
+  sensibilidad?: string;
+  capacidad_bateria?: string;
+  largo_cable?: string;
+  // Campos de visibilidad
+  mostrar_descripcion?: boolean;
+  mostrar_material?: boolean;
+  mostrar_espesor?: boolean;
+  mostrar_proteccion?: boolean;
+  mostrar_compatibilidad?: boolean;
+  mostrar_pegamento?: boolean;
+  mostrar_interior?: boolean;
+  mostrar_protector_camara?: boolean;
+  mostrar_flexibilidad?: boolean;
+  mostrar_colores_disenos?: boolean;
+  mostrar_adhesivo?: boolean;
+  mostrar_compatibilidad_magsafe?: boolean;
+  mostrar_soporte?: boolean;
+  mostrar_bluetooth?: boolean;
+  mostrar_duracion_bateria?: boolean;
+  mostrar_cancelacion_ruido?: boolean;
+  mostrar_resistencia_agua?: boolean;
+  mostrar_rgb?: boolean;
+  mostrar_respuesta_frecuencia?: boolean;
+  mostrar_sensibilidad?: boolean;
+  mostrar_capacidad_bateria?: boolean;
+  mostrar_largo_cable?: boolean;
 }
 
 interface EditProductModalProps {
@@ -68,7 +110,49 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
         foto4_url: sanitizeValue(producto.foto4_url),
         foto_portada: sanitizeValue(producto.foto_portada),
         destacar: Boolean(producto.destacar),
-        activo: Boolean(producto.activo)
+        activo: Boolean(producto.activo),
+        // Campos nuevos - Fundas
+        interior: sanitizeValue(producto.interior),
+        protector_camara: sanitizeValue(producto.protector_camara),
+        flexibilidad: sanitizeValue(producto.flexibilidad),
+        colores_disenos: sanitizeValue(producto.colores_disenos),
+        // Campos nuevos - Popsockets
+        adhesivo: sanitizeValue(producto.adhesivo),
+        compatibilidad_magsafe: sanitizeValue(producto.compatibilidad_magsafe),
+        soporte: sanitizeValue(producto.soporte),
+        // Campos nuevos - Auriculares
+        bluetooth: sanitizeValue(producto.bluetooth),
+        duracion_bateria: sanitizeValue(producto.duracion_bateria),
+        cancelacion_ruido: sanitizeValue(producto.cancelacion_ruido),
+        resistencia_agua: sanitizeValue(producto.resistencia_agua),
+        rgb: sanitizeValue(producto.rgb),
+        respuesta_frecuencia: sanitizeValue(producto.respuesta_frecuencia),
+        sensibilidad: sanitizeValue(producto.sensibilidad),
+        capacidad_bateria: sanitizeValue(producto.capacidad_bateria),
+        largo_cable: sanitizeValue(producto.largo_cable),
+        // Campos de visibilidad
+        mostrar_descripcion: Boolean(producto.mostrar_descripcion),
+        mostrar_material: Boolean(producto.mostrar_material),
+        mostrar_espesor: Boolean(producto.mostrar_espesor),
+        mostrar_proteccion: Boolean(producto.mostrar_proteccion),
+        mostrar_compatibilidad: Boolean(producto.mostrar_compatibilidad),
+        mostrar_pegamento: Boolean(producto.mostrar_pegamento),
+        mostrar_interior: Boolean(producto.mostrar_interior),
+        mostrar_protector_camara: Boolean(producto.mostrar_protector_camara),
+        mostrar_flexibilidad: Boolean(producto.mostrar_flexibilidad),
+        mostrar_colores_disenos: Boolean(producto.mostrar_colores_disenos),
+        mostrar_adhesivo: Boolean(producto.mostrar_adhesivo),
+        mostrar_compatibilidad_magsafe: Boolean(producto.mostrar_compatibilidad_magsafe),
+        mostrar_soporte: Boolean(producto.mostrar_soporte),
+        mostrar_bluetooth: Boolean(producto.mostrar_bluetooth),
+        mostrar_duracion_bateria: Boolean(producto.mostrar_duracion_bateria),
+        mostrar_cancelacion_ruido: Boolean(producto.mostrar_cancelacion_ruido),
+        mostrar_resistencia_agua: Boolean(producto.mostrar_resistencia_agua),
+        mostrar_rgb: Boolean(producto.mostrar_rgb),
+        mostrar_respuesta_frecuencia: Boolean(producto.mostrar_respuesta_frecuencia),
+        mostrar_sensibilidad: Boolean(producto.mostrar_sensibilidad),
+        mostrar_capacidad_bateria: Boolean(producto.mostrar_capacidad_bateria),
+        mostrar_largo_cable: Boolean(producto.mostrar_largo_cable)
       };
       
       setFormData(sanitizedProducto);
@@ -546,70 +630,583 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
                 Características del Producto
               </h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Material
-                  </label>
-                  <input
-                    type="text"
-                    name="material"
-                    value={sanitizeValue(formData.material)}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+              <p className="text-sm text-blue-700 mb-4 bg-blue-100 p-3 rounded-md">
+                💡 Activa el checkbox junto a cada característica que quieras mostrar en el detalle del producto
+              </p>
+              
+              <div className="space-y-4">
+                {/* CAMPOS COMUNES / GENERALES */}
+                <div className="border-b pb-4">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3">Características Generales</h4>
+                  <div className="grid grid-cols-1 gap-4">
+                    {/* Descripción */}
+                    <div className="bg-white p-3 rounded-md border border-gray-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <input
+                          type="checkbox"
+                          id="mostrar_descripcion"
+                          name="mostrar_descripcion"
+                          checked={formData.mostrar_descripcion || false}
+                          onChange={handleInputChange}
+                          className="h-4 w-4 text-blue-600 rounded"
+                        />
+                        <label htmlFor="mostrar_descripcion" className="text-sm font-medium text-gray-700 cursor-pointer">
+                          Mostrar Descripción
+                        </label>
+                      </div>
+                      <textarea
+                        name="descripcion"
+                        value={sanitizeValue(formData.descripcion)}
+                        onChange={handleInputChange}
+                        rows={3}
+                        placeholder="Descripción del producto..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
+
+                    {/* Material */}
+                    <div className="bg-white p-3 rounded-md border border-gray-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <input
+                          type="checkbox"
+                          id="mostrar_material"
+                          name="mostrar_material"
+                          checked={formData.mostrar_material || false}
+                          onChange={handleInputChange}
+                          className="h-4 w-4 text-blue-600 rounded"
+                        />
+                        <label htmlFor="mostrar_material" className="text-sm font-medium text-gray-700 cursor-pointer">
+                          Mostrar Material
+                        </label>
+                      </div>
+                      <input
+                        type="text"
+                        name="material"
+                        value={sanitizeValue(formData.material)}
+                        onChange={handleInputChange}
+                        placeholder="Ej: Silicona, TPU, Policarbonato..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
+
+                    {/* Espesor */}
+                    <div className="bg-white p-3 rounded-md border border-gray-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <input
+                          type="checkbox"
+                          id="mostrar_espesor"
+                          name="mostrar_espesor"
+                          checked={formData.mostrar_espesor || false}
+                          onChange={handleInputChange}
+                          className="h-4 w-4 text-blue-600 rounded"
+                        />
+                        <label htmlFor="mostrar_espesor" className="text-sm font-medium text-gray-700 cursor-pointer">
+                          Mostrar Espesor
+                        </label>
+                      </div>
+                      <input
+                        type="text"
+                        name="espesor"
+                        value={sanitizeValue(formData.espesor)}
+                        onChange={handleInputChange}
+                        placeholder="Ej: 0.33mm, 1.5mm..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
+
+                    {/* Protección */}
+                    <div className="bg-white p-3 rounded-md border border-gray-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <input
+                          type="checkbox"
+                          id="mostrar_proteccion"
+                          name="mostrar_proteccion"
+                          checked={formData.mostrar_proteccion || false}
+                          onChange={handleInputChange}
+                          className="h-4 w-4 text-blue-600 rounded"
+                        />
+                        <label htmlFor="mostrar_proteccion" className="text-sm font-medium text-gray-700 cursor-pointer">
+                          Mostrar Protección
+                        </label>
+                      </div>
+                      <input
+                        type="text"
+                        name="proteccion"
+                        value={sanitizeValue(formData.proteccion)}
+                        onChange={handleInputChange}
+                        placeholder="Ej: 9H, Anti-rayones, Militar..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
+
+                    {/* Compatibilidad */}
+                    <div className="bg-white p-3 rounded-md border border-gray-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <input
+                          type="checkbox"
+                          id="mostrar_compatibilidad"
+                          name="mostrar_compatibilidad"
+                          checked={formData.mostrar_compatibilidad || false}
+                          onChange={handleInputChange}
+                          className="h-4 w-4 text-blue-600 rounded"
+                        />
+                        <label htmlFor="mostrar_compatibilidad" className="text-sm font-medium text-gray-700 cursor-pointer">
+                          Mostrar Compatibilidad
+                        </label>
+                      </div>
+                      <input
+                        type="text"
+                        name="compatibilidad"
+                        value={sanitizeValue(formData.compatibilidad)}
+                        onChange={handleInputChange}
+                        placeholder="Ej: iPhone 15, Samsung Galaxy S23..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
+
+                    {/* Pegamento */}
+                    <div className="bg-white p-3 rounded-md border border-gray-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <input
+                          type="checkbox"
+                          id="mostrar_pegamento"
+                          name="mostrar_pegamento"
+                          checked={formData.mostrar_pegamento || false}
+                          onChange={handleInputChange}
+                          className="h-4 w-4 text-blue-600 rounded"
+                        />
+                        <label htmlFor="mostrar_pegamento" className="text-sm font-medium text-gray-700 cursor-pointer">
+                          Mostrar Pegamento
+                        </label>
+                      </div>
+                      <input
+                        type="text"
+                        name="pegamento"
+                        value={sanitizeValue(formData.pegamento)}
+                        onChange={handleInputChange}
+                        placeholder="Ej: Silicona líquida, Adhesivo reutilizable..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Espesor
-                  </label>
-                  <input
-                    type="text"
-                    name="espesor"
-                    value={sanitizeValue(formData.espesor)}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                {/* CAMPOS ESPECÍFICOS PARA FUNDAS */}
+                <div className="border-b pb-4">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3 bg-purple-50 p-2 rounded">📱 Características para Fundas</h4>
+                  <div className="grid grid-cols-1 gap-4">
+                    {/* Interior */}
+                    <div className="bg-white p-3 rounded-md border border-gray-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <input
+                          type="checkbox"
+                          id="mostrar_interior"
+                          name="mostrar_interior"
+                          checked={formData.mostrar_interior || false}
+                          onChange={handleInputChange}
+                          className="h-4 w-4 text-blue-600 rounded"
+                        />
+                        <label htmlFor="mostrar_interior" className="text-sm font-medium text-gray-700 cursor-pointer">
+                          Mostrar Interior
+                        </label>
+                      </div>
+                      <input
+                        type="text"
+                        name="interior"
+                        value={sanitizeValue(formData.interior)}
+                        onChange={handleInputChange}
+                        placeholder="Ej: Microfibra, Forrado..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
+
+                    {/* Protector de cámara */}
+                    <div className="bg-white p-3 rounded-md border border-gray-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <input
+                          type="checkbox"
+                          id="mostrar_protector_camara"
+                          name="mostrar_protector_camara"
+                          checked={formData.mostrar_protector_camara || false}
+                          onChange={handleInputChange}
+                          className="h-4 w-4 text-blue-600 rounded"
+                        />
+                        <label htmlFor="mostrar_protector_camara" className="text-sm font-medium text-gray-700 cursor-pointer">
+                          Mostrar Protector de Cámara
+                        </label>
+                      </div>
+                      <input
+                        type="text"
+                        name="protector_camara"
+                        value={sanitizeValue(formData.protector_camara)}
+                        onChange={handleInputChange}
+                        placeholder="Ej: Borde elevado, Protección integrada..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
+
+                    {/* Flexibilidad */}
+                    <div className="bg-white p-3 rounded-md border border-gray-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <input
+                          type="checkbox"
+                          id="mostrar_flexibilidad"
+                          name="mostrar_flexibilidad"
+                          checked={formData.mostrar_flexibilidad || false}
+                          onChange={handleInputChange}
+                          className="h-4 w-4 text-blue-600 rounded"
+                        />
+                        <label htmlFor="mostrar_flexibilidad" className="text-sm font-medium text-gray-700 cursor-pointer">
+                          Mostrar Flexibilidad
+                        </label>
+                      </div>
+                      <input
+                        type="text"
+                        name="flexibilidad"
+                        value={sanitizeValue(formData.flexibilidad)}
+                        onChange={handleInputChange}
+                        placeholder="Ej: Flexible, Semi-rígida, Rígida..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
+
+                    {/* Colores/diseños */}
+                    <div className="bg-white p-3 rounded-md border border-gray-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <input
+                          type="checkbox"
+                          id="mostrar_colores_disenos"
+                          name="mostrar_colores_disenos"
+                          checked={formData.mostrar_colores_disenos || false}
+                          onChange={handleInputChange}
+                          className="h-4 w-4 text-blue-600 rounded"
+                        />
+                        <label htmlFor="mostrar_colores_disenos" className="text-sm font-medium text-gray-700 cursor-pointer">
+                          Mostrar Colores/Diseños
+                        </label>
+                      </div>
+                      <input
+                        type="text"
+                        name="colores_disenos"
+                        value={sanitizeValue(formData.colores_disenos)}
+                        onChange={handleInputChange}
+                        placeholder="Ej: Transparente, Negro, Rojo..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Protección
-                  </label>
-                  <input
-                    type="text"
-                    name="proteccion"
-                    value={sanitizeValue(formData.proteccion)}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                {/* CAMPOS ESPECÍFICOS PARA POPSOCKETS */}
+                <div className="border-b pb-4">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3 bg-green-50 p-2 rounded">🔘 Características para Popsockets</h4>
+                  <div className="grid grid-cols-1 gap-4">
+                    {/* Adhesivo */}
+                    <div className="bg-white p-3 rounded-md border border-gray-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <input
+                          type="checkbox"
+                          id="mostrar_adhesivo"
+                          name="mostrar_adhesivo"
+                          checked={formData.mostrar_adhesivo || false}
+                          onChange={handleInputChange}
+                          className="h-4 w-4 text-blue-600 rounded"
+                        />
+                        <label htmlFor="mostrar_adhesivo" className="text-sm font-medium text-gray-700 cursor-pointer">
+                          Mostrar Adhesivo
+                        </label>
+                      </div>
+                      <input
+                        type="text"
+                        name="adhesivo"
+                        value={sanitizeValue(formData.adhesivo)}
+                        onChange={handleInputChange}
+                        placeholder="Ej: Reutilizable, Permanente..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
+
+                    {/* Compatibilidad MagSafe */}
+                    <div className="bg-white p-3 rounded-md border border-gray-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <input
+                          type="checkbox"
+                          id="mostrar_compatibilidad_magsafe"
+                          name="mostrar_compatibilidad_magsafe"
+                          checked={formData.mostrar_compatibilidad_magsafe || false}
+                          onChange={handleInputChange}
+                          className="h-4 w-4 text-blue-600 rounded"
+                        />
+                        <label htmlFor="mostrar_compatibilidad_magsafe" className="text-sm font-medium text-gray-700 cursor-pointer">
+                          Mostrar Compatibilidad MagSafe
+                        </label>
+                      </div>
+                      <input
+                        type="text"
+                        name="compatibilidad_magsafe"
+                        value={sanitizeValue(formData.compatibilidad_magsafe)}
+                        onChange={handleInputChange}
+                        placeholder="Ej: Sí, No, Compatible con anillo..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
+
+                    {/* Soporte */}
+                    <div className="bg-white p-3 rounded-md border border-gray-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <input
+                          type="checkbox"
+                          id="mostrar_soporte"
+                          name="mostrar_soporte"
+                          checked={formData.mostrar_soporte || false}
+                          onChange={handleInputChange}
+                          className="h-4 w-4 text-blue-600 rounded"
+                        />
+                        <label htmlFor="mostrar_soporte" className="text-sm font-medium text-gray-700 cursor-pointer">
+                          Mostrar Soporte
+                        </label>
+                      </div>
+                      <input
+                        type="text"
+                        name="soporte"
+                        value={sanitizeValue(formData.soporte)}
+                        onChange={handleInputChange}
+                        placeholder="Ej: Soporte para auto, Pie de apoyo..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Compatibilidad
-                  </label>
-                  <input
-                    type="text"
-                    name="compatibilidad"
-                    value={sanitizeValue(formData.compatibilidad)}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
+                {/* CAMPOS ESPECÍFICOS PARA AURICULARES */}
+                <div className="border-b pb-4">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3 bg-orange-50 p-2 rounded">🎧 Características para Auriculares</h4>
+                  <div className="grid grid-cols-1 gap-4">
+                    {/* Bluetooth */}
+                    <div className="bg-white p-3 rounded-md border border-gray-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <input
+                          type="checkbox"
+                          id="mostrar_bluetooth"
+                          name="mostrar_bluetooth"
+                          checked={formData.mostrar_bluetooth || false}
+                          onChange={handleInputChange}
+                          className="h-4 w-4 text-blue-600 rounded"
+                        />
+                        <label htmlFor="mostrar_bluetooth" className="text-sm font-medium text-gray-700 cursor-pointer">
+                          Mostrar Bluetooth
+                        </label>
+                      </div>
+                      <input
+                        type="text"
+                        name="bluetooth"
+                        value={sanitizeValue(formData.bluetooth)}
+                        onChange={handleInputChange}
+                        placeholder="Ej: Sí - Bluetooth 5.3, No"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
 
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Pegamento
-                  </label>
-                  <input
-                    type="text"
-                    name="pegamento"
-                    value={sanitizeValue(formData.pegamento)}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                    {/* Duración de batería */}
+                    <div className="bg-white p-3 rounded-md border border-gray-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <input
+                          type="checkbox"
+                          id="mostrar_duracion_bateria"
+                          name="mostrar_duracion_bateria"
+                          checked={formData.mostrar_duracion_bateria || false}
+                          onChange={handleInputChange}
+                          className="h-4 w-4 text-blue-600 rounded"
+                        />
+                        <label htmlFor="mostrar_duracion_bateria" className="text-sm font-medium text-gray-700 cursor-pointer">
+                          Mostrar Duración de Batería
+                        </label>
+                      </div>
+                      <input
+                        type="text"
+                        name="duracion_bateria"
+                        value={sanitizeValue(formData.duracion_bateria)}
+                        onChange={handleInputChange}
+                        placeholder="Ej: 8 horas, 24 horas con estuche..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
+
+                    {/* Cancelación de ruido */}
+                    <div className="bg-white p-3 rounded-md border border-gray-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <input
+                          type="checkbox"
+                          id="mostrar_cancelacion_ruido"
+                          name="mostrar_cancelacion_ruido"
+                          checked={formData.mostrar_cancelacion_ruido || false}
+                          onChange={handleInputChange}
+                          className="h-4 w-4 text-blue-600 rounded"
+                        />
+                        <label htmlFor="mostrar_cancelacion_ruido" className="text-sm font-medium text-gray-700 cursor-pointer">
+                          Mostrar Cancelación de Ruido
+                        </label>
+                      </div>
+                      <input
+                        type="text"
+                        name="cancelacion_ruido"
+                        value={sanitizeValue(formData.cancelacion_ruido)}
+                        onChange={handleInputChange}
+                        placeholder="Ej: Sí - ANC activo, No, Pasiva..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
+
+                    {/* Resistencia al agua */}
+                    <div className="bg-white p-3 rounded-md border border-gray-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <input
+                          type="checkbox"
+                          id="mostrar_resistencia_agua"
+                          name="mostrar_resistencia_agua"
+                          checked={formData.mostrar_resistencia_agua || false}
+                          onChange={handleInputChange}
+                          className="h-4 w-4 text-blue-600 rounded"
+                        />
+                        <label htmlFor="mostrar_resistencia_agua" className="text-sm font-medium text-gray-700 cursor-pointer">
+                          Mostrar Resistencia al Agua
+                        </label>
+                      </div>
+                      <input
+                        type="text"
+                        name="resistencia_agua"
+                        value={sanitizeValue(formData.resistencia_agua)}
+                        onChange={handleInputChange}
+                        placeholder="Ej: IPX4, IPX7, No..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
+
+                    {/* RGB */}
+                    <div className="bg-white p-3 rounded-md border border-gray-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <input
+                          type="checkbox"
+                          id="mostrar_rgb"
+                          name="mostrar_rgb"
+                          checked={formData.mostrar_rgb || false}
+                          onChange={handleInputChange}
+                          className="h-4 w-4 text-blue-600 rounded"
+                        />
+                        <label htmlFor="mostrar_rgb" className="text-sm font-medium text-gray-700 cursor-pointer">
+                          Mostrar RGB
+                        </label>
+                      </div>
+                      <input
+                        type="text"
+                        name="rgb"
+                        value={sanitizeValue(formData.rgb)}
+                        onChange={handleInputChange}
+                        placeholder="Ej: Sí, No, 7 colores..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
+
+                    {/* Respuesta de frecuencia */}
+                    <div className="bg-white p-3 rounded-md border border-gray-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <input
+                          type="checkbox"
+                          id="mostrar_respuesta_frecuencia"
+                          name="mostrar_respuesta_frecuencia"
+                          checked={formData.mostrar_respuesta_frecuencia || false}
+                          onChange={handleInputChange}
+                          className="h-4 w-4 text-blue-600 rounded"
+                        />
+                        <label htmlFor="mostrar_respuesta_frecuencia" className="text-sm font-medium text-gray-700 cursor-pointer">
+                          Mostrar Respuesta de Frecuencia
+                        </label>
+                      </div>
+                      <input
+                        type="text"
+                        name="respuesta_frecuencia"
+                        value={sanitizeValue(formData.respuesta_frecuencia)}
+                        onChange={handleInputChange}
+                        placeholder="Ej: 20Hz - 20kHz"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
+
+                    {/* Sensibilidad */}
+                    <div className="bg-white p-3 rounded-md border border-gray-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <input
+                          type="checkbox"
+                          id="mostrar_sensibilidad"
+                          name="mostrar_sensibilidad"
+                          checked={formData.mostrar_sensibilidad || false}
+                          onChange={handleInputChange}
+                          className="h-4 w-4 text-blue-600 rounded"
+                        />
+                        <label htmlFor="mostrar_sensibilidad" className="text-sm font-medium text-gray-700 cursor-pointer">
+                          Mostrar Sensibilidad
+                        </label>
+                      </div>
+                      <input
+                        type="text"
+                        name="sensibilidad"
+                        value={sanitizeValue(formData.sensibilidad)}
+                        onChange={handleInputChange}
+                        placeholder="Ej: 105dB, 98dB..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
+
+                    {/* Capacidad de batería */}
+                    <div className="bg-white p-3 rounded-md border border-gray-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <input
+                          type="checkbox"
+                          id="mostrar_capacidad_bateria"
+                          name="mostrar_capacidad_bateria"
+                          checked={formData.mostrar_capacidad_bateria || false}
+                          onChange={handleInputChange}
+                          className="h-4 w-4 text-blue-600 rounded"
+                        />
+                        <label htmlFor="mostrar_capacidad_bateria" className="text-sm font-medium text-gray-700 cursor-pointer">
+                          Mostrar Capacidad de Batería
+                        </label>
+                      </div>
+                      <input
+                        type="text"
+                        name="capacidad_bateria"
+                        value={sanitizeValue(formData.capacidad_bateria)}
+                        onChange={handleInputChange}
+                        placeholder="Ej: 300mAh, 500mAh con estuche..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
+
+                    {/* Largo del cable */}
+                    <div className="bg-white p-3 rounded-md border border-gray-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <input
+                          type="checkbox"
+                          id="mostrar_largo_cable"
+                          name="mostrar_largo_cable"
+                          checked={formData.mostrar_largo_cable || false}
+                          onChange={handleInputChange}
+                          className="h-4 w-4 text-blue-600 rounded"
+                        />
+                        <label htmlFor="mostrar_largo_cable" className="text-sm font-medium text-gray-700 cursor-pointer">
+                          Mostrar Largo del Cable
+                        </label>
+                      </div>
+                      <input
+                        type="text"
+                        name="largo_cable"
+                        value={sanitizeValue(formData.largo_cable)}
+                        onChange={handleInputChange}
+                        placeholder="Ej: 1.2m, 1.5m..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -641,19 +1238,6 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
                 readOnly={true}
                 className="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-gray-600 cursor-not-allowed"
                 title="Este campo no se puede modificar"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Descripción
-              </label>
-              <textarea
-                name="descripcion"
-                value={sanitizeValue(formData.descripcion)}
-                onChange={handleInputChange}
-                rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
               />
             </div>
           </div>

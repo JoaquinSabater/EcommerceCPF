@@ -82,7 +82,7 @@ export default function HomeCarousel() {
   };
 
   const handleSlideClick = (enlace: string) => {
-    if (enlace && !isDragging) {
+    if (enlace && enlace.trim() !== '') {
       if (enlace.startsWith('http')) {
         window.open(enlace, '_blank');
       } else {
@@ -95,16 +95,22 @@ export default function HomeCarousel() {
   const handleTouchStart = (e: React.TouchEvent) => {
     if (slides.length <= 1) return;
     setStartX(e.touches[0].clientX);
-    setIsDragging(true);
+    setIsDragging(false); // Reset al inicio
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging || slides.length <= 1) return;
-    e.preventDefault();
+    if (slides.length <= 1) return;
+    const currentX = e.touches[0].clientX;
+    const diffX = Math.abs(startX - currentX);
+    
+    // Si se mueve más de 10px, considerarlo como drag
+    if (diffX > 10) {
+      setIsDragging(true);
+    }
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
-    if (!isDragging || slides.length <= 1) return;
+    if (slides.length <= 1) return;
     
     const endX = e.changedTouches[0].clientX;
     const diffX = startX - endX;
@@ -118,7 +124,10 @@ export default function HomeCarousel() {
       }
     }
 
-    setIsDragging(false);
+    // Reset dragging después de un pequeño delay
+    setTimeout(() => {
+      setIsDragging(false);
+    }, 100);
     setStartX(0);
   };
 
@@ -160,7 +169,12 @@ export default function HomeCarousel() {
               >
                 <div 
                   className="relative w-full h-full cursor-pointer group"
-                  onClick={() => handleSlideClick(slide.enlace)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (!isDragging) {
+                      handleSlideClick(slide.enlace);
+                    }
+                  }}
                 >
                   <CldImage
                     src={isMobile ? slide.imagen_mobile : slide.imagen_desktop}

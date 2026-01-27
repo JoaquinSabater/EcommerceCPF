@@ -63,32 +63,14 @@ export default function DetalleDesktop({ producto, onSugerenciaChange }: Detalle
   };
 
   return (
-    <div className="rounded-lg bg-white shadow-sm">
-      <div className="flex w-full items-start p-6">
-        <div className="flex-1 flex flex-col justify-start pr-8">
-          {/* ...existing code... */}
-          <div className="font-bold text-3xl mb-2">{producto.nombre}</div>
-          <div className="text-gray-700 mb-4 text-lg">{producto.descripcion}</div>
+    <div>
+      <div className="flex w-full items-start gap-8">
+        <div className="flex-1 min-w-0">
+          {/* Nombre y descripción */}
+          <div className="font-bold text-3xl mb-2 break-words">{producto.nombre}</div>
+          <div className="text-gray-700 mb-4 text-lg break-words">{producto.descripcion}</div>
           
-          <div className="mb-4">
-            <label 
-              className="block text-sm font-bold mb-2"
-              style={{ color: '#ea580c' }}
-            >
-              SUGERENCIAS ESPECIALES
-            </label>
-            <textarea
-              value={sugerencia}
-              onChange={(e) => handleSugerenciaChange(e.target.value)}
-              placeholder="Escribe aquí cualquier sugerencia especial para este producto (color, tamaño, personalización, etc.)"
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 resize-none text-sm"
-              rows={3}
-            />
-            <div className="text-xs text-gray-500 mt-1">
-              Opcional: Puedes agregar detalles específicos sobre cómo quieres este producto
-            </div>
-          </div>
-
+          {/* Características */}
           {producto.mostrarCaracteristicas && (
             <>
               <div 
@@ -103,7 +85,7 @@ export default function DetalleDesktop({ producto, onSugerenciaChange }: Detalle
                     {producto.caracteristicas.map((c: any) => (
                       <tr key={c.label} className="border-b align-top">
                         <td className="py-2 text-gray-500">{c.label}:</td>
-                        <td className="py-2 font-bold text-gray-800">{c.value}</td>
+                        <td className="py-2 font-bold text-gray-800 break-words">{c.value}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -113,8 +95,8 @@ export default function DetalleDesktop({ producto, onSugerenciaChange }: Detalle
           )}
         </div>
 
-        {/* ✅ SIEMPRE MOSTRAR: Sección de imágenes */}
-        <div className="flex-1">
+        {/* ✅ SIEMPRE MOSTRAR: Sección de imágenes - TAMAÑO FIJO */}
+        <div className="flex-shrink-0 w-[500px]">
           <div className="relative">
             <div className="flex items-center justify-center rounded-lg overflow-hidden">
               {todasLasImagenes.length > 0 ? (
@@ -201,6 +183,26 @@ export default function DetalleDesktop({ producto, onSugerenciaChange }: Detalle
               </div>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* Sugerencias especiales - FUERA DEL FLEX PARA OCUPAR TODO EL ANCHO */}
+      <div className="mt-6">
+        <label 
+          className="block text-sm font-bold mb-2"
+          style={{ color: '#ea580c' }}
+        >
+          SUGERENCIAS ESPECIALES
+        </label>
+        <textarea
+          value={sugerencia}
+          onChange={(e) => handleSugerenciaChange(e.target.value)}
+          placeholder="Escribe aquí cualquier sugerencia especial para este producto (color, tamaño, personalización, etc.)"
+          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 resize-none text-sm"
+          rows={3}
+        />
+        <div className="text-xs text-gray-500 mt-1">
+          Opcional: Puedes agregar detalles específicos sobre cómo quieres este producto
         </div>
       </div>
     </div>

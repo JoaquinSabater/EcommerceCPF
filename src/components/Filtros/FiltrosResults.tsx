@@ -3,6 +3,7 @@
 import React from "react";
 import { CldImage } from "next-cloudinary";
 import FiltrosQuantityButton from "./FiltrosQuantityButton";
+import { useDolar } from "@/contexts/DolarContext";
 
 interface ProductoFiltrado {
   item_id: number;
@@ -30,6 +31,7 @@ export default function FiltrosResults({
   onItemClick, 
   onAddToCart 
 }: FiltrosResultsProps) {
+  const { dolar } = useDolar();
 
   const getImageSrc = (producto: ProductoFiltrado) => {
     return producto.foto_portada || producto.foto1_url;
@@ -91,7 +93,7 @@ export default function FiltrosResults({
       </div>
 
       <div className="space-y-3">
-        {productos.map((producto, index) => (
+        {productos.map((producto: ProductoFiltrado, index) => (
           <div
             key={`${producto.codigo_interno}-${index}`}
             className="bg-white rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow"
@@ -140,7 +142,7 @@ export default function FiltrosResults({
                       
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="text-lg font-bold text-orange-600">
-                          ${producto.precio_venta.toLocaleString()}
+                          ${Math.round(producto.precio_venta * dolar).toLocaleString('es-AR')}
                         </span>
                         {/* ✅ NUEVO: Solo mostrar indicadores de disponibilidad limitada */}
                         {producto.stock_real <= 0 ? (

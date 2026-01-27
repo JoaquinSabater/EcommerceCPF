@@ -18,7 +18,11 @@ interface SearchResult {
   marca_modelo_completo?: string;
 }
 
-export default function Search() {
+interface SearchProps {
+  onResultClick?: () => void;
+}
+
+export default function Search({ onResultClick }: SearchProps = {}) {
   const [search, setSearch] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -211,6 +215,11 @@ export default function Search() {
     
     // ✅ Esconder resultados antes de navegar
     setShowResults(false);
+    
+    // ✅ Llamar al callback si existe (para cerrar el menú móvil)
+    if (onResultClick) {
+      onResultClick();
+    }
     
     // ✅ Navegar a la página del producto usando item_id
     router.push(`/public/items/${result.item_id}`);

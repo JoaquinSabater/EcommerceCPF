@@ -122,12 +122,11 @@ export function getRateLimiter(): RateLimiter {
 
 // Configuraciones predefinidas para diferentes endpoints
 export const RateLimitConfigs = {
-  // Login: 5 intentos cada 15 minutos, bloqueo de 1 hora si excede
   login: {
     maxRequests: 5,
     windowMs: 15 * 60 * 1000, // 15 minutos
-    blockDurationMs: 60 * 60 * 1000, // 1 hora
-    message: 'Demasiados intentos de login. Tu IP ha sido bloqueada por 1 hora.'
+    blockDurationMs: 5 * 60 * 1000, // 5 minutos
+    message: 'Demasiados intentos de login. Tu IP ha sido bloqueada por 5 minutos.'
   },
   
   // Búsqueda: 30 búsquedas por minuto

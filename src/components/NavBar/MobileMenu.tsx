@@ -162,7 +162,7 @@ export default function MobileMenu({ menu }: { menu: MenuItem[] }) {
 
             {/* ✅ BÚSQUEDA con ancho completo */}
             <div className="p-4 border-b border-gray-100">
-              <Search />
+              <Search onResultClick={() => setIsOpen(false)} />
             </div>
 
             {/* ✅ NUEVO: Botón de filtros rápido */}

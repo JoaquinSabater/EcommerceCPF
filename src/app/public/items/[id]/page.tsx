@@ -30,6 +30,48 @@ interface DetalleProducto {
   foto_portada?: string;
   destacar?: boolean;
   activo?: boolean;
+  // Campos nuevos - Fundas
+  interior?: string;
+  protector_camara?: string;
+  flexibilidad?: string;
+  colores_disenos?: string;
+  // Campos nuevos - Popsockets
+  adhesivo?: string;
+  compatibilidad_magsafe?: string;
+  soporte?: string;
+  // Campos nuevos - Auriculares
+  bluetooth?: string;
+  duracion_bateria?: string;
+  cancelacion_ruido?: string;
+  resistencia_agua?: string;
+  rgb?: string;
+  respuesta_frecuencia?: string;
+  sensibilidad?: string;
+  capacidad_bateria?: string;
+  largo_cable?: string;
+  // Campos de visibilidad
+  mostrar_descripcion?: boolean;
+  mostrar_material?: boolean;
+  mostrar_espesor?: boolean;
+  mostrar_proteccion?: boolean;
+  mostrar_compatibilidad?: boolean;
+  mostrar_pegamento?: boolean;
+  mostrar_interior?: boolean;
+  mostrar_protector_camara?: boolean;
+  mostrar_flexibilidad?: boolean;
+  mostrar_colores_disenos?: boolean;
+  mostrar_adhesivo?: boolean;
+  mostrar_compatibilidad_magsafe?: boolean;
+  mostrar_soporte?: boolean;
+  mostrar_bluetooth?: boolean;
+  mostrar_duracion_bateria?: boolean;
+  mostrar_cancelacion_ruido?: boolean;
+  mostrar_resistencia_agua?: boolean;
+  mostrar_rgb?: boolean;
+  mostrar_respuesta_frecuencia?: boolean;
+  mostrar_sensibilidad?: boolean;
+  mostrar_capacidad_bateria?: boolean;
+  mostrar_largo_cable?: boolean;
 }
 
 interface ProductoFormateado {
@@ -87,6 +129,80 @@ function formatearProducto(detalle: DetalleProducto, precio: number): ProductoFo
 
   const mostrarCaracteristicas = Boolean(detalle.activo);
 
+  // ✅ Construir características dinámicamente según los campos mostrar_*
+  const caracteristicas: Caracteristica[] = [];
+
+  // Campos generales/existentes
+  if (detalle.mostrar_material) {
+    caracteristicas.push({ label: "Material", value: detalle.material || "No especificado" });
+  }
+  if (detalle.mostrar_espesor) {
+    caracteristicas.push({ label: "Espesor", value: detalle.espesor || "No especificado" });
+  }
+  if (detalle.mostrar_proteccion) {
+    caracteristicas.push({ label: "Protección", value: detalle.proteccion || "No especificado" });
+  }
+  if (detalle.mostrar_compatibilidad) {
+    caracteristicas.push({ label: "Compatibilidad", value: detalle.compatibilidad || "No especificado" });
+  }
+  if (detalle.mostrar_pegamento) {
+    caracteristicas.push({ label: "Pegamento", value: detalle.pegamento || "No especificado" });
+  }
+
+  // Campos para Fundas
+  if (detalle.mostrar_interior) {
+    caracteristicas.push({ label: "Interior", value: detalle.interior || "No especificado" });
+  }
+  if (detalle.mostrar_protector_camara) {
+    caracteristicas.push({ label: "Protector de Cámara", value: detalle.protector_camara || "No especificado" });
+  }
+  if (detalle.mostrar_flexibilidad) {
+    caracteristicas.push({ label: "Flexibilidad", value: detalle.flexibilidad || "No especificado" });
+  }
+  if (detalle.mostrar_colores_disenos) {
+    caracteristicas.push({ label: "Colores/Diseños", value: detalle.colores_disenos || "No especificado" });
+  }
+
+  // Campos para Popsockets
+  if (detalle.mostrar_adhesivo) {
+    caracteristicas.push({ label: "Adhesivo", value: detalle.adhesivo || "No especificado" });
+  }
+  if (detalle.mostrar_compatibilidad_magsafe) {
+    caracteristicas.push({ label: "Compatibilidad MagSafe", value: detalle.compatibilidad_magsafe || "No especificado" });
+  }
+  if (detalle.mostrar_soporte) {
+    caracteristicas.push({ label: "Soporte", value: detalle.soporte || "No especificado" });
+  }
+
+  // Campos para Auriculares
+  if (detalle.mostrar_bluetooth) {
+    caracteristicas.push({ label: "Bluetooth", value: detalle.bluetooth || "No especificado" });
+  }
+  if (detalle.mostrar_duracion_bateria) {
+    caracteristicas.push({ label: "Duración de Batería", value: detalle.duracion_bateria || "No especificado" });
+  }
+  if (detalle.mostrar_cancelacion_ruido) {
+    caracteristicas.push({ label: "Cancelación de Ruido", value: detalle.cancelacion_ruido || "No especificado" });
+  }
+  if (detalle.mostrar_resistencia_agua) {
+    caracteristicas.push({ label: "Resistencia al Agua", value: detalle.resistencia_agua || "No especificado" });
+  }
+  if (detalle.mostrar_rgb) {
+    caracteristicas.push({ label: "RGB", value: detalle.rgb || "No especificado" });
+  }
+  if (detalle.mostrar_respuesta_frecuencia) {
+    caracteristicas.push({ label: "Respuesta de Frecuencia", value: detalle.respuesta_frecuencia || "No especificado" });
+  }
+  if (detalle.mostrar_sensibilidad) {
+    caracteristicas.push({ label: "Sensibilidad", value: detalle.sensibilidad || "No especificado" });
+  }
+  if (detalle.mostrar_capacidad_bateria) {
+    caracteristicas.push({ label: "Capacidad de Batería", value: detalle.capacidad_bateria || "No especificado" });
+  }
+  if (detalle.mostrar_largo_cable) {
+    caracteristicas.push({ label: "Largo del Cable", value: detalle.largo_cable || "No especificado" });
+  }
+
   return {
     imagen: imagenPrincipal,
     nombre: detalle.item_nombre,
@@ -95,13 +211,7 @@ function formatearProducto(detalle: DetalleProducto, precio: number): ProductoFo
     imagenes: todasLasImagenes,
     sugerencia: '',
     mostrarCaracteristicas: mostrarCaracteristicas,
-    caracteristicas: [
-      { label: "Material", value: detalle.material || "No especificado" },
-      { label: "Espesor", value: detalle.espesor || "No especificado" },
-      { label: "Protección", value: detalle.proteccion || "No especificado" },
-      { label: "Compatibilidad", value: detalle.compatibilidad || "No especificado" },
-      { label: "Pegamento", value: detalle.pegamento || "No especificado" },
-    ],
+    caracteristicas: caracteristicas,
   };
 }
 

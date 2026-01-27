@@ -235,25 +235,11 @@ export default function ModelosSelector({ subcategoriaId, itemId, sugerenciaActu
   };
 
   return (
-    <div className="w-full mt-4 rounded-lg bg-white shadow-sm p-4">
+    <div>
       <ModelosSelectorHeader 
         esSinDescuento={esSinDescuento}
         isDistribuidor={isDistribuidor}
         sugerenciaActual={sugerenciaActual}
-      />
-      
-      <ModelosRecomendados
-        modelosRecomendados={modelosRecomendados}
-        setModelosRecomendados={setModelosRecomendados}
-        modelos={modelos}
-        seleccionados={seleccionados}
-        subcategoriaId={itemId}
-        esSinDescuento={esSinDescuento}
-        dolar={dolar}
-        getPrecioConDescuento={getPrecioConDescuento}
-        isDistribuidor={isDistribuidor}
-        onRecomendadoSelect={handleRecomendadoSelect}
-        loadingModelos={loadingModelos}
       />
 
       <ModelosBuscador

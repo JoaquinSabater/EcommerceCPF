@@ -4,6 +4,7 @@ import React from "react";
 import Image from "next/image";
 import SearchQuantityButton from "@/components/SearchQuantityButton";
 import { CldImage } from "next-cloudinary";
+import { useDolar } from "@/contexts/DolarContext";
 
 interface SearchResult {
   item_id: number;
@@ -31,6 +32,7 @@ export default function SearchResults({
   onItemClick, 
   onAddToCart 
 }: SearchResultsProps) {
+  const { dolar } = useDolar();
 
   // ✅ Función para formatear el display del modelo
   const formatModeloDisplay = (result: SearchResult) => {
@@ -128,7 +130,7 @@ export default function SearchResults({
                   
                   <div className="flex flex-wrap items-center gap-2 mt-2">
                     <span className="text-sm font-semibold text-orange-600">
-                      ${result.precio_venta.toLocaleString()}
+                      ${Math.round(result.precio_venta * dolar).toLocaleString('es-AR')}
                     </span>
                     {/* ✅ NUEVO: Solo mostrar indicadores de disponibilidad limitada */}
                     {result.stock_real <= 0 ? (
