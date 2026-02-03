@@ -27,6 +27,7 @@ export type categorias = {
   nombre: string;
   subcategoria_id: number;
   imagen?: string;
+  modelosDisponibles?: number;
 }
 
 export interface User {

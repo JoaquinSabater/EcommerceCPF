@@ -70,6 +70,8 @@ export default function Fundas() {
           );
           const resultados = await Promise.all(promesas);
           const todasCategorias = resultados.flat();
+          // Ordenar por cantidad de modelos disponibles (mayor a menor)
+          todasCategorias.sort((a, b) => (b.modelosDisponibles || 0) - (a.modelosDisponibles || 0));
           setCategorias(todasCategorias);
         } else {
           // Sin marca - todas las categorías
@@ -80,6 +82,8 @@ export default function Fundas() {
           );
           const resultados = await Promise.all(promesas);
           const todasCategorias = resultados.flat();
+          // Ordenar por cantidad de modelos disponibles (mayor a menor)
+          todasCategorias.sort((a, b) => (b.modelosDisponibles || 0) - (a.modelosDisponibles || 0));
           setCategorias(todasCategorias);
         }
       } catch (error) {

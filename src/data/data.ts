@@ -223,7 +223,8 @@ export async function getCategorias(subcategoriaId: number, mostrarContenidoEspe
     const mostrarEspecial = mostrarContenidoEspecial ? 1 : 0;
     
     const [rows] = await connection.query(
-      `SELECT DISTINCT i.* 
+      `SELECT i.*,
+              COUNT(DISTINCT a.codigo_interno) AS modelosDisponibles
        FROM items i
        INNER JOIN articulos a ON i.id = a.item_id
        LEFT JOIN item_detalle id ON i.id = id.item_id
@@ -231,7 +232,8 @@ export async function getCategorias(subcategoriaId: number, mostrarContenidoEspe
          AND i.disponible = 1 
          AND (calcular_stock_fisico(a.codigo_interno) - calcular_stock_comprometido(a.codigo_interno)) > 0
          AND (? = 1 OR COALESCE(id.contenido_especial, 0) = 0)
-       ORDER BY i.nombre ASC`,
+       GROUP BY i.id, i.nombre, i.subcategoria_id, i.disponible
+       ORDER BY modelosDisponibles DESC, i.nombre ASC`,
       [subcategoriaId, mostrarEspecial]
     );
     
@@ -426,7 +428,8 @@ export async function getCategoriasPorMarca(subcategoriaId: number, marcaId: num
     const mostrarEspecial = mostrarContenidoEspecial ? 1 : 0;
     
     const [rows] = await connection.query(
-      `SELECT DISTINCT i.* 
+      `SELECT i.*,
+              COUNT(DISTINCT a.codigo_interno) AS modelosDisponibles
        FROM items i
        INNER JOIN articulos a ON i.id = a.item_id
        INNER JOIN marcas m ON a.marca_id = m.id
@@ -437,7 +440,8 @@ export async function getCategoriasPorMarca(subcategoriaId: number, marcaId: num
          AND a.ubicacion <> 'SIN STOCK'
          AND (calcular_stock_fisico(a.codigo_interno) - calcular_stock_comprometido(a.codigo_interno)) > 0
          AND (? = 1 OR COALESCE(id.contenido_especial, 0) = 0)
-       ORDER BY i.nombre ASC`,
+       GROUP BY i.id, i.nombre, i.subcategoria_id, i.disponible
+       ORDER BY modelosDisponibles DESC, i.nombre ASC`,
       [subcategoriaId, marcaId, mostrarEspecial]
     );
     

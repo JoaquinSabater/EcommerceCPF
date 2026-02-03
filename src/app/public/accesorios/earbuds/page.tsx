@@ -36,6 +36,9 @@ export default async function earbuds() {
     const resultadosCategorias = await Promise.all(promesasCategorias);
     
     const todasLasCategorias = resultadosCategorias.flat();
+    
+    // Ordenar por cantidad de modelos disponibles (mayor a menor)
+    todasLasCategorias.sort((a, b) => (b.modelosDisponibles || 0) - (a.modelosDisponibles || 0));
 
     return (
       <div className="flex">
