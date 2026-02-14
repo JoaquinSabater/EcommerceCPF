@@ -74,12 +74,20 @@ interface DetalleProducto {
   mostrar_largo_cable?: boolean;
 }
 
+interface RangoPrecio {
+  precioMinimo: number | null;
+  precioMaximo: number | null;
+  tieneVariacion: boolean;
+  totalArticulos?: number;
+  articulosConPrecio?: number;
+}
+
 interface ProductoFormateado {
   imagen: string;
   imagenes: string[];
   nombre: string;
   descripcion: string;
-  precio: number;
+  rangoPrecio: RangoPrecio | null;
   caracteristicas: Caracteristica[];
   sugerencia?: string;
   mostrarCaracteristicas?: boolean;
@@ -99,7 +107,7 @@ export default function DetalleProductoModal({
   onUpdate 
 }: DetalleProductoModalProps) {
   const [detalleProducto, setDetalleProducto] = useState<DetalleProducto | null>(null);
-  const [precio, setPrecio] = useState<number>(0);
+  const [rangoPrecio, setRangoPrecio] = useState<RangoPrecio | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -126,21 +134,21 @@ export default function DetalleProductoModal({
     }
   };
 
-  const fetchPrecio = async (id: string) => {
+  const fetchRangoPrecio = async (id: string) => {
     try {
-      const response = await fetch(`/api/precio?itemId=${id}`);
+      const response = await fetch(`/api/rangoPrecio?itemId=${id}`);
       if (!response.ok) {
-        throw new Error('Error al obtener precio');
+        throw new Error('Error al obtener rango de precio');
       }
       const data = await response.json();
-      return data.precio;
+      return data as RangoPrecio;
     } catch (error) {
-      console.error("Error al obtener el precio:", error);
-      return 0;
+      console.error("Error al obtener el rango de precio:", error);
+      return null;
     }
   };
 
-  const formatearProducto = (detalle: DetalleProducto, precio: number): ProductoFormateado => {
+  const formatearProducto = (detalle: DetalleProducto, rangoPrecio: RangoPrecio | null): ProductoFormateado => {
     const imagenPrincipal = detalle.foto_portada || detalle.foto1_url || '';
     
     const todasLasImagenes = [
@@ -230,7 +238,7 @@ export default function DetalleProductoModal({
       imagen: imagenPrincipal,
       nombre: detalle.item_nombre,
       descripcion: detalle.descripcion,
-      precio: precio,
+      rangoPrecio: rangoPrecio,
       imagenes: todasLasImagenes,
       sugerencia: sugerenciaActual,
       mostrarCaracteristicas: mostrarCaracteristicas,
@@ -278,13 +286,13 @@ export default function DetalleProductoModal({
         setSugerenciaActual('');
         
         try {
-          const [detalleData, precioData] = await Promise.all([
+          const [detalleData, rangoPrecioData] = await Promise.all([
             fetchProductoDetalle(itemId),
-            fetchPrecio(itemId)
+            fetchRangoPrecio(itemId)
           ]);
           
           setDetalleProducto(detalleData);
-          setPrecio(precioData);
+          setRangoPrecio(rangoPrecioData);
           
         } catch (err) {
           setError('Error al cargar los datos del producto');
@@ -408,7 +416,8 @@ export default function DetalleProductoModal({
               <div className="min-h-[60vh]">
                 <div className="md:hidden space-y-6">
                   <DetalleMobile 
-                    producto={formatearProducto(detalleProducto, precio)} 
+                    producto={formatearProducto(detalleProducto, rangoPrecio)} 
+                    subcategoriaId={detalleProducto.subcategoria_id}
                     onSugerenciaChange={handleSugerenciaChange} 
                   />
                   <ModelosSelector
@@ -420,7 +429,8 @@ export default function DetalleProductoModal({
                 
                 <div className="hidden md:flex flex-col space-y-8">
                   <DetalleDesktop 
-                    producto={formatearProducto(detalleProducto, precio)}
+                    producto={formatearProducto(detalleProducto, rangoPrecio)}
+                    subcategoriaId={detalleProducto.subcategoria_id}
                     onSugerenciaChange={handleSugerenciaChange} 
                   />
                   <ModelosSelector 
