@@ -74,12 +74,20 @@ interface DetalleProducto {
   mostrar_largo_cable?: boolean;
 }
 
+interface RangoPrecio {
+  precioMinimo: number | null;
+  precioMaximo: number | null;
+  tieneVariacion: boolean;
+  totalArticulos?: number;
+  articulosConPrecio?: number;
+}
+
 interface ProductoFormateado {
   imagen: string;
   imagenes: string[];
   nombre: string;
   descripcion: string;
-  precio: number;
+  rangoPrecio: RangoPrecio | null;
   caracteristicas: Caracteristica[];
   sugerencia?: string;
   mostrarCaracteristicas?: boolean;
@@ -99,25 +107,25 @@ async function fetchProductoDetalle(id: string): Promise<DetalleProducto> {
   return data.detalle as DetalleProducto;
 }
 
-async function fetchPrecio(id: string): Promise<number> {
+async function fetchRangoPrecio(id: string): Promise<RangoPrecio | null> {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/precio?itemId=${id}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/rangoPrecio?itemId=${id}`, {
       cache: 'no-store'
     });
     
     if (!response.ok) {
-      return 0;
+      return null;
     }
     
     const data = await response.json();
-    return data.precio || 0;
+    return data;
   } catch (error) {
-    console.error("Error al obtener el precio:", error);
-    return 0;
+    console.error("Error al obtener el rango de precios:", error);
+    return null;
   }
 }
 
-function formatearProducto(detalle: DetalleProducto, precio: number): ProductoFormateado {
+function formatearProducto(detalle: DetalleProducto, rangoPrecio: RangoPrecio | null): ProductoFormateado {
   const imagenPrincipal = detalle.foto_portada || detalle.foto1_url || '';
   
   const todasLasImagenes = [
@@ -207,7 +215,7 @@ function formatearProducto(detalle: DetalleProducto, precio: number): ProductoFo
     imagen: imagenPrincipal,
     nombre: detalle.item_nombre,
     descripcion: detalle.descripcion,
-    precio: precio,
+    rangoPrecio: rangoPrecio,
     imagenes: todasLasImagenes,
     sugerencia: '',
     mostrarCaracteristicas: mostrarCaracteristicas,
@@ -220,16 +228,16 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 
   try {
     // Obtener datos en paralelo
-    const [detalleProducto, precio] = await Promise.all([
+    const [detalleProducto, rangoPrecio] = await Promise.all([
       fetchProductoDetalle(id),
-      fetchPrecio(id)
+      fetchRangoPrecio(id)
     ]);
 
     if (!detalleProducto) {
       notFound();
     }
 
-    const productoFormateado = formatearProducto(detalleProducto, precio);
+    const productoFormateado = formatearProducto(detalleProducto, rangoPrecio);
 
     console.log(`🔍 Página producto - Item ID: ${id}, Subcategoria ID: ${detalleProducto.subcategoria_id}`);
 

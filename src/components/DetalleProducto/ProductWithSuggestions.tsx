@@ -24,6 +24,7 @@ export default function ProductWithSuggestions({ producto, subcategoriaId, itemI
       <div className="md:hidden">
         <DetalleMobile 
           producto={producto} 
+          subcategoriaId={subcategoriaId}
           onSugerenciaChange={handleSugerenciaChange}
         />
         <div className="mt-6">
@@ -39,6 +40,7 @@ export default function ProductWithSuggestions({ producto, subcategoriaId, itemI
       <div className="hidden md:block">
         <DetalleDesktop 
           producto={producto}
+          subcategoriaId={subcategoriaId}
           onSugerenciaChange={handleSugerenciaChange}
         />
         <div className="mt-8">

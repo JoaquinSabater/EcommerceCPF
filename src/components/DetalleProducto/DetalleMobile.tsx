@@ -2,17 +2,27 @@
 
 import { CldImage } from 'next-cloudinary';
 import React, { useState, useRef } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { useDolar } from "@/contexts/DolarContext";
 
 interface Caracteristica {
   label: string;
   value: string;
 }
 
+interface RangoPrecio {
+  precioMinimo: number | null;
+  precioMaximo: number | null;
+  tieneVariacion: boolean;
+  totalArticulos?: number;
+  articulosConPrecio?: number;
+}
+
 interface ProductoFormateado {
   imagen: string;
   nombre: string;
   descripcion: string;
-  precio: number;
+  rangoPrecio: RangoPrecio | null;
   caracteristicas: Caracteristica[];
   imagenes?: string[];
   sugerencia?: string;
@@ -21,10 +31,13 @@ interface ProductoFormateado {
 
 interface DetalleMobileProps {
   producto: ProductoFormateado;
+  subcategoriaId: number;
   onSugerenciaChange?: (sugerencia: string) => void;
 }
 
-export default function DetalleMobile({ producto, onSugerenciaChange }: DetalleMobileProps) {
+export default function DetalleMobile({ producto, subcategoriaId, onSugerenciaChange }: DetalleMobileProps) {
+  const { getPrecioConDescuento, isDistribuidor, esCategoriaExcluida } = useAuth();
+  const { dolar } = useDolar();
   const todasLasImagenes = [
     producto.imagen,
     ...(producto.imagenes || [])
@@ -225,6 +238,57 @@ export default function DetalleMobile({ producto, onSugerenciaChange }: DetalleM
           </div>
         )}
       </div>
+
+      {/* Precio debajo de las fotos */}
+      {producto.rangoPrecio && (producto.rangoPrecio.precioMinimo || producto.rangoPrecio.precioMaximo) && (() => {
+        const { precioMinimo, precioMaximo, tieneVariacion } = producto.rangoPrecio;
+        const itemExcluido = esCategoriaExcluida(subcategoriaId);
+        
+        let precioMinimoConDescuento: number;
+        let precioMaximoConDescuento: number;
+
+        if (itemExcluido) {
+          precioMinimoConDescuento = precioMinimo || 0;
+          precioMaximoConDescuento = precioMaximo || 0;
+        } else {
+          precioMinimoConDescuento = precioMinimo ? getPrecioConDescuento(precioMinimo, { id: subcategoriaId }) : 0;
+          precioMaximoConDescuento = precioMaximo ? getPrecioConDescuento(precioMaximo, { id: subcategoriaId }) : 0;
+        }
+
+        const precioMinimoPesos = Math.round(precioMinimoConDescuento * dolar);
+        const precioMaximoPesos = Math.round(precioMaximoConDescuento * dolar);
+        const hayDescuentoAplicado = isDistribuidor() && !itemExcluido && precioMinimo && (precioMinimoConDescuento < precioMinimo);
+
+        if (tieneVariacion && precioMinimo !== precioMaximo) {
+          return (
+            <div className="text-green-600 font-bold mb-4 text-center">
+              <div className="text-2xl">
+                ${precioMinimoPesos.toLocaleString('es-AR')} - ${precioMaximoPesos.toLocaleString('es-AR')}
+              </div>
+              <div className="text-sm text-gray-500">
+                USD ${precioMinimoConDescuento.toFixed(2)} - ${precioMaximoConDescuento.toFixed(2)}
+                {hayDescuentoAplicado && (
+                  <span className="ml-1 text-green-600">(-20%)</span>
+                )}
+              </div>
+            </div>
+          );
+        } else {
+          return (
+            <div className="text-green-600 font-bold mb-4 text-center">
+              <div className="text-2xl">
+                ${precioMinimoPesos.toLocaleString('es-AR')}
+              </div>
+              <div className="text-sm text-gray-500">
+                USD ${precioMinimoConDescuento.toFixed(2)}
+                {hayDescuentoAplicado && (
+                  <span className="ml-1 text-green-600">(-20%)</span>
+                )}
+              </div>
+            </div>
+          );
+        }
+      })()}
 
       {/* Nombre y descripción */}
       <div className="font-bold text-xl mb-1 break-words">{producto.nombre}</div>
