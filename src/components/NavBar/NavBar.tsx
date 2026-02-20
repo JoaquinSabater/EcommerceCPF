@@ -194,18 +194,20 @@ export default function NavBar() {
             </button>
           )}
           
-          {/* Botón carrito con contador mejorado */}
-          <button onClick={() => setCartOpen(true)} className="relative">
-            <Image
-              src="/cart.svg"
-              width={30}
-              height={30}
-              alt="shopping cart icon"
-            />
-            <div className="rounded-full flex justify-center items-center text-xs text-white absolute w-5 h-5 -top-2 -right-2" style={{ backgroundColor: '#ea580c' }}>
-              {formatCartCount(totalItems)}
-            </div>
-          </button>
+          {/* ✅ MODIFICADO: Botón carrito - No mostrar en modo chatbot */}
+          {!isChatbotMode && (
+            <button onClick={() => setCartOpen(true)} className="relative">
+              <Image
+                src="/cart.svg"
+                width={30}
+                height={30}
+                alt="shopping cart icon"
+              />
+              <div className="rounded-full flex justify-center items-center text-xs text-white absolute w-5 h-5 -top-2 -right-2" style={{ backgroundColor: '#ea580c' }}>
+                {formatCartCount(totalItems)}
+              </div>
+            </button>
+          )}
         </div>
         <CartSidebar isOpen={cartOpen} onClose={() => setCartOpen(false)} />
       </nav>
