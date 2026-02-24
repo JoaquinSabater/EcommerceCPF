@@ -194,7 +194,6 @@ export default function NavBar() {
             </button>
           )}
           
-          {/* ✅ MODIFICADO: Botón carrito - No mostrar en modo chatbot */}
           {!isChatbotMode && (
             <button onClick={() => setCartOpen(true)} className="relative">
               <Image

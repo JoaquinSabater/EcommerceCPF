@@ -18,7 +18,7 @@ export default function MobileMenu({ menu }: { menu: MenuItem[] }) {
   const [isOpen, setIsOpen] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
   const { cart } = useCart();
-  const { isProspectoMode } = useProspectoMode();
+  const { isProspectoMode, isChatbotMode } = useProspectoMode();
   const menuRef = useRef<HTMLDivElement>(null);
 
   // ✅ NUEVO: Estados para swipe
@@ -137,8 +137,8 @@ export default function MobileMenu({ menu }: { menu: MenuItem[] }) {
               </h2>
               
               <div className="flex items-center gap-3">
-                {/* SOLO MOSTRAR USUARIO SI NO ES PROSPECTO */}
-                {!isProspectoMode && (
+                {/* SOLO MOSTRAR USUARIO SI NO ES PROSPECTO NI CHATBOT */}
+                {!isProspectoMode && !isChatbotMode && (
                   <button
                     onClick={() => {
                       setIsOpen(false);

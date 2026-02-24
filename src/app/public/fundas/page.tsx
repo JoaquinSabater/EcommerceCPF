@@ -19,7 +19,7 @@ export default function Fundas() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [loadingMarcas, setLoadingMarcas] = useState(true); // ✅ Nuevo estado para marcas
   
-  const subcategoriasFundas = [11, 8, 10, 9]; // Diseño, FlipWallet, Lisas, Silicona
+  const subcategoriasFundas = [11, 8, 10, 9];
 
   useEffect(() => {
     const fetchMarcas = async () => {

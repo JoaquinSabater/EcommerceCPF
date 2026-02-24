@@ -7,7 +7,7 @@ import { cookies } from 'next/headers';
 export const dynamic = 'force-dynamic';
 
 export default async function correas() {
-  const subcategoriaId = 25;
+  const subcategoriasCorreas = [25, 34];
   
   // ✅ Por defecto false (prospecto/cliente normal)
   let tieneContenidoEspecial = false;
@@ -27,7 +27,15 @@ export default async function correas() {
   }
   
   try {
-    const categorias = await getCategorias(subcategoriaId, tieneContenidoEspecial);
+    // Obtener categorías de todas las subcategorías
+    const promesas = subcategoriasCorreas.map(subcategoriaId =>
+      getCategorias(subcategoriaId, tieneContenidoEspecial)
+    );
+    const resultados = await Promise.all(promesas);
+    const categorias = resultados.flat();
+    
+    // Ordenar por cantidad de modelos disponibles (mayor a menor)
+    categorias.sort((a, b) => (b.modelosDisponibles || 0) - (a.modelosDisponibles || 0));
 
     return (
       <div className="flex">
