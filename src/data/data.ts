@@ -222,9 +222,21 @@ export async function getCategorias(subcategoriaId: number, mostrarContenidoEspe
     // - Si mostrarContenidoEspecial = false: Solo muestra contenido_especial = 0 (normales)
     const mostrarEspecial = mostrarContenidoEspecial ? 1 : 0;
     
+    // ✅ OPTIMIZADO: Incluimos foto_portada, fotos, descripcion y rango de precios
+    // para que CategoriaCard no necesite hacer API calls individuales.
+    // Se mantienen las stored functions calcular_stock_fisico/calcular_stock_comprometido
+    // para cálculo preciso de stock.
     const [rows] = await connection.query(
       `SELECT i.*,
-              COUNT(DISTINCT a.codigo_interno) AS modelosDisponibles
+              COUNT(DISTINCT a.codigo_interno) AS modelosDisponibles,
+              id.foto_portada,
+              id.foto1_url,
+              id.foto2_url,
+              id.foto3_url,
+              id.foto4_url,
+              id.descripcion,
+              MIN(CASE WHEN a.precio_venta > 0 THEN a.precio_venta ELSE NULL END) AS precioMinimo,
+              MAX(CASE WHEN a.precio_venta > 0 THEN a.precio_venta ELSE NULL END) AS precioMaximo
        FROM items i
        INNER JOIN articulos a ON i.id = a.item_id
        LEFT JOIN item_detalle id ON i.id = id.item_id
@@ -232,7 +244,8 @@ export async function getCategorias(subcategoriaId: number, mostrarContenidoEspe
          AND i.disponible = 1 
          AND (calcular_stock_fisico(a.codigo_interno) - calcular_stock_comprometido(a.codigo_interno)) > 0
          AND (? = 1 OR COALESCE(id.contenido_especial, 0) = 0)
-       GROUP BY i.id, i.nombre, i.subcategoria_id, i.disponible
+       GROUP BY i.id, i.nombre, i.subcategoria_id, i.disponible,
+                id.foto_portada, id.foto1_url, id.foto2_url, id.foto3_url, id.foto4_url, id.descripcion
        ORDER BY modelosDisponibles DESC, i.nombre ASC`,
       [subcategoriaId, mostrarEspecial]
     );
@@ -427,9 +440,18 @@ export async function getCategoriasPorMarca(subcategoriaId: number, marcaId: num
     // ✅ FILTRADO POR CONTENIDO ESPECIAL (igual que getCategorias)
     const mostrarEspecial = mostrarContenidoEspecial ? 1 : 0;
     
+    // ✅ OPTIMIZADO: Incluimos foto_portada, fotos, descripcion y rango de precios.
     const [rows] = await connection.query(
       `SELECT i.*,
-              COUNT(DISTINCT a.codigo_interno) AS modelosDisponibles
+              COUNT(DISTINCT a.codigo_interno) AS modelosDisponibles,
+              id.foto_portada,
+              id.foto1_url,
+              id.foto2_url,
+              id.foto3_url,
+              id.foto4_url,
+              id.descripcion,
+              MIN(CASE WHEN a.precio_venta > 0 THEN a.precio_venta ELSE NULL END) AS precioMinimo,
+              MAX(CASE WHEN a.precio_venta > 0 THEN a.precio_venta ELSE NULL END) AS precioMaximo
        FROM items i
        INNER JOIN articulos a ON i.id = a.item_id
        INNER JOIN marcas m ON a.marca_id = m.id
@@ -437,10 +459,10 @@ export async function getCategoriasPorMarca(subcategoriaId: number, marcaId: num
        WHERE i.subcategoria_id = ? 
          AND m.id = ?
          AND i.disponible = 1 
-         AND a.ubicacion <> 'SIN STOCK'
          AND (calcular_stock_fisico(a.codigo_interno) - calcular_stock_comprometido(a.codigo_interno)) > 0
          AND (? = 1 OR COALESCE(id.contenido_especial, 0) = 0)
-       GROUP BY i.id, i.nombre, i.subcategoria_id, i.disponible
+       GROUP BY i.id, i.nombre, i.subcategoria_id, i.disponible,
+                id.foto_portada, id.foto1_url, id.foto2_url, id.foto3_url, id.foto4_url, id.descripcion
        ORDER BY modelosDisponibles DESC, i.nombre ASC`,
       [subcategoriaId, marcaId, mostrarEspecial]
     );

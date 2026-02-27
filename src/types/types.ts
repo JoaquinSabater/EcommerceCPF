@@ -28,6 +28,15 @@ export type categorias = {
   subcategoria_id: number;
   imagen?: string;
   modelosDisponibles?: number;
+  // Campos pre-cargados para evitar API calls individuales por tarjeta
+  foto_portada?: string;
+  foto1_url?: string;
+  foto2_url?: string;
+  foto3_url?: string;
+  foto4_url?: string;
+  descripcion?: string;
+  precioMinimo?: number | null;
+  precioMaximo?: number | null;
 }
 
 export interface User {

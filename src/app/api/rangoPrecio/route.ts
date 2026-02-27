@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getArticulosPorSubcategoria } from "@/data/data";
+import { db } from "@/data/mysql";
 import { getRateLimiter } from '@/lib/rate-limit';
 
 export async function GET(request: NextRequest) {
@@ -24,57 +24,33 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // ✅ Obtener todos los artículos de este item/categoría
-    const articulos = await getArticulosPorSubcategoria(itemId);
-    
-    if (articulos.length === 0) {
-      return NextResponse.json({ 
-        precioMinimo: null,
-        precioMaximo: null,
-        tieneVariacion: false,
-        totalArticulos: 0,
-        articulosConPrecio: 0
-      });
-    }
+    // ✅ OPTIMIZADO: Calcular MIN/MAX directamente en SQL en vez de
+    // traer TODOS los artículos y calcular en JS.
+    // Usa stock_actual > 0 como filtro rápido en vez de stored functions.
+    const [rows]: any = await db.query(
+      `SELECT 
+        MIN(CASE WHEN a.precio_venta > 0 THEN a.precio_venta ELSE NULL END) AS precioMinimo,
+        MAX(CASE WHEN a.precio_venta > 0 THEN a.precio_venta ELSE NULL END) AS precioMaximo,
+        COUNT(DISTINCT a.codigo_interno) AS totalArticulos,
+        COUNT(DISTINCT CASE WHEN a.precio_venta > 0 THEN a.codigo_interno ELSE NULL END) AS articulosConPrecio
+      FROM articulos a
+      WHERE a.item_id = ? 
+        AND a.ubicacion <> 'SIN STOCK'
+        AND a.stock_actual > 0`,
+      [itemId]
+    );
 
-    // ✅ Filtrar solo artículos con precio válido y stock
-    const articulosConPrecio = articulos.filter(articulo => {
-      const precio = Number(articulo.precio_venta || 0);
-      const stock = Number(articulo.stock_real || 0);
-      return precio > 0 && stock > 0;
-    });
-
-    if (articulosConPrecio.length === 0) {
-      return NextResponse.json({ 
-        precioMinimo: null,
-        precioMaximo: null,
-        tieneVariacion: false,
-        totalArticulos: articulos.length,
-        articulosConPrecio: 0
-      });
-    }
-
-    // ✅ Extraer solo los precios para calcular min/max
-    const precios = articulosConPrecio.map(articulo => Number(articulo.precio_venta || 0));
-    
-    const precioMinimo = Math.min(...precios);
-    const precioMaximo = Math.max(...precios);
-    const tieneVariacion = precioMinimo !== precioMaximo;
-
-    // console.log(`💰 Rango calculado para item ${itemId}:`, {
-    //   precioMinimo,
-    //   precioMaximo,
-    //   tieneVariacion,
-    //   totalArticulos: articulos.length,
-    //   articulosConPrecio: articulosConPrecio.length
-    // });
+    const resultado = rows[0];
+    const precioMinimo = resultado.precioMinimo ? Number(resultado.precioMinimo) : null;
+    const precioMaximo = resultado.precioMaximo ? Number(resultado.precioMaximo) : null;
+    const tieneVariacion = precioMinimo !== null && precioMaximo !== null && precioMinimo !== precioMaximo;
 
     return NextResponse.json({ 
       precioMinimo,
       precioMaximo,
       tieneVariacion,
-      totalArticulos: articulos.length,
-      articulosConPrecio: articulosConPrecio.length
+      totalArticulos: Number(resultado.totalArticulos) || 0,
+      articulosConPrecio: Number(resultado.articulosConPrecio) || 0
     });
 
   } catch (error) {

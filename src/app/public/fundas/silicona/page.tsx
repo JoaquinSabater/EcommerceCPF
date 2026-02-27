@@ -1,85 +1,55 @@
-'use client';
+import { getCategorias, getMarcasConStock } from "@/data/data";
+import { cookies } from 'next/headers';
+import CategoriasPageClient from "@/components/Products/CategoriasPageClient";
 
-import { useState, useEffect } from 'react';
-import CollectionsSidebar from "@/components/Filters/CollectionsSidebar";
-import CollectionsDropdown from "@/components/Filters/CollectionsDropdown";
-import CategoriaCard from "@/components/Products/CategoriaCard";
-import CategoriaCardSkeleton from "@/components/Skeletons/CategoriaCardSkeleton";
-import { FiltersProvider, useFilters } from '@/contexts/FiltersContext';
-import { categorias } from '@/types/types';
+export const dynamic = 'force-dynamic';
 
-function SiliconaContent() {
-  const { selectedMarca } = useFilters();
-  const [categorias, setCategorias] = useState<categorias[]>([]);
-  const [loading, setLoading] = useState(true);
-  const subcategoriaId = 9;
+export default async function Silicona() {
+  const subcategoriasIds = [9];
+  
+  let tieneContenidoEspecial = false;
+  try {
+    const cookieStore = await cookies();
+    const authUserCookie = cookieStore.get('auth_user');
+    const prospectoTokenCookie = cookieStore.get('prospecto_token');
+    if (authUserCookie && !prospectoTokenCookie) {
+      const userData = JSON.parse(decodeURIComponent(authUserCookie.value));
+      tieneContenidoEspecial = userData.contenidoEspecial === 1;
+    }
+  } catch (error) {
+    console.error('❌ Error leyendo cookies:', error);
+  }
 
-  useEffect(() => {
-    const fetchCategorias = async () => {
-      setLoading(true);
-      try {
-        const url = selectedMarca 
-          ? `/api/categorias-filtradas?subcategoriaId=${subcategoriaId}&marcaId=${selectedMarca.id}`
-          : `/api/categorias-filtradas?subcategoriaId=${subcategoriaId}`;
-          
-        const response = await fetch(url);
-        const data = await response.json();
-        
-        if (data.success) {
-          setCategorias(data.categorias);
-        }
-      } catch (error) {
-        console.error('Error cargando categorías:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  try {
+    const [categoriasResults, marcasResults] = await Promise.all([
+      Promise.all(subcategoriasIds.map(id => getCategorias(id, tieneContenidoEspecial))),
+      Promise.all(subcategoriasIds.map(id => getMarcasConStock(id)))
+    ]);
 
-    fetchCategorias();
-  }, [selectedMarca, subcategoriaId]);
+    const categorias = categoriasResults.flat();
+    categorias.sort((a, b) => (b.modelosDisponibles || 0) - (a.modelosDisponibles || 0));
 
-  return (
-    <div className="flex">
-      <CollectionsSidebar />
-      <main className="flex-1">
-        <CollectionsDropdown />
-        <div className="container mx-auto px-4 py-6">
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {Array.from({ length: 8 }, (_, index) => (
-                <CategoriaCardSkeleton key={index} />
-              ))}
-            </div>
-          ) : (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {categorias.map((cat) => (
-                  <CategoriaCard key={cat.id} categoria={cat} />
-                ))}
-              </div>
-              
-              {categorias.length === 0 && (
-                <div className="text-center py-12">
-                  <p className="text-gray-500 text-lg">
-                    {selectedMarca 
-                      ? `No hay fundas de silicona de ${selectedMarca.nombre} disponibles en este momento.`
-                      : 'No hay fundas de silicona disponibles en este momento.'
-                    }
-                  </p>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      </main>
-    </div>
-  );
-}
+    const marcasMap = new Map<number, { id: number; nombre: string }>();
+    marcasResults.flat().forEach(m => marcasMap.set(m.id, m));
+    const marcas = Array.from(marcasMap.values()).sort((a, b) => a.nombre.localeCompare(b.nombre));
 
-export default function Silicona() {
-  return (
-    <FiltersProvider>
-      <SiliconaContent />
-    </FiltersProvider>
-  );
+    return (
+      <CategoriasPageClient
+        categoriasIniciales={categorias}
+        marcasIniciales={marcas}
+        subcategoriasIds={subcategoriasIds}
+        emptyMessage="No hay fundas de silicona disponibles en este momento."
+      />
+    );
+  } catch (error) {
+    console.error('Error cargando categorías:', error);
+    return (
+      <CategoriasPageClient
+        categoriasIniciales={[]}
+        marcasIniciales={[]}
+        subcategoriasIds={subcategoriasIds}
+        emptyMessage="No hay fundas de silicona disponibles en este momento."
+      />
+    );
+  }
 }

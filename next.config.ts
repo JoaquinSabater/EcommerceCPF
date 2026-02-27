@@ -3,7 +3,16 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // ✅ Configuración corregida según la nueva estructura de Next.js 15
   serverExternalPackages: [], // ✅ Movido fuera de experimental
-  
+
+  experimental: {
+    // ✅ Cache del Router en el cliente: las páginas dinámicas visitadas
+    // se mantienen en cache 60s, así al volver atrás no se recargan.
+    staleTimes: {
+      dynamic: 300, // páginas dinámicas: 5 minutos en cache del cliente
+      static: 300,  // páginas estáticas: 5 minutos
+    },
+  },
+
   typescript: {
     ignoreBuildErrors: false,
   },

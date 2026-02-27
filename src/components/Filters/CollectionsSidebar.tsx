@@ -24,6 +24,9 @@ export default function CollectionsSidebar() {
   };
 
   useEffect(() => {
+    // ✅ Si las marcas ya fueron pre-cargadas desde el servidor, no re-fetchear
+    if (marcas.length > 0) return;
+
     const subcategoriaId = getSubcategoriaId();
     if (!subcategoriaId) return;
 
@@ -44,7 +47,7 @@ export default function CollectionsSidebar() {
     };
 
     fetchMarcas();
-  }, [pathname, setMarcas]);
+  }, [pathname, setMarcas, marcas.length]);
 
   const handleMarcaClick = (marca: {id: number, nombre: string} | null) => {
     setSelectedMarca(marca);

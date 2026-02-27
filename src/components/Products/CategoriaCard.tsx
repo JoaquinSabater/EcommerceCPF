@@ -1,10 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { categorias } from "@/types/types";
 import { CldImage } from 'next-cloudinary';
 import { useRouter } from 'next/navigation';
-import CategoriaCardSkeleton from "@/components/Skeletons/CategoriaCardSkeleton";
 import { useAuth } from "@/hooks/useAuth";
 import { useDolar } from "@/contexts/DolarContext";
 
@@ -13,97 +12,43 @@ interface CategoriaCardProps {
   onClick?: () => void;
 }
 
-interface RangoPrecio {
-  precioMinimo: number | null;
-  precioMaximo: number | null;
-  tieneVariacion: boolean;
-  totalArticulos?: number;
-  articulosConPrecio?: number;
-}
-
 export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps) {
-  const [rangoPrecio, setRangoPrecio] = useState<RangoPrecio | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [imagenPrincipal, setImagenPrincipal] = useState<string>('');
   const [imageError, setImageError] = useState(false);
-  const [descripcion, setDescripcion] = useState<string>('');
 
   const { getPrecioConDescuento, isDistribuidor, esCategoriaExcluida } = useAuth();
   const { dolar } = useDolar(); 
   const router = useRouter();
 
-  // ✅ CORREGIDO: Usar subcategoria_id en lugar de id
   const itemExcluido = esCategoriaExcluida(categoria.subcategoria_id);
-  
-  // ✅ Log corregido para debugging
-  console.log(`🔍 ${categoria.nombre} (item_id: ${categoria.id}, subcategoria_id: ${categoria.subcategoria_id}) - Excluido: ${itemExcluido} - Es distribuidor: ${isDistribuidor()}`);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      setImageError(false);
-      
-      try {
-        const [resDetail, resPrecio] = await Promise.all([
-          fetch(`/api/detalle?id=${categoria.id}`),
-          fetch(`/api/rangoPrecio?itemId=${categoria.id}`)
-        ]);
+  // ✅ OPTIMIZADO: Usar datos pre-cargados desde la API de categorías
+  // en vez de hacer 2 API calls individuales por tarjeta
+  const imagenPrincipal = useMemo(() => {
+    if (categoria.foto_portada && categoria.foto_portada.trim() !== '') return categoria.foto_portada;
+    if (categoria.foto1_url && categoria.foto1_url.trim() !== '') return categoria.foto1_url;
+    if (categoria.foto2_url && categoria.foto2_url.trim() !== '') return categoria.foto2_url;
+    if (categoria.foto3_url && categoria.foto3_url.trim() !== '') return categoria.foto3_url;
+    if (categoria.foto4_url && categoria.foto4_url.trim() !== '') return categoria.foto4_url;
+    return '';
+  }, [categoria.foto_portada, categoria.foto1_url, categoria.foto2_url, categoria.foto3_url, categoria.foto4_url]);
 
-        if (resDetail.ok) {
-          const dataDetail = await resDetail.json();
-          
-          setDescripcion(dataDetail.descripcion || '');
-          
-          if (dataDetail.foto_portada && dataDetail.foto_portada.trim() !== '') {
-            setImagenPrincipal(dataDetail.foto_portada);
-            setImageError(false);
-          } else if (dataDetail.foto1_url && dataDetail.foto1_url.trim() !== '') {
-            setImagenPrincipal(dataDetail.foto1_url);
-            setImageError(false);
-          } else if (dataDetail.foto2_url && dataDetail.foto2_url.trim() !== '') {
-            setImagenPrincipal(dataDetail.foto2_url);
-            setImageError(false);
-          } else if (dataDetail.foto3_url && dataDetail.foto3_url.trim() !== '') {
-            setImagenPrincipal(dataDetail.foto3_url);
-            setImageError(false);
-          } else if (dataDetail.foto4_url && dataDetail.foto4_url.trim() !== '') {
-            setImagenPrincipal(dataDetail.foto4_url);
-            setImageError(false);
-          } else {
-            setImagenPrincipal('');
-            setImageError(true);
-          }
-        } else {
-          console.warn(`❌ No se pudieron obtener detalles para ${categoria.nombre}`);
-          setImagenPrincipal('');
-          setImageError(true);
-          setDescripcion('');
-        }
-
-        if (resPrecio.ok) {
-          const dataPrecio = await resPrecio.json();
-          setRangoPrecio(dataPrecio);
-        } else {
-          console.warn(`❌ No se pudo obtener rango de precios para ${categoria.nombre}`);
-          setRangoPrecio(null);
-        }
-
-      } catch (error) {
-        console.error(`❌ Error al obtener datos para ${categoria.nombre}:`, error);
-        setImagenPrincipal('');
-        setImageError(true);
-        setDescripcion('');
-        setRangoPrecio(null);
-      }
-      
-      setLoading(false);
+  // Rango de precios pre-cargado desde getCategorias()
+  const rangoPrecio = useMemo(() => {
+    // MySQL devuelve decimales como strings, convertir a number
+    const precioMinimo = categoria.precioMinimo != null ? Number(categoria.precioMinimo) : null;
+    const precioMaximo = categoria.precioMaximo != null ? Number(categoria.precioMaximo) : null;
+    if (!precioMinimo && !precioMaximo) return null;
+    return {
+      precioMinimo,
+      precioMaximo,
+      tieneVariacion: precioMinimo !== precioMaximo,
+      totalArticulos: categoria.modelosDisponibles || 0,
     };
-
-    fetchData();
-  }, [categoria.id, categoria.nombre, categoria.subcategoria_id]);
+  }, [categoria.precioMinimo, categoria.precioMaximo, categoria.modelosDisponibles]);
 
   const handleCardClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    window.dispatchEvent(new CustomEvent('navigation-start'));
     router.push(`/public/items/${categoria.id}`);
     if (onClick) {
       onClick();
@@ -119,16 +64,13 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
 
     if (!precioMinimo && !precioMaximo) return null;
 
-    // ✅ CORREGIDO: Calcular precios usando subcategoria_id
     let precioMinimoConDescuento: number;
     let precioMaximoConDescuento: number;
 
     if (itemExcluido) {
-      // Si está excluido, usar precio original sin descuento
       precioMinimoConDescuento = precioMinimo || 0;
       precioMaximoConDescuento = precioMaximo || 0;
     } else {
-      // Si NO está excluido, aplicar descuento - usar subcategoria_id
       precioMinimoConDescuento = precioMinimo ? getPrecioConDescuento(precioMinimo, { id: categoria.subcategoria_id }) : 0;
       precioMaximoConDescuento = precioMaximo ? getPrecioConDescuento(precioMaximo, { id: categoria.subcategoria_id }) : 0;
     }
@@ -136,10 +78,7 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
     const precioMinimoPesos = Math.round(precioMinimoConDescuento * dolar);
     const precioMaximoPesos = Math.round(precioMaximoConDescuento * dolar);
 
-    // ✅ CORREGIDO: Solo mostrar descuento si NO está excluido Y es distribuidor Y hay descuento aplicado
     const hayDescuentoAplicado = isDistribuidor() && !itemExcluido && precioMinimo && (precioMinimoConDescuento < precioMinimo);
-
-    console.log(`💰 ${categoria.nombre}: Original: ${precioMinimo}, Con descuento: ${precioMinimoConDescuento}, Hay descuento: ${hayDescuentoAplicado}, Excluido: ${itemExcluido} (subcategoria_id: ${categoria.subcategoria_id})`);
 
     if (tieneVariacion && precioMinimo !== precioMaximo) {
       return (
@@ -149,7 +88,6 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
           </div>
           <div className="text-xs text-gray-500">
             USD ${precioMinimoConDescuento.toFixed(2)} - ${precioMaximoConDescuento.toFixed(2)}
-            {/* ✅ CORREGIDO: Solo mostrar si hay descuento aplicado */}
             {hayDescuentoAplicado && (
               <span className="ml-1 text-green-600">(-20%)</span>
             )}
@@ -164,7 +102,6 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
           </div>
           <div className="text-xs text-gray-500">
             USD ${precioMinimoConDescuento.toFixed(2)}
-            {/* ✅ CORREGIDO: Solo mostrar si hay descuento aplicado */}
             {hayDescuentoAplicado && (
               <span className="ml-1 text-green-600">(-20%)</span>
             )}
@@ -173,10 +110,6 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
       );
     }
   };
-
-  if (loading) {
-    return <CategoriaCardSkeleton />;
-  }
 
   return (
     <div
@@ -187,6 +120,7 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
       aria-label={`Ver detalles de ${categoria.nombre}`}
     >
       <div className="relative bg-white p-2 flex justify-center items-center h-72 md:h-80 border-b border-gray-100">
+
         {imageError || !imagenPrincipal ? (
           <img
             src="/not-image.png"
@@ -203,12 +137,11 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
             height={600}
             className="object-contain w-full h-full transition-transform duration-300 hover:scale-105"
             crop="fit"
-            quality="auto:eco" // ✅ OPTIMIZADO: Reduce tamaño ~40%
-            format="auto" // ✅ OPTIMIZADO: WebP/AVIF automático
-            loading="lazy" // ✅ OPTIMIZADO: Carga diferida
-            sizes="(max-width: 640px) 150px, (max-width: 1024px) 250px, 300px" // ✅ OPTIMIZADO: Tamaños responsive
+            quality="auto:eco"
+            format="auto"
+            loading="lazy"
+            sizes="(max-width: 640px) 150px, (max-width: 1024px) 250px, 300px"
             onError={() => {
-              console.warn(`❌ Error cargando imagen: ${imagenPrincipal}`);
               setImageError(true);
             }}
           />
@@ -224,7 +157,6 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
           <div className="flex-1">
             {renderPrecio()}
             
-            {/* ✅ CORREGIDO: Solo mostrar badge si NO está excluido Y es distribuidor Y tiene precio */}
             {!itemExcluido && isDistribuidor() && rangoPrecio?.precioMinimo && (
               <div className="mt-1">
                 <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
@@ -233,7 +165,6 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
               </div>
             )}
             
-            {/* ✅ Mostrar badge para items excluidos */}
             {itemExcluido && isDistribuidor() && (
               <div className="mt-1">
                 <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-full">
