@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCategorias } from '@/data/data';
 import { db } from '@/data/mysql';
 import { getRateLimiter } from '@/lib/rate-limit';
 
@@ -42,38 +41,33 @@ export async function GET(request: NextRequest) {
     const campoCategoria = CATEGORIA_FIELDS[categoria];
 
     const query = `
-      SELECT DISTINCT i.subcategoria_id
-      FROM item_detalle id_table
-      JOIN items i ON id_table.item_id = i.id
+      SELECT
+        i.*,
+        COUNT(DISTINCT a.codigo_interno) AS modelosDisponibles,
+        id_table.foto_portada,
+        id_table.foto1_url,
+        id_table.foto2_url,
+        id_table.foto3_url,
+        id_table.foto4_url,
+        id_table.descripcion,
+        MIN(CASE WHEN a.precio_venta > 0 THEN a.precio_venta ELSE NULL END) AS precioMinimo,
+        MAX(CASE WHEN a.precio_venta > 0 THEN a.precio_venta ELSE NULL END) AS precioMaximo
+      FROM items i
+      INNER JOIN articulos a ON i.id = a.item_id
+      INNER JOIN item_detalle id_table ON i.id = id_table.item_id
       WHERE id_table.${campoCategoria} = 1
+        AND i.disponible = 1
+        AND COALESCE(id_table.contenido_especial, 0) = 0
+        AND (calcular_stock_fisico(a.codigo_interno) - calcular_stock_comprometido(a.codigo_interno)) > 0
+      GROUP BY
+        i.id, i.nombre, i.subcategoria_id, i.disponible,
+        id_table.foto_portada, id_table.foto1_url, id_table.foto2_url, id_table.foto3_url, id_table.foto4_url,
+        id_table.descripcion
+      ORDER BY modelosDisponibles DESC, i.nombre ASC
     `;
 
     const [rows]: any = await db.query(query);
-    
-    if (rows.length === 0) {
-      return NextResponse.json([]);
-    }
-
-    let productosCategoria = [];
-    
-    for (const row of rows) {
-      const categorias = await getCategorias(row.subcategoria_id);
-      
-      const categoriasFiltradas = await Promise.all(
-        categorias.map(async (cat) => {
-          const [catRows]: any = await db.query(
-            `SELECT ${campoCategoria} as tiene_categoria FROM item_detalle WHERE item_id = ?`,
-            [cat.id]
-          );
-          
-          return catRows.length > 0 && catRows[0].tiene_categoria === 1 ? cat : null;
-        })
-      );
-      
-      productosCategoria.push(...categoriasFiltradas.filter(Boolean));
-    }
-    
-    return NextResponse.json(productosCategoria);
+    return NextResponse.json(rows);
   } catch (error) {
     console.error('Error al obtener productos por categoría:', error);
     return NextResponse.json(
