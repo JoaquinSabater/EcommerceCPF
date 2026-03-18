@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { CldImage } from 'next-cloudinary';
+import { showError, showInfo, showWarning } from '@/lib/swal';
 
 export const dynamic = 'force-dynamic';
 
@@ -249,7 +250,7 @@ function StockAmbulanteContent() {
         setIsCarruselOpen(true);
       } else {
         // Si no hay imágenes, mostrar una notificación
-        alert('No hay imágenes disponibles para este producto');
+        showInfo('Sin imagenes', 'No hay imagenes disponibles para este producto.');
       }
     } catch (error) {
       console.error('Error al obtener imágenes:', error);
@@ -317,17 +318,17 @@ function StockAmbulanteContent() {
     const cantidad = cantidadesSeleccionadas[articulo.codigo_interno] || 0;
 
     if (cantidad <= 0) {
-      alert('Por favor, ingresa una cantidad válida');
+      showWarning('Cantidad invalida', 'Ingresa una cantidad valida.');
       return;
     }
 
     if (cantidad > articulo.cantidad_disponible) {
-      alert(`La cantidad solicitada (${cantidad}) supera el stock disponible (${articulo.cantidad_disponible})`);
+      showWarning('Stock insuficiente', `La cantidad solicitada (${cantidad}) supera el stock disponible (${articulo.cantidad_disponible}).`);
       return;
     }
 
     if (!clienteId) {
-      alert('No se pudo identificar el cliente');
+      showError('No se pudo identificar el cliente');
       return;
     }
 
@@ -378,11 +379,11 @@ function StockAmbulanteContent() {
           setMensajeConfirmacion(null);
         }, 3000);
       } else {
-        alert('Error al enviar la intención de compra: ' + data.error);
+        showError('Error al enviar la intención de compra', data.error);
       }
     } catch (error) {
       console.error('Error al enviar intención:', error);
-      alert('Error al enviar la intención de compra');
+      showError('Error al enviar la intención de compra');
     } finally {
       setEnviandoIntencion(null);
     }

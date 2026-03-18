@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth'; // ✅ AGREGAR IMPORT
 import { LoginResponse } from '@/types/types';
 import Link from 'next/link';
 import { EyeIcon, EyeSlashIcon, ExclamationTriangleIcon} from '@heroicons/react/24/outline';
+import { confirmDialog } from '@/lib/swal';
 export const dynamic = 'force-dynamic';
 
 export default function LoginPage() {
@@ -48,9 +49,13 @@ export default function LoginPage() {
         
         // ✅ MANEJAR CONFIGURACIÓN DE CONTRASEÑA ANTES DE REDIRIGIR
         if (data.requiresPasswordSetup) {
-          const wantsToSetPassword = confirm(
-            'Por seguridad, ¿te gustaría configurar una contraseña ahora? (Puedes hacerlo después desde tu perfil)'
-          );
+          const wantsToSetPassword = await confirmDialog({
+            title: 'Configurar contrasena',
+            text: 'Por seguridad, te gustaria configurar una contrasena ahora? Puedes hacerlo despues desde tu perfil.',
+            confirmButtonText: 'Si, configurar',
+            cancelButtonText: 'Ahora no',
+            icon: 'question',
+          });
           
           if (wantsToSetPassword) {
             // ✅ DAR TIEMPO PARA COOKIES Y REDIRIGIR

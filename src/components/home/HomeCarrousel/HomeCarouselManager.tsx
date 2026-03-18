@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { CldUploadWidget, CldImage } from 'next-cloudinary';
 import { PencilIcon, TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '@/hooks/useAuth';
+import { confirmDialog, showError, showWarning } from '@/lib/swal';
 
 interface CarouselSlide {
   id: number;
@@ -74,12 +75,12 @@ export default function HomeCarouselManager() {
     if (!editingSlide) return;
 
     if (!editingSlide.titulo.trim()) {
-      alert('El título es obligatorio');
+      showWarning('Campo requerido', 'El titulo es obligatorio.');
       return;
     }
     
     if (!editingSlide.imagen_desktop.trim() || !editingSlide.imagen_mobile.trim()) {
-      alert('Ambas imágenes son obligatorias');
+      showWarning('Imagenes requeridas', 'Debes cargar imagen desktop y mobile.');
       return;
     }
 
@@ -102,18 +103,26 @@ export default function HomeCarouselManager() {
         console.log(`✅ Slide ${isCreating ? 'creada' : 'actualizada'} exitosamente`);
       } else {
         const error = await response.json();
-        alert(error.error || 'Error al guardar la slide');
+        showError('Error al guardar la slide', error.error || undefined);
       }
     } catch (error) {
       console.error('Error saving slide:', error);
-      alert('Error al guardar la slide');
+      showError('Error al guardar la slide');
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('¿Eliminar esta slide?')) return;
+    const shouldDelete = await confirmDialog({
+      title: 'Eliminar slide',
+      text: 'Esta accion no se puede deshacer.',
+      confirmButtonText: 'Eliminar',
+      cancelButtonText: 'Cancelar',
+      icon: 'warning',
+    });
+
+    if (!shouldDelete) return;
 
     try {
       const response = await fetch(`/api/home-carousel/${id}`, {

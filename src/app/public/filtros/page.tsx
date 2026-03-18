@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { createPortal } from 'react-dom';
 import FiltrosResults from '@/components/Filtros/FiltrosResults';
 import DetalleProductoModal from '@/components/Products/DetalleProductoModal';
+import { showWarning } from '@/lib/swal';
 export const dynamic = 'force-dynamic';
 
 interface Marca {
@@ -275,7 +276,7 @@ export default function FiltrosPage() {
 
   const handleAplicarFiltros = async () => {
     if (selectedMarcas.length === 0) {
-      alert('Selecciona al menos una marca para aplicar filtros');
+      showWarning('Selecciona una marca', 'Debes seleccionar al menos una marca para aplicar filtros.');
       return;
     }
 

@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { XMarkIcon, PhotoIcon, TrashIcon, StarIcon, EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import { CldImage, CldUploadWidget } from 'next-cloudinary';
+import { showError, showSuccess } from '@/lib/swal';
 
 interface DetalleProducto {
   item_id: number;
@@ -20,6 +21,12 @@ interface DetalleProducto {
   foto_portada?: string;
   destacar?: boolean;
   activo?: boolean;
+  // Campos de categorías especiales
+  categoria_best_sellers?: boolean;
+  categoria_magsafe?: boolean;
+  categoria_ofertas?: boolean;
+  categoria_iphone?: boolean;
+  categoria_nuevos_ingresos?: boolean;
   // Campos nuevos - Fundas
   interior?: string;
   protector_camara?: string;
@@ -111,6 +118,12 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
         foto_portada: sanitizeValue(producto.foto_portada),
         destacar: Boolean(producto.destacar),
         activo: Boolean(producto.activo),
+        // Campos de categorías
+        categoria_best_sellers: Boolean(producto.categoria_best_sellers),
+        categoria_magsafe: Boolean(producto.categoria_magsafe),
+        categoria_ofertas: Boolean(producto.categoria_ofertas),
+        categoria_iphone: Boolean(producto.categoria_iphone),
+        categoria_nuevos_ingresos: Boolean(producto.categoria_nuevos_ingresos),
         // Campos nuevos - Fundas
         interior: sanitizeValue(producto.interior),
         protector_camara: sanitizeValue(producto.protector_camara),
@@ -335,11 +348,11 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
       else statusMessages.push('detalle desactivado');
       
       const statusText = statusMessages.length > 0 ? ` y ${statusMessages.join(', ')}` : '';
-      alert(`Producto actualizado exitosamente${statusText}`);
+      showSuccess('Producto actualizado', `Producto actualizado exitosamente${statusText}`);
       
     } catch (error) {
       console.error('Error saving product:', error);
-      alert(`Error al guardar el producto: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+      showError('Error al guardar el producto', error instanceof Error ? error.message : 'Error desconocido');
     } finally {
       setLoading(false);
     }
@@ -352,11 +365,11 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
         portadaWidgetRef.current();
       } else {
         console.error('Widget de portada no inicializado');
-        alert('Error: El selector de imágenes no está listo. Intenta de nuevo en unos segundos.');
+        showError('Selector no disponible', 'El selector de imagenes no esta listo. Intenta de nuevo en unos segundos.');
       }
     } catch (error) {
       console.error('Error abriendo widget de portada:', error);
-      alert('Error al abrir el selector de imágenes. Refresca la página e inténtalo de nuevo.');
+      showError('Error al abrir el selector', 'Refresca la pagina e intentalo de nuevo.');
     }
   };
 
@@ -367,11 +380,11 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
         imageWidgetRefs.current[index]();
       } else {
         console.error(`Widget de galería ${index} no inicializado`);
-        alert('Error: El selector de imágenes no está listo. Intenta de nuevo en unos segundos.');
+        showError('Selector no disponible', 'El selector de imagenes no esta listo. Intenta de nuevo en unos segundos.');
       }
     } catch (error) {
       console.error(`Error abriendo widget de galería ${index}:`, error);
-      alert('Error al abrir el selector de imágenes. Refresca la página e inténtalo de nuevo.');
+      showError('Error al abrir el selector', 'Refresca la pagina e intentalo de nuevo.');
     }
   };
 
@@ -436,7 +449,7 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
             onSuccess={handlePortadaUpload}
             onError={(error) => {
               console.error('Error en upload de portada:', error);
-              alert('Error al subir la imagen de portada. Inténtalo de nuevo.');
+              showError('Error al subir imagen de portada', 'Intentalo de nuevo.');
             }}
           >
             {({ open }) => {
@@ -522,7 +535,7 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
             onSuccess={(result) => handleImageUpload(result, index)}
             onError={(error) => {
               console.error(`Error en upload de imagen ${index + 1}:`, error);
-              alert(`Error al subir la imagen ${index + 1}. Inténtalo de nuevo.`);
+              showError('Error al subir imagen', `No se pudo subir la imagen ${index + 1}. Intentalo de nuevo.`);
             }}
           >
             {({ open }) => {
@@ -619,6 +632,73 @@ export default function EditProductModal({ producto, isOpen, onClose, onSave }: 
               <p className="text-xs text-gray-600 mt-2 ml-8">
                 Los productos destacados aparecen en el carrusel de la página principal
               </p>
+            </div>
+          </div>
+
+          {/* Sección de Categorías Especiales */}
+          <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg p-4">
+            <h3 className="text-lg font-semibold text-purple-800 mb-3 flex items-center">
+              <span className="mr-2">🏷️</span>
+              Categorías Especiales
+            </h3>
+            <p className="text-xs text-gray-600 mb-4">
+              Selecciona las categorías a las que pertenece este producto para la sección "Find Your Favorites"
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <label className="flex items-center space-x-2 cursor-pointer hover:bg-purple-100 p-2 rounded transition-colors">
+                <input
+                  type="checkbox"
+                  name="categoria_best_sellers"
+                  checked={formData.categoria_best_sellers || false}
+                  onChange={handleInputChange}
+                  className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-purple-300 rounded"
+                />
+                <span className="text-sm text-gray-700">Best Sellers</span>
+              </label>
+              
+              <label className="flex items-center space-x-2 cursor-pointer hover:bg-purple-100 p-2 rounded transition-colors">
+                <input
+                  type="checkbox"
+                  name="categoria_magsafe"
+                  checked={formData.categoria_magsafe || false}
+                  onChange={handleInputChange}
+                  className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-purple-300 rounded"
+                />
+                <span className="text-sm text-gray-700">MagSafe</span>
+              </label>
+              
+              <label className="flex items-center space-x-2 cursor-pointer hover:bg-purple-100 p-2 rounded transition-colors">
+                <input
+                  type="checkbox"
+                  name="categoria_ofertas"
+                  checked={formData.categoria_ofertas || false}
+                  onChange={handleInputChange}
+                  className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-purple-300 rounded"
+                />
+                <span className="text-sm text-gray-700">Ofertas</span>
+              </label>
+              
+              <label className="flex items-center space-x-2 cursor-pointer hover:bg-purple-100 p-2 rounded transition-colors">
+                <input
+                  type="checkbox"
+                  name="categoria_iphone"
+                  checked={formData.categoria_iphone || false}
+                  onChange={handleInputChange}
+                  className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-purple-300 rounded"
+                />
+                <span className="text-sm text-gray-700">iPhone</span>
+              </label>
+              
+              <label className="flex items-center space-x-2 cursor-pointer hover:bg-purple-100 p-2 rounded transition-colors">
+                <input
+                  type="checkbox"
+                  name="categoria_nuevos_ingresos"
+                  checked={formData.categoria_nuevos_ingresos || false}
+                  onChange={handleInputChange}
+                  className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-purple-300 rounded"
+                />
+                <span className="text-sm text-gray-700">Nuevos Ingresos</span>
+              </label>
             </div>
           </div>
 

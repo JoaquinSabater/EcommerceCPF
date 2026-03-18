@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import QuantityButton from "@/components/QuantityButton";
 import { ShoppingCartIcon } from "@heroicons/react/24/outline";
 import { useCart } from "@/components/CartContext";
+import { showError, showSuccess } from "@/lib/swal";
 
 interface SearchQuantityButtonProps {
   itemId: number;
@@ -95,12 +96,12 @@ export default function SearchQuantityButton({
       }
 
       // ✅ CORREGIDO: Mensaje más específico
-      alert(`✅ ${quantity} x ${modelo} agregado al carrito`);
+      showSuccess('Producto agregado', `${quantity} x ${modelo} agregado al carrito`);
       setQuantity(0);
       
     } catch (error) {
       console.error('❌ Error al agregar al carrito:', error);
-      alert('❌ Error al agregar al carrito. Intenta nuevamente.');
+      showError('No se pudo agregar al carrito', 'Intenta nuevamente.');
     } finally {
       setIsAdding(false);
     }

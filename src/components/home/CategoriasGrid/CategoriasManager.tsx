@@ -5,6 +5,7 @@ import { CldUploadWidget, CldImage } from 'next-cloudinary';
 import Image from 'next/image';
 import { PencilIcon, TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '@/hooks/useAuth';
+import { confirmDialog, showError, showWarning } from '@/lib/swal';
 
 interface Categoria {
   id: number;
@@ -65,7 +66,7 @@ export default function CategoriasManager() {
 
   const handleSave = async () => {
     if (!editingCategoria?.nombre || !editingCategoria?.imagen || !editingCategoria?.url) {
-      alert('Todos los campos son obligatorios');
+      showWarning('Campos requeridos', 'Todos los campos son obligatorios.');
       return;
     }
 
@@ -88,14 +89,22 @@ export default function CategoriasManager() {
       }
     } catch (error) {
       console.error('Error saving category:', error);
-      alert('Error al guardar');
+      showError('Error al guardar la categoria');
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('¿Eliminar categoría?')) return;
+    const shouldDelete = await confirmDialog({
+      title: 'Eliminar categoria',
+      text: 'Esta accion no se puede deshacer.',
+      confirmButtonText: 'Eliminar',
+      cancelButtonText: 'Cancelar',
+      icon: 'warning',
+    });
+
+    if (!shouldDelete) return;
 
     try {
       const response = await fetch(`/api/categorias-home/${id}`, { method: 'DELETE' });

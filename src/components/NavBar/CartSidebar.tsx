@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useProspectoMode } from '@/hooks/useProspectoMode';
 import { useDolar } from '@/contexts/DolarContext';
+import { showError, showInfo, showSuccess, showWarning } from '@/lib/swal';
 
 export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const sidebarRef = useRef<HTMLDivElement>(null);
@@ -83,19 +84,19 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
 
   const handleBuy = async () => {
     if (isChatbotMode) {
-      alert('💬 Este carrito es solo para consultas. No se pueden realizar pedidos en modo chatbot.');
+      showInfo('Modo chatbot', 'Este carrito es solo para consultas. No se pueden realizar pedidos en modo chatbot.');
       return;
     }
 
     if (cart.length === 0) {
-      alert('El carrito está vacío');
+      showInfo('Carrito vacio', 'Agrega productos antes de continuar.');
       return;
     }
 
     // ✅ Validar stock antes de proceder
     if (stockValidation.hasWarnings) {
       const errorsMessage = stockValidation.warnings.join('\n');
-      alert(`⚠️ Hay problemas de stock:\n\n${errorsMessage}\n\nPor favor, ajusta las cantidades antes de continuar.`);
+      showWarning('Problemas de stock', `${errorsMessage}\n\nAjusta las cantidades antes de continuar.`);
       return;
     }
 
@@ -130,7 +131,7 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
       } else {
         // ✅ CLIENTE: Crear pedido preliminar normal
         if (!user) {
-          alert('Debes iniciar sesión para realizar una compra');
+          showWarning('Inicia sesion', 'Debes iniciar sesión para realizar una compra.');
           router.push('/auth/login');
           return;
         }
@@ -155,9 +156,9 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
         onClose();
         
         if (isProspectoMode) {
-          alert(`¡Solicitud enviada exitosamente! Número de pedido preliminar: ${data.pedidoPreliminarId}. El vendedor se pondrá en contacto contigo pronto.`);
+          showSuccess('Solicitud enviada', `Número de pedido preliminar: ${data.pedidoPreliminarId}. El vendedor se pondrá en contacto contigo pronto.`);
         } else {
-          alert(`¡Pedido creado exitosamente! Número de pedido preliminar: ${data.pedidoPreliminarId}`);
+          showSuccess('Pedido creado', `Número de pedido preliminar: ${data.pedidoPreliminarId}`);
           router.push('/admin/pedidos');
         }
       } else {
@@ -166,7 +167,7 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
 
     } catch (error) {
       console.error('Error al crear pedido:', error);
-      alert('Error al crear el pedido. Por favor, inténtalo de nuevo.');
+      showError('Error al crear el pedido', 'Por favor, intentalo de nuevo.');
     } finally {
       setIsCreatingOrder(false);
     }

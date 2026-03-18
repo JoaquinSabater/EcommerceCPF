@@ -6,6 +6,7 @@ import { PencilIcon } from "@heroicons/react/24/outline";
 import { Articulo } from "@/types/types";
 import { formatModeloDisplay, getStockDisponible } from "./ModelosUtils";
 import { useAuth } from "@/hooks/useAuth";
+import { showError, showSuccess } from "@/lib/swal";
 
 type ModeloSeleccionado = {
   articulo: Articulo;
@@ -81,13 +82,13 @@ export default function ModelosRecomendados({
         if (data.limitado) {
           mensaje += `\n${data.limitado}`;
         }
-        alert(mensaje);
+        showSuccess('Recomendaciones guardadas', mensaje);
       } else {
         throw new Error(data.error || 'Error al guardar');
       }
     } catch (error) {
       console.error('Error:', error);
-      alert('Error al guardar las recomendaciones');
+      showError('Error al guardar las recomendaciones');
     }
   };
 

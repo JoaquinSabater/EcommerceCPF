@@ -28,6 +28,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-responsive-carousel": "^3.2.23",
+    "sweetalert2": "^11.26.23",
     "swiper": "^11.2.10"
   },
   "devDependencies": {

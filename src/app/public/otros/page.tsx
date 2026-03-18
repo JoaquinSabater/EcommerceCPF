@@ -11,7 +11,8 @@ export default async function Otros() {
     20,
     21,
     24,
-    22
+    22,
+    35
   ];
   
   // ✅ Por defecto false (prospecto/cliente normal)

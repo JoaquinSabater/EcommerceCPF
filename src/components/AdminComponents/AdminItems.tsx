@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
+import { showError } from '@/lib/swal';
 
 interface ItemAdmin {
   id: number;
@@ -129,11 +130,11 @@ const loadItems = async () => {
           )
         );
       } else {
-        alert('Error al actualizar el item');
+        showError('No se pudo actualizar el item');
       }
     } catch (error) {
       console.error('Error actualizando item:', error);
-      alert('Error al actualizar el item');
+      showError('No se pudo actualizar el item');
     }
   };
 
@@ -163,11 +164,11 @@ const loadItems = async () => {
           )
         );
       } else {
-        alert('Error al actualizar contenido especial');
+        showError('No se pudo actualizar el contenido especial');
       }
     } catch (error) {
       console.error('Error actualizando contenido especial:', error);
-      alert('Error al actualizar contenido especial');
+      showError('No se pudo actualizar el contenido especial');
     }
   };
 

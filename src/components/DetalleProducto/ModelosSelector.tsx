@@ -11,6 +11,7 @@ import ModelosBuscador from "./ModelosSelectorComponents/ModelosBuscador";
 import ModelosListbox from "./ModelosSelectorComponents/ModelosListbox";
 import ModelosSeleccionados from "./ModelosSelectorComponents/ModelosSeleccionados";
 import { formatModeloDisplay, getStockDisponible } from "./ModelosSelectorComponents/ModelosUtils";
+import { showError, showInfo, showSuccess, showWarning } from "@/lib/swal";
 
 type ModeloSeleccionado = {
   articulo: Articulo;
@@ -138,12 +139,12 @@ export default function ModelosSelector({ subcategoriaId, itemId, sugerenciaActu
       const cantidadFinal = Math.min(cantidadActual, stockDisponible);
       
       if (cantidadFinal <= 0) {
-        alert(`No hay stock suficiente para ${modeloActual.modelo}. Stock disponible: ${stockDisponible}`);
+        showWarning('Stock insuficiente', `${modeloActual.modelo} tiene ${stockDisponible} unidades disponibles.`);
         return;
       }
       
       if (cantidadFinal < cantidadActual) {
-        alert(`Solo se pueden agregar ${cantidadFinal} unidades de ${modeloActual.modelo} (stock disponible limitado)`);
+        showInfo('Cantidad ajustada', `Solo se pueden agregar ${cantidadFinal} unidades de ${modeloActual.modelo}.`);
       }
       
       setSeleccionados([...seleccionados, { articulo: modeloActual, cantidad: cantidadFinal }]);
@@ -175,7 +176,7 @@ export default function ModelosSelector({ subcategoriaId, itemId, sugerenciaActu
     for (const { articulo, cantidad } of seleccionados) {
       const stockActual = Number(articulo.stock_real || 0);
       if (cantidad > stockActual) {
-        alert(`Error: ${articulo.modelo} tiene solo ${stockActual} unidades en stock, pero intentas agregar ${cantidad}.`);
+        showError('Error de stock', `${articulo.modelo} tiene ${stockActual} unidades, intentas agregar ${cantidad}.`);
         return;
       }
     }
@@ -207,7 +208,7 @@ export default function ModelosSelector({ subcategoriaId, itemId, sugerenciaActu
       ? `Se agregaron ${seleccionados.length} modelo(s) al carrito con sugerencias especiales${tipoProducto}. Total: $${Math.round(totalPesos).toLocaleString()} ARS${tieneDescuento ? ' (con descuento distribuidor)' : ''}`
       : `Se agregaron ${seleccionados.length} modelo(s) al carrito${tipoProducto}. Total: $${Math.round(totalPesos).toLocaleString()} ARS${tieneDescuento ? ' (con descuento distribuidor)' : ''}`;
       
-    alert(mensajeConSugerencia);
+    showSuccess('Modelos agregados', mensajeConSugerencia);
     setSeleccionados([]);
   };
 
@@ -229,7 +230,7 @@ export default function ModelosSelector({ subcategoriaId, itemId, sugerenciaActu
         setModeloActual(modeloEncontrado);
         setCantidadActual(1);
       } else {
-        alert(`${modeloNombre} no tiene stock disponible`);
+        showWarning('Sin stock', `${modeloNombre} no tiene stock disponible.`);
       }
     }
   };

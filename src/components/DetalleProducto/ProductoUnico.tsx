@@ -5,6 +5,7 @@ import QuantityButton from "@/components/QuantityButton";
 import { Articulo } from "@/types/types";
 import { useCart } from "@/components/CartContext";
 import { useAuth } from "@/hooks/useAuth";
+import { showSuccess } from "@/lib/swal";
 
 interface ProductoUnicoProps {
   subcategoriaId: number;
@@ -141,7 +142,7 @@ export default function ProductoUnico({ subcategoriaId, sugerenciaActual = '' }:
         ? `✅ Se agregó ${articulo.modelo} al carrito con sugerencias especiales${tipoProducto}. Total: $${Math.round(totalArs).toLocaleString()} ARS${tieneDescuento ? ' (con descuento distribuidor)' : ''}`
         : `✅ Se agregó ${articulo.modelo} al carrito${tipoProducto}. Total: $${Math.round(totalArs).toLocaleString()} ARS${tieneDescuento ? ' (con descuento distribuidor)' : ''}`;
         
-      alert(mensaje);
+      showSuccess('Producto agregado', mensaje);
       setCantidad(1);
     }
   };
