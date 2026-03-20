@@ -2,6 +2,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { crearPedidoPreliminar } from '@/data/data';
 import { requireAuth, validateId } from '@/lib/auth';
+import { getActivePromotion } from '@/lib/promotions';
+import { db } from '@/data/mysql';
 
 export async function POST(request: NextRequest) {
   // 🔒 PROTECCIÓN: Verificar autenticación
@@ -46,10 +48,33 @@ export async function POST(request: NextRequest) {
       observaciones
     );
 
+    let promocionPedidosCount: number | null = null;
+    const promoActiva = await getActivePromotion();
+
+    if (promoActiva) {
+      await db.query(
+        `UPDATE clientes_auth
+         SET promocion_pedidos_count = promocion_pedidos_count + 1
+         WHERE cliente_id = ?
+           AND promocion_pedidos_count < ?`,
+        [clienteId, promoActiva.max_pedidos_por_cliente]
+      );
+
+      const [countRows]: any = await db.query(
+        'SELECT promocion_pedidos_count FROM clientes_auth WHERE cliente_id = ?',
+        [clienteId]
+      );
+
+      if (countRows.length > 0) {
+        promocionPedidosCount = countRows[0].promocion_pedidos_count;
+      }
+    }
+
     return NextResponse.json({ 
       success: true, 
       pedidoPreliminarId,
-      message: 'Pedido preliminar creado exitosamente' 
+      message: 'Pedido preliminar creado exitosamente',
+      promocionPedidosCount
     });
 
 } catch (error) {

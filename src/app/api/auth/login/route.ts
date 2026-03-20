@@ -94,13 +94,14 @@ export async function POST(request: Request) {
     const isDistribuidor = Boolean(cliente.Distribuidor);
 
     const [authRows] = await db.execute(
-      'SELECT id, cliente_id, password_hash, email_verified FROM clientes_auth WHERE cliente_id = ?',
+      'SELECT id, cliente_id, password_hash, email_verified, promocion_pedidos_count FROM clientes_auth WHERE cliente_id = ?',
       [cliente.id]
     ) as [Array<{
       id: number;
       cliente_id: number;
       password_hash: string | null;
       email_verified: number;
+      promocion_pedidos_count: number;
     }>, any];
 
     if (authRows.length === 0) {
@@ -110,7 +111,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const auth = authRows[0] || { password_hash: null };
+    const auth = authRows[0] || { password_hash: null, promocion_pedidos_count: 0 };
 
     if (!password) {
       // ✅ Generar token JWT CON contenidoEspecial (ESTRUCTURA CORREGIDA)
@@ -146,7 +147,8 @@ export async function POST(request: Request) {
           vendedor_id: cliente.vendedor_id,
           isAdmin,
           Distribuidor: cliente.Distribuidor,
-          contenidoEspecial: cliente.contenidoEspecial // ✅ NUEVO CAMPO
+          contenidoEspecial: cliente.contenidoEspecial, // ✅ NUEVO CAMPO
+          promocionPedidosCount: auth.promocion_pedidos_count ?? 0
         }
       });
     }
@@ -200,7 +202,8 @@ export async function POST(request: Request) {
         vendedor_id: cliente.vendedor_id,
         isAdmin,
         Distribuidor: cliente.Distribuidor,
-        contenidoEspecial: cliente.contenidoEspecial // ✅ NUEVO CAMPO
+        contenidoEspecial: cliente.contenidoEspecial, // ✅ NUEVO CAMPO
+        promocionPedidosCount: auth.promocion_pedidos_count ?? 0
       }
     });
 

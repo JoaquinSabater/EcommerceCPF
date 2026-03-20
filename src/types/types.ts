@@ -52,6 +52,7 @@ export interface User {
   Distribuidor?: number;
   vendedor_id?: number; 
   contenidoEspecial?: number;
+  promocionPedidosCount?: number;
 }
 
 export interface LoginResponse {
@@ -68,6 +69,8 @@ export interface LoginResponse {
     vendedor_id: number;
     Distribuidor?: number; // ✅ AGREGAR este campo también
     isAdmin?: boolean; // ✅ AGREGAR este campo también
+    promocionPedidosCount?: number;
+    contenidoEspecial?: number;
   };
   requiresPasswordSetup?: boolean;
   disabled?: boolean;

@@ -18,7 +18,7 @@ interface Categoria {
 }
 
 const categorias_disponibles: Categoria[] = [
-  { id: 'best-sellers', label: 'Best Sellers' },
+  { id: 'best-sellers', label: 'Mas Vendidos' },
   { id: 'magsafe', label: 'MagSafe' },
   { id: 'ofertas', label: 'Ofertas' },
   { id: 'iphone', label: 'iPhone' },
@@ -62,7 +62,7 @@ export default function CategoriasProductos() {
     <div className="container mx-auto px-4 py-12">
       <div className="text-center mb-8">
         <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
-          Find Your Favorites
+          Encontra tus Favoritos
         </h2>
       </div>
 

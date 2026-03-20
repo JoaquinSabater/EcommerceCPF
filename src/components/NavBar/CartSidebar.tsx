@@ -12,15 +12,30 @@ import { useProspectoMode } from '@/hooks/useProspectoMode';
 import { useDolar } from '@/contexts/DolarContext';
 import { showError, showInfo, showSuccess, showWarning } from '@/lib/swal';
 
+interface PromoAPIResponse {
+  active: boolean;
+  promotion: {
+    id: number;
+    nombre: string;
+    fecha_inicio: string;
+    fecha_fin: string;
+    descuento_percent: number;
+    max_pedidos_por_cliente: number;
+  } | null;
+}
+
 export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const sidebarRef = useRef<HTMLDivElement>(null);
   const { cart, changeQuantity, clearCart, getStockWarnings } = useCart(); 
-  const { user, getPrecioConDescuento, isDistribuidor, esCategoriaExcluida } = useAuth(); // ✅ NUEVO: Agregar esCategoriaExcluida
+  const { user, getPrecioConDescuento, isDistribuidor, esCategoriaExcluida, updateUser } = useAuth();
   const { isProspectoMode, isChatbotMode, prospectoData } = useProspectoMode();
   const router = useRouter();
   const { dolar } = useDolar(); // ✅ Usar contexto compartido
 
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
+  const [promoData, setPromoData] = useState<PromoAPIResponse | null>(null);
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [promoError, setPromoError] = useState<string | null>(null);
 
   // ✅ Estados para swipe
   const [touchStart, setTouchStart] = useState(0);
@@ -29,6 +44,49 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
 
   // ✅ Obtener advertencias de stock
   const stockValidation = getStockWarnings();
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchPromo = async () => {
+      if (!user || isProspectoMode || isChatbotMode) {
+        if (isMounted) {
+          setPromoData(null);
+          setPromoError(null);
+        }
+        return;
+      }
+
+      setPromoLoading(true);
+      setPromoError(null);
+
+      try {
+        const response = await fetch('/api/promociones');
+        if (!response.ok) {
+          throw new Error('Respuesta no válida');
+        }
+        const data: PromoAPIResponse = await response.json();
+        if (isMounted) {
+          setPromoData(data);
+        }
+      } catch (error) {
+        console.error('Error cargando promoción activa:', error);
+        if (isMounted) {
+          setPromoError('No pudimos cargar la promoción.');
+        }
+      } finally {
+        if (isMounted) {
+          setPromoLoading(false);
+        }
+      }
+    };
+
+    fetchPromo();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id, isProspectoMode, isChatbotMode]);
 
   // ✅ Funciones para manejar swipe
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -60,17 +118,33 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
   };
 
   // ✅ NUEVO: Función para calcular precio final con exclusiones
+  const maxPedidosPromo = promoData?.promotion?.max_pedidos_por_cliente ?? 0;
+  const descuentoPromo = promoData?.promotion?.descuento_percent ?? 0;
+  const pedidosUsados = user?.promocionPedidosCount ?? 0;
+  const pedidosRestantes = Math.max(maxPedidosPromo - pedidosUsados, 0);
+  const promoActivaParaCliente = Boolean(
+    promoData?.active &&
+    user &&
+    !isProspectoMode &&
+    !isChatbotMode &&
+    maxPedidosPromo > 0 &&
+    pedidosRestantes > 0 &&
+    descuentoPromo > 0
+  );
+
   const calcularPrecioFinal = (item: any) => {
     // Usar item_id para verificar exclusión de descuento
     const itemExcluido = item.item_id ? esCategoriaExcluida(item.item_id) : false;
     
-    if (itemExcluido) {
-      // Si está excluido, usar precio original sin descuento
-      return item.precio_venta;
-    } else {
-      // Si NO está excluido, aplicar descuento usando item_id
-      return getPrecioConDescuento(item.precio_venta, { id: item.item_id });
+    let precioCalculado = itemExcluido
+      ? item.precio_venta
+      : getPrecioConDescuento(item.precio_venta, { id: item.item_id });
+
+    if (promoActivaParaCliente) {
+      precioCalculado = precioCalculado * (1 - descuentoPromo / 100);
     }
+
+    return precioCalculado;
   };
 
   // ✅ Calcular total VISUAL (con descuento) pero mantener precios originales en cart
@@ -115,7 +189,7 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
 
       let response;
 
-      if (isProspectoMode) {
+        if (isProspectoMode) {
         // ✅ PROSPECTO: Crear pedido preliminar sin cliente/vendedor (NULLs)
         response = await fetch('/api/pedidos-prospecto', {
           method: 'POST',
@@ -159,6 +233,9 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
           showSuccess('Solicitud enviada', `Número de pedido preliminar: ${data.pedidoPreliminarId}. El vendedor se pondrá en contacto contigo pronto.`);
         } else {
           showSuccess('Pedido creado', `Número de pedido preliminar: ${data.pedidoPreliminarId}`);
+          if (typeof data.promocionPedidosCount === 'number' && user) {
+            updateUser({ ...user, promocionPedidosCount: data.promocionPedidosCount });
+          }
           router.push('/admin/pedidos');
         }
       } else {
@@ -277,6 +354,7 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
                   // ✅ NUEVO: Verificar si el item está excluido del descuento
                   const itemExcluido = item.item_id ? esCategoriaExcluida(item.item_id) : false;
                   const hayDescuentoAplicado = isDistribuidor() && !itemExcluido && (precioConDescuento < item.precio_venta);
+                  const muestraPromoBadge = promoActivaParaCliente;
                   
                   return (
                     <li key={item.codigo_interno} className="bg-white border rounded p-3" style={{ borderColor: '#e5e7eb' }}>
@@ -337,6 +415,11 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
                                 </span>
                               )}
                             </div>
+                              {muestraPromoBadge && (
+                                <span className="text-xs px-1 py-0.5 rounded border" style={{ backgroundColor: '#fefce8', color: '#854d0e', borderColor: '#fde68a' }}>
+                                  -{descuentoPromo}% promo
+                                </span>
+                              )}
                           </div>
                           
                           {/* ✅ QuantityButton */}
@@ -376,11 +459,60 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
             
             {/* ✅ FOOTER CON TOTAL Y BOTONES */}
             <div className="border-t p-4" style={{ borderColor: '#e5e7eb', backgroundColor: '#f9fafb' }}>
+              {promoLoading && user && !isProspectoMode && !isChatbotMode && (
+                <div className="mb-4 p-3 rounded border animate-pulse" style={{ backgroundColor: '#fff7ed', borderColor: '#fde68a' }}>
+                  <div className="h-3 bg-orange-100 rounded mb-2"></div>
+                  <div className="h-2 bg-orange-50 rounded w-1/2"></div>
+                </div>
+              )}
+
+              {promoError && (
+                <div className="mb-4 p-3 rounded border" style={{ backgroundColor: '#fef2f2', borderColor: '#fecaca' }}>
+                  <p className="text-xs" style={{ color: '#b91c1c' }}>{promoError}</p>
+                </div>
+              )}
+
+              {promoData?.active && user && !isProspectoMode && !isChatbotMode && (
+                <div className="mb-4 p-3 rounded border" style={{ backgroundColor: promoActivaParaCliente ? '#ecfccb' : '#fee2e2', borderColor: promoActivaParaCliente ? '#bef264' : '#fecaca' }}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold" style={{ color: promoActivaParaCliente ? '#365314' : '#b91c1c' }}>
+                      Promo -{descuentoPromo}% (21 al 31)
+                    </span>
+                    {maxPedidosPromo > 0 && (
+                      <span className="text-xs" style={{ color: promoActivaParaCliente ? '#4d7c0f' : '#991b1b' }}>
+                        {Math.min(pedidosUsados, maxPedidosPromo)} / {maxPedidosPromo} pedidos
+                      </span>
+                    )}
+                  </div>
+                  {maxPedidosPromo > 0 && (
+                    <div className="h-2 rounded-full bg-white overflow-hidden">
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${Math.min((pedidosUsados / maxPedidosPromo) * 100, 100)}%`,
+                          backgroundColor: promoActivaParaCliente ? '#4ade80' : '#f87171'
+                        }}
+                      ></div>
+                    </div>
+                  )}
+                  <p className="text-xs mt-2" style={{ color: promoActivaParaCliente ? '#4d7c0f' : '#b91c1c' }}>
+                    {promoActivaParaCliente
+                      ? `Te ${pedidosRestantes === 1 ? 'queda' : 'quedan'} ${pedidosRestantes} pedido${pedidosRestantes === 1 ? '' : 's'} con descuento.`
+                      : 'Ya utilizaste los pedidos con descuento de esta promo.'}
+                  </p>
+                </div>
+              )}
+
               <div className="flex justify-between items-center mb-4">
                 <span className="font-bold" style={{ color: '#111827' }}>
                   Total
                   {isDistribuidor() && (
                     <span className="ml-2 text-xs" style={{ color: '#16a34a' }}>(con descuentos)</span>
+                  )}
+                  {promoActivaParaCliente && (
+                    <span className="ml-2 text-xs" style={{ color: '#6b7280' }}>
+                      + promo -{descuentoPromo}%
+                    </span>
                   )}
                 </span>
                 <div className="text-right">

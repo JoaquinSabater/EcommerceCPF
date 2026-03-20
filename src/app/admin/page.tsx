@@ -1,10 +1,23 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import AdminItems from '@/components/AdminComponents/AdminItems';
 import ClienteMovimientos from '@/components/ClienteComponents/ClienteMovimientos';
+import { showError, showSuccess } from '@/lib/swal';
+
+type PromoAPIResponse = {
+  active: boolean;
+  promotion: {
+    id: number;
+    nombre: string;
+    fecha_inicio: string;
+    fecha_fin: string;
+    descuento_percent: number;
+    max_pedidos_por_cliente: number;
+  } | null;
+};
 
 type AdminSection = 'items' | 'dashboard';
 type UserSection = 'dashboard' | 'movimientos';
@@ -14,6 +27,103 @@ export default function AdminPage() {
   const router = useRouter();
   
   const [selectedSection, setSelectedSection] = useState<AdminSection | UserSection>('dashboard');
+  const [promoData, setPromoData] = useState<PromoAPIResponse | null>(null);
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [promoSaving, setPromoSaving] = useState(false);
+
+  const fetchPromocion = useCallback(async () => {
+    if (!isAdmin) {
+      setPromoData(null);
+      return;
+    }
+    setPromoLoading(true);
+    try {
+      const response = await fetch('/api/promociones');
+      if (!response.ok) {
+        throw new Error('Respuesta no válida');
+      }
+      const data: PromoAPIResponse = await response.json();
+      setPromoData(data);
+    } catch (error) {
+      console.error('Error cargando promoción:', error);
+      showError('Promoción', 'No pudimos cargar el estado de la promoción.');
+    } finally {
+      setPromoLoading(false);
+    }
+  }, [isAdmin]);
+
+  useEffect(() => {
+    fetchPromocion();
+  }, [fetchPromocion]);
+
+  const formatDate = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const buildPromoDates = () => {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth(), 21);
+    const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const endDay = Math.min(31, lastDayOfMonth);
+    const end = new Date(now.getFullYear(), now.getMonth(), endDay);
+    return {
+      start: formatDate(start),
+      end: formatDate(end)
+    };
+  };
+
+  const togglePromocion = async () => {
+    if (!isAdmin) return;
+    const activating = !promoData?.active;
+    const { start, end } = buildPromoDates();
+
+    const body = {
+      activa: activating,
+      fecha_inicio: promoData?.promotion?.fecha_inicio || start,
+      fecha_fin: promoData?.promotion?.fecha_fin || end,
+      descuento_percent: promoData?.promotion?.descuento_percent ?? 5,
+      max_pedidos_por_cliente: promoData?.promotion?.max_pedidos_por_cliente ?? 5,
+      resetCounters: activating,
+      nombre: promoData?.promotion?.nombre || 'Promo 5% del 21 al 31'
+    };
+
+    setPromoSaving(true);
+    try {
+      const response = await fetch('/api/promociones', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || 'Error al guardar la promoción');
+      }
+
+      setPromoData({
+        active: activating,
+        promotion: data.promotion
+      });
+
+      showSuccess(
+        activating ? 'Promoción activada' : 'Promoción desactivada',
+        activating
+          ? 'Los contadores se reiniciaron y la promo estará disponible del 21 al 31.'
+          : 'La promo quedó inactiva. Los importes volverán a verse normales.'
+      );
+    } catch (error) {
+      console.error('Error guardando promo:', error);
+      showError('Promoción', error instanceof Error ? error.message : 'Error al actualizar la promoción');
+    } finally {
+      setPromoSaving(false);
+    }
+  };
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -171,6 +281,37 @@ export default function AdminPage() {
           </p>
         </div>
       </div>
+
+      {isAdmin && (
+        <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mt-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">🎯 Promoción 5% (21 al 31)</h3>
+              <p className="text-sm text-gray-600">
+                Estado actual: <span className={`font-semibold ${promoData?.active ? 'text-green-600' : 'text-gray-800'}`}>
+                  {promoData?.active ? 'Activa' : 'Inactiva'}
+                </span>
+              </p>
+              {promoData?.promotion && (
+                <p className="text-xs text-gray-500">
+                  {promoData.promotion.fecha_inicio} → {promoData.promotion.fecha_fin} · Máx {promoData.promotion.max_pedidos_por_cliente} pedidos · {promoData.promotion.descuento_percent}% OFF
+                </p>
+              )}
+            </div>
+            <button
+              onClick={togglePromocion}
+              disabled={promoSaving || promoLoading}
+              className={`px-4 py-2 rounded-lg font-medium text-white ${promoData?.active ? 'bg-gray-600 hover:bg-gray-700' : 'bg-orange-500 hover:bg-orange-600'} disabled:opacity-60`}
+            >
+              {promoSaving
+                ? 'Guardando...'
+                : promoData?.active
+                  ? 'Desactivar promo'
+                  : 'Activar promo'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 
