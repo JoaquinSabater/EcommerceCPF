@@ -8,6 +8,7 @@ import { useCart } from '@/components/CartContext';
 import { usePathname, useRouter } from 'next/navigation';
 import CartSidebar from './CartSidebar';
 import { ChevronRightIcon, UserCircleIcon } from '@heroicons/react/24/solid';
+import { QuestionMarkCircleIcon } from '@heroicons/react/24/outline';
 import Search from '../Search/Search';
 import { SearchSkeleton } from '../Search/Search';
 import { useAuth } from '@/hooks/useAuth';
@@ -23,6 +24,7 @@ export default function NavBar() {
   const { isProspectoMode, isChatbotMode, prospectoData, clearProspectoSession } = useProspectoMode(); // ✅ AGREGADO isChatbotMode
   
   const [cartOpen, setCartOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
   const { cart } = useCart();
   const pathname = usePathname();
   const router = useRouter();
@@ -58,6 +60,17 @@ export default function NavBar() {
   ];
 
   const totalItems = cart.reduce((sum, item) => sum + item.cantidad, 0);
+
+  const tutorialVideos = [
+    {
+      title: 'Tutorial de Filtros para la tienda',
+      url: 'https://youtube.com/shorts/IccLr1w-kJ8?feature=share'
+    },
+    {
+      title: 'Recorrido por la tienda',
+      url: 'https://youtube.com/shorts/34pk-uq9Bzg?feature=share'
+    }
+  ];
 
   // FUNCIÓN PARA FORMATEAR EL CONTADOR
   const formatCartCount = (count: number) => {
@@ -132,7 +145,7 @@ export default function NavBar() {
         {/* ✅ Mobile Menu - Activo hasta 1536px (2xl) */}
         <div className="block 2xl:hidden">
           <Suspense fallback={null}>
-            <MobileMenu menu={menu} />
+            <MobileMenu menu={menu} tutorialVideos={tutorialVideos} />
           </Suspense>
         </div>
 
@@ -183,6 +196,43 @@ export default function NavBar() {
 
         {/* ✅ User + Cart - Siempre visible */}
         <div className="flex justify-end items-center gap-4 2xl:flex-1">
+          <div
+            className="relative hidden 2xl:block"
+            onMouseEnter={() => setIsHelpOpen(true)}
+            onMouseLeave={() => setIsHelpOpen(false)}
+          >
+            <button
+              type="button"
+              className="p-1"
+              aria-label="Ayuda y tutoriales"
+              aria-expanded={isHelpOpen}
+              onClick={() => setIsHelpOpen((prev) => !prev)}
+            >
+              <QuestionMarkCircleIcon className="w-7 h-7 text-gray-700 hover:text-orange-600 transition" />
+            </button>
+
+            {isHelpOpen && (
+              <div className="absolute right-0 top-full min-w-[320px] rounded-lg border border-gray-200 bg-white p-3 shadow-xl z-[10001]">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                Tutoriales
+              </p>
+              <div className="flex flex-col gap-2">
+                {tutorialVideos.map((video) => (
+                  <a
+                    key={video.title}
+                    href={video.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-gray-700 hover:text-orange-600 hover:underline"
+                  >
+                    {video.title}
+                  </a>
+                ))}
+              </div>
+              </div>
+            )}
+          </div>
+
           {/* ✅ MODIFICADO: No mostrar botón admin para prospectos NI chatbots */}
           {!isProspectoMode && !isChatbotMode && (
             <button

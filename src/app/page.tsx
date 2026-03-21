@@ -187,6 +187,15 @@ export default function LoginPage() {
             Configurar contraseña
           </Link>
         </div>
+        
+        <a
+          href="https://youtube.com/shorts/gOiy1cYxWaI?feature=share"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-sm text-center text-orange-700 bg-orange-50 border border-orange-200 rounded-lg px-3 py-2 hover:bg-orange-100 transition-colors"
+        >
+          Ver tutorial para ingresar por primera vez
+        </a>
       </form>
     </div>
   );

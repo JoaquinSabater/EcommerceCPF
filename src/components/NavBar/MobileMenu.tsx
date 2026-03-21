@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { XMarkIcon, ChevronDownIcon, ChevronUpIcon, UserCircleIcon, FunnelIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, ChevronDownIcon, ChevronUpIcon, UserCircleIcon, FunnelIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/outline';
 import Search from '../Search/Search';
 import { useCart } from '@/components/CartContext';
 import { useProspectoMode } from '@/hooks/useProspectoMode';
@@ -14,9 +14,15 @@ type MenuItem = {
   submenu?: MenuItem[];
 };
 
-export default function MobileMenu({ menu }: { menu: MenuItem[] }) {
+type TutorialVideo = {
+  title: string;
+  url: string;
+};
+
+export default function MobileMenu({ menu, tutorialVideos }: { menu: MenuItem[]; tutorialVideos: TutorialVideo[] }) {
   const [isOpen, setIsOpen] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [showHelpLinks, setShowHelpLinks] = useState(false);
   const { cart } = useCart();
   const { isProspectoMode, isChatbotMode } = useProspectoMode();
   const menuRef = useRef<HTMLDivElement>(null);
@@ -102,7 +108,10 @@ export default function MobileMenu({ menu }: { menu: MenuItem[] }) {
     <>
       {/* ✅ Botón del menú */}
       <button
-        onClick={() => setIsOpen(true)}
+        onClick={() => {
+          setIsOpen(true);
+          setShowHelpLinks(false);
+        }}
         className="block 2xl:hidden p-2 border rounded text-black bg-white"
       >
         <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none">
@@ -137,6 +146,15 @@ export default function MobileMenu({ menu }: { menu: MenuItem[] }) {
               </h2>
               
               <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setShowHelpLinks((prev) => !prev)}
+                  className="p-1 hover:bg-white rounded-full transition-colors"
+                  aria-label="Ayuda y tutoriales"
+                  aria-expanded={showHelpLinks}
+                >
+                  <QuestionMarkCircleIcon className="h-6 w-6 text-gray-700 hover:text-orange-600 transition" />
+                </button>
+
                 {/* SOLO MOSTRAR USUARIO SI NO ES PROSPECTO NI CHATBOT */}
                 {!isProspectoMode && !isChatbotMode && (
                   <button
@@ -159,6 +177,27 @@ export default function MobileMenu({ menu }: { menu: MenuItem[] }) {
                 </button>
               </div>
             </div>
+
+            {showHelpLinks && (
+              <div className="px-4 py-3 border-b border-gray-100 bg-orange-50/60">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                  Tutoriales
+                </p>
+                <div className="flex flex-col gap-2">
+                  {tutorialVideos.map((video) => (
+                    <a
+                      key={video.title}
+                      href={video.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-gray-700 hover:text-orange-600 hover:underline"
+                    >
+                      {video.title}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* ✅ BÚSQUEDA con ancho completo */}
             <div className="p-4 border-b border-gray-100">
