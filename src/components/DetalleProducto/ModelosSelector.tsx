@@ -26,6 +26,7 @@ interface ModelosSelectorProps {
 
 export default function ModelosSelector({ subcategoriaId, itemId, sugerenciaActual = '' }: ModelosSelectorProps) {
   const [modelos, setModelos] = useState<Articulo[]>([]);
+  const [articuloUnico, setArticuloUnico] = useState<Articulo | null>(null);
   const [seleccionados, setSeleccionados] = useState<ModeloSeleccionado[]>([]);
   const [modeloActual, setModeloActual] = useState<Articulo | null>(null);
   const [cantidadActual, setCantidadActual] = useState<number>(1);
@@ -41,18 +42,6 @@ export default function ModelosSelector({ subcategoriaId, itemId, sugerenciaActu
 
   // ✅ CORREGIR: Usar subcategoriaId para exclusiones
   const esSinDescuento = esCategoriaExcluida(subcategoriaId);
-
-  console.log('🔍 DEBUG ModelosSelector - CORREGIDO:', {
-    itemId, // Para APIs
-    subcategoriaId, // Para exclusiones
-    esSinDescuento,
-    isDistribuidor: isDistribuidor(),
-    primerosModelos: modelos.slice(0, 2).map(m => ({
-      modelo: m.modelo,
-      precio_venta: m.precio_venta,
-      precioConDescuento: getPrecioConDescuento(Number(m.precio_venta || 0))
-    }))
-  });
 
   useEffect(() => {
     async function fetchDolar() {
@@ -73,52 +62,54 @@ export default function ModelosSelector({ subcategoriaId, itemId, sugerenciaActu
 
   useEffect(() => {
     setLoadingModelos(true);
-    
-    // ✅ CORREGIR: Usar itemId para obtener artículos
-    fetch(`/api/articulosPorSubcategoria?subcategoriaId=${itemId}`)
-      .then(res => res.json())
-      .then(data => {
-        const articulosConStock = (data.articulos || []).filter((a: Articulo) => 
-          Number(a.stock_real || 0) > 0
-        );
-        
-        console.log('🟡 Artículos cargados con stock:', articulosConStock.slice(0, 3).map((a: Articulo) => ({
-          modelo: a.modelo,
-          stock_real: a.stock_real,
-          es_pesificado: a.es_pesificado,
-          precio_pesos: a.precio_pesos,
-          precio_venta: a.precio_venta
-        })));
-        
-        setModelos(data.articulos || []);
-        setEsModoSimple(articulosConStock.length === 1);
-      })
-      .catch(error => {
+    setArticuloUnico(null);
+
+    const fetchData = async () => {
+      try {
+        const articulosResponse = await fetch(`/api/articulosPorSubcategoria?subcategoriaId=${itemId}`);
+        const articulosData = await articulosResponse.json();
+
+        const articulos = articulosData.articulos || [];
+        const articulosConStock = articulos.filter((a: Articulo) => Number(a.stock_real || 0) > 0);
+
+        setModelos(articulos);
+
+        const modoSimple = articulosConStock.length === 1;
+        setEsModoSimple(modoSimple);
+
+        if (modoSimple) {
+          setArticuloUnico(articulosConStock[0]);
+          setModelosRecomendados([]);
+          return;
+        }
+
+        try {
+          const recomendacionesResponse = await fetch(`/api/recomendaciones?itemId=${itemId}`);
+          const recomendacionesData = await recomendacionesResponse.json();
+          setModelosRecomendados(recomendacionesData.recomendaciones || []);
+        } catch {
+          setModelosRecomendados(["A25", "A15", "G04", "G14", "EDGE 50 ULTRA"]);
+        }
+      } catch (error) {
         console.error('Error cargando modelos:', error);
         setModelos([]);
+        setArticuloUnico(null);
         setEsModoSimple(false);
-      })
-      .finally(() => {
+      } finally {
         setLoadingModelos(false);
-      });
+      }
+    };
 
-    // ✅ CORREGIR: Usar itemId para recomendaciones
-    fetch(`/api/recomendaciones?itemId=${itemId}`)
-      .then(res => res.json())
-      .then(data => {
-        const recomendaciones = data.recomendaciones || [];
-        setModelosRecomendados(recomendaciones);
-      })
-      .catch(() => {
-        const recomendacionesDefault = ["A25", "A15", "G04", "G14", "EDGE 50 ULTRA"];
-        setModelosRecomendados(recomendacionesDefault);
-      });
+    fetchData();
   }, [itemId]);
 
   if (esModoSimple) {
     return (
       <ProductoUnico 
-        subcategoriaId={itemId}
+        itemId={itemId}
+        subcategoriaId={subcategoriaId}
+        initialArticulo={articuloUnico}
+        initialDolar={dolar}
         sugerenciaActual={sugerenciaActual} 
       />
     );

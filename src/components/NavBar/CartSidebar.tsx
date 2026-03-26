@@ -132,20 +132,37 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
     descuentoPromo > 0
   );
 
+  const itemExcluidoDePromo = (item: any) => {
+    // Priorizar subcategoria_id cuando exista para excluir TODA la pestana "Otros".
+    // Algunos flujos de carrito no lo traen de inicio, por eso dejamos fallback por nombre.
+    if (typeof item?.subcategoria_id === 'number' && esCategoriaExcluida(item.subcategoria_id)) {
+      return true;
+    }
+
+    const nombreCategoria = String(item?.item_nombre || '').toLowerCase();
+    return nombreCategoria.includes('celulares') ||
+      nombreCategoria.includes('auriculares') ||
+      nombreCategoria.includes('proyector') ||
+      nombreCategoria.includes('electronica') ||
+      nombreCategoria.includes('electrónica');
+  };
+
   const calcularPrecioFinal = (item: any) => {
     // Usar item_id para verificar exclusión de descuento
-    const itemExcluido = item.item_id ? esCategoriaExcluida(item.item_id) : false;
+    const itemExcluido = itemExcluidoDePromo(item);
     
     let precioCalculado = itemExcluido
       ? item.precio_venta
       : getPrecioConDescuento(item.precio_venta, { id: item.item_id });
 
-    if (promoActivaParaCliente) {
+    if (promoActivaParaCliente && !itemExcluido) {
       precioCalculado = precioCalculado * (1 - descuentoPromo / 100);
     }
 
     return precioCalculado;
   };
+
+  const hayPromoAplicadaEnCarrito = promoActivaParaCliente && cart.some((item) => !itemExcluidoDePromo(item));
 
   // ✅ Calcular total VISUAL (con descuento) pero mantener precios originales en cart
   const totalEnPesos = cart.reduce(
@@ -352,9 +369,9 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
                                    stockDisponible > 10 ? '#16a34a' : '#ca8a04';
                   
                   // ✅ NUEVO: Verificar si el item está excluido del descuento
-                  const itemExcluido = item.item_id ? esCategoriaExcluida(item.item_id) : false;
+                  const itemExcluido = itemExcluidoDePromo(item);
                   const hayDescuentoAplicado = isDistribuidor() && !itemExcluido && (precioConDescuento < item.precio_venta);
-                  const muestraPromoBadge = promoActivaParaCliente;
+                  const muestraPromoBadge = promoActivaParaCliente && !itemExcluido;
                   
                   return (
                     <li key={item.codigo_interno} className="bg-white border rounded p-3" style={{ borderColor: '#e5e7eb' }}>
@@ -472,14 +489,14 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
                 </div>
               )}
 
-              {promoData?.active && user && !isProspectoMode && !isChatbotMode && (
-                <div className="mb-4 p-3 rounded border" style={{ backgroundColor: promoActivaParaCliente ? '#ecfccb' : '#fee2e2', borderColor: promoActivaParaCliente ? '#bef264' : '#fecaca' }}>
+              {promoActivaParaCliente && user && !isProspectoMode && !isChatbotMode && (
+                <div className="mb-4 p-3 rounded border" style={{ backgroundColor: '#ecfccb', borderColor: '#bef264' }}>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-semibold" style={{ color: promoActivaParaCliente ? '#365314' : '#b91c1c' }}>
+                    <span className="text-sm font-semibold" style={{ color: '#365314' }}>
                       Promo -{descuentoPromo}% (21 al 31)
                     </span>
                     {maxPedidosPromo > 0 && (
-                      <span className="text-xs" style={{ color: promoActivaParaCliente ? '#4d7c0f' : '#991b1b' }}>
+                      <span className="text-xs" style={{ color: '#4d7c0f' }}>
                         {Math.min(pedidosUsados, maxPedidosPromo)} / {maxPedidosPromo} pedidos
                       </span>
                     )}
@@ -490,15 +507,13 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
                         className="h-full rounded-full"
                         style={{
                           width: `${Math.min((pedidosUsados / maxPedidosPromo) * 100, 100)}%`,
-                          backgroundColor: promoActivaParaCliente ? '#4ade80' : '#f87171'
+                          backgroundColor: '#4ade80'
                         }}
                       ></div>
                     </div>
                   )}
-                  <p className="text-xs mt-2" style={{ color: promoActivaParaCliente ? '#4d7c0f' : '#b91c1c' }}>
-                    {promoActivaParaCliente
-                      ? `Te ${pedidosRestantes === 1 ? 'queda' : 'quedan'} ${pedidosRestantes} pedido${pedidosRestantes === 1 ? '' : 's'} con descuento.`
-                      : 'Ya utilizaste los pedidos con descuento de esta promo.'}
+                  <p className="text-xs mt-2" style={{ color: '#4d7c0f' }}>
+                    {`Te ${pedidosRestantes === 1 ? 'queda' : 'quedan'} ${pedidosRestantes} pedido${pedidosRestantes === 1 ? '' : 's'} con descuento.`}
                   </p>
                 </div>
               )}
@@ -509,7 +524,7 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
                   {isDistribuidor() && (
                     <span className="ml-2 text-xs" style={{ color: '#16a34a' }}>(con descuentos)</span>
                   )}
-                  {promoActivaParaCliente && (
+                  {hayPromoAplicadaEnCarrito && (
                     <span className="ml-2 text-xs" style={{ color: '#6b7280' }}>
                       + promo -{descuentoPromo}%
                     </span>

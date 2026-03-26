@@ -14,6 +14,7 @@ type CartItem = {
   foto_portada?: string;
   foto1_url?: string;
   item_id?: number; // Para poder obtener imágenes si no las tenemos
+  subcategoria_id?: number;
 };
 
 type CartContextType = {
@@ -162,6 +163,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         sugerencia: sugerencia,
         stock_real: Number(articulo.stock_real || 0),
         item_id: articulo.item_id,
+        subcategoria_id: (articulo as any).subcategoria_id,
         foto_portada: '',
         foto1_url: ''
       };
@@ -179,7 +181,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
                     ? { 
                         ...item, 
                         foto_portada: dataDetail.foto_portada || '',
-                        foto1_url: dataDetail.foto1_url || ''
+                        foto1_url: dataDetail.foto1_url || '',
+                        subcategoria_id: dataDetail.subcategoria_id || dataDetail?.detalle?.subcategoria_id || item.subcategoria_id
                       }
                     : item
                 )
@@ -269,6 +272,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           sugerencia: '',
           stock_real: Number(articulo.stock_real || 0),
           item_id: articulo.item_id,
+          subcategoria_id: (articulo as any).subcategoria_id,
           foto_portada: '',
           foto1_url: ''
         };
@@ -286,7 +290,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
                       ? { 
                           ...item, 
                           foto_portada: dataDetail.foto_portada || '',
-                          foto1_url: dataDetail.foto1_url || ''
+                          foto1_url: dataDetail.foto1_url || '',
+                          subcategoria_id: dataDetail.subcategoria_id || dataDetail?.detalle?.subcategoria_id || item.subcategoria_id
                         }
                       : item
                   )

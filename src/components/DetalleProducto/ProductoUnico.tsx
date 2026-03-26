@@ -8,15 +8,24 @@ import { useAuth } from "@/hooks/useAuth";
 import { showSuccess } from "@/lib/swal";
 
 interface ProductoUnicoProps {
+  itemId: number;
   subcategoriaId: number;
+  initialArticulo?: Articulo | null;
+  initialDolar?: number;
   sugerenciaActual?: string;
 }
 
-export default function ProductoUnico({ subcategoriaId, sugerenciaActual = '' }: ProductoUnicoProps) {
-  const [articulo, setArticulo] = useState<Articulo | null>(null);
+export default function ProductoUnico({
+  itemId,
+  subcategoriaId,
+  initialArticulo = null,
+  initialDolar,
+  sugerenciaActual = ''
+}: ProductoUnicoProps) {
+  const [articulo, setArticulo] = useState<Articulo | null>(initialArticulo);
   const [cantidad, setCantidad] = useState<number>(1);
-  const [dolar, setDolar] = useState<number>(1);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [dolar, setDolar] = useState<number>(initialDolar ?? 1);
+  const [loading, setLoading] = useState<boolean>(!initialArticulo);
 
   const { addToCart } = useCart();
   const { getPrecioConDescuento, isDistribuidor } = useAuth();
@@ -67,6 +76,10 @@ export default function ProductoUnico({ subcategoriaId, sugerenciaActual = '' }:
 
   // ✅ Cargar cotización del dólar
   useEffect(() => {
+    if (typeof initialDolar === 'number' && initialDolar > 0) {
+      return;
+    }
+
     async function fetchDolar() {
       try {
         const endpoint = esElectronica ? '/api/dolar-electronica' : '/api/dolar';
@@ -79,13 +92,18 @@ export default function ProductoUnico({ subcategoriaId, sugerenciaActual = '' }:
       }
     }
     fetchDolar();
-  }, [esElectronica]);
+  }, [esElectronica, initialDolar]);
 
   // ✅ Cargar el artículo único
   useEffect(() => {
+    if (initialArticulo && initialArticulo.item_id === itemId) {
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     
-    fetch(`/api/articulosPorSubcategoria?subcategoriaId=${subcategoriaId}`)
+    fetch(`/api/articulosPorSubcategoria?subcategoriaId=${itemId}`)
       .then(res => res.json())
       .then(data => {
         const articulosConStock = (data.articulos || []).filter((a: Articulo) => 
@@ -103,7 +121,7 @@ export default function ProductoUnico({ subcategoriaId, sugerenciaActual = '' }:
       .finally(() => {
         setLoading(false);
       });
-  }, [subcategoriaId]);
+  }, [itemId, initialArticulo]);
 
   // ✅ Manejar cambio de cantidad
   const handleCantidadChange = (value: number) => {

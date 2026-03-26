@@ -151,8 +151,8 @@ export function useAuth() {
   const esCategoriaExcluida = (itemId?: number): boolean => {
     if (!itemId) return false;
     
-    // ✅ IDs de items excluidos del descuento de distribuidor
-    const itemsExcluidos = [18, 19, 20, 21, 22, 24];
+    // ✅ Subcategorias de "Otros" (electronica) excluidas de descuentos visuales
+    const itemsExcluidos = [18, 19, 20, 21, 22, 24, 35];
     
     return itemsExcluidos.includes(itemId);
   };

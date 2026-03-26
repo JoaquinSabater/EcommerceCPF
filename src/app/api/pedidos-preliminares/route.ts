@@ -52,21 +52,24 @@ export async function POST(request: NextRequest) {
     const promoActiva = await getActivePromotion();
 
     if (promoActiva) {
-      await db.query(
-        `UPDATE clientes_auth
-         SET promocion_pedidos_count = promocion_pedidos_count + 1
-         WHERE cliente_id = ?
-           AND promocion_pedidos_count < ?`,
-        [clienteId, promoActiva.max_pedidos_por_cliente]
-      );
+      try {
+        await db.query(
+          `UPDATE clientes_auth
+           SET promocion_pedidos_count = LEAST(promocion_pedidos_count + 1, ?)
+           WHERE cliente_id = ?`,
+          [promoActiva.max_pedidos_por_cliente, clienteId]
+        );
 
-      const [countRows]: any = await db.query(
-        'SELECT promocion_pedidos_count FROM clientes_auth WHERE cliente_id = ?',
-        [clienteId]
-      );
+        const [countRows]: any = await db.query(
+          'SELECT promocion_pedidos_count FROM clientes_auth WHERE cliente_id = ?',
+          [clienteId]
+        );
 
-      if (countRows.length > 0) {
-        promocionPedidosCount = countRows[0].promocion_pedidos_count;
+        if (countRows.length > 0) {
+          promocionPedidosCount = countRows[0].promocion_pedidos_count;
+        }
+      } catch (promoError) {
+        console.warn('⚠️ No se pudo actualizar el contador de promo, pero el pedido fue creado:', promoError);
       }
     }
 
