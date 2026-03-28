@@ -107,9 +107,9 @@ async function fetchProductoDetalle(id: string): Promise<DetalleProducto> {
   return data.detalle as DetalleProducto;
 }
 
-async function fetchRangoPrecio(id: string): Promise<RangoPrecio | null> {
+async function fetchRangoPrecio(id: string, clubSubDolarMode: boolean = false): Promise<RangoPrecio | null> {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/rangoPrecio?itemId=${id}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/rangoPrecio?itemId=${id}${clubSubDolarMode ? '&clubSubDolar=1' : ''}`, {
       cache: 'no-store'
     });
     
@@ -223,14 +223,16 @@ function formatearProducto(detalle: DetalleProducto, rangoPrecio: RangoPrecio | 
   };
 }
 
-export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+export default async function Page({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ clubSubDolar?: string }> }) {
   const { id } = await params;
+  const { clubSubDolar } = await searchParams;
+  const clubSubDolarMode = clubSubDolar === '1';
 
   try {
     // Obtener datos en paralelo
     const [detalleProducto, rangoPrecio] = await Promise.all([
       fetchProductoDetalle(id),
-      fetchRangoPrecio(id)
+      fetchRangoPrecio(id, clubSubDolarMode)
     ]);
 
     if (!detalleProducto) {
@@ -255,6 +257,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
                 producto={productoFormateado} 
                 subcategoriaId={detalleProducto.subcategoria_id}
                 itemId={parseInt(id)}
+                clubSubDolarMode={clubSubDolarMode}
               />
             </Suspense>
           </div>

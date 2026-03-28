@@ -18,11 +18,12 @@ export async function GET(request: NextRequest) {
   
   const { searchParams } = new URL(request.url);
   const subcategoriaId = Number(searchParams.get("subcategoriaId"));
+  const clubSubDolarMode = searchParams.get('clubSubDolar') === '1';
 
   if (!subcategoriaId) {
     return NextResponse.json({ error: "subcategoriaId requerido" }, { status: 400 });
   }
 
-  const articulos = await getArticulosPorSubcategoria(subcategoriaId);
+  const articulos = await getArticulosPorSubcategoria(subcategoriaId, clubSubDolarMode ? 1 : undefined);
   return NextResponse.json({ articulos });
 }

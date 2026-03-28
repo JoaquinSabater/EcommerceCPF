@@ -2,11 +2,14 @@ import { db } from "./mysql";
 import { Articulo,categorias,ArticuloPedido,Pedido} from "@/types/types";
 import { RowDataPacket } from "mysql2";
 
-export async function getArticulosPorSubcategoria(subcategoriaId: number): Promise<Articulo[]> {
+export async function getArticulosPorSubcategoria(subcategoriaId: number, maxPrecioUsd?: number): Promise<Articulo[]> {
   let connection;
   try {
     connection = await db.getConnection();
     
+    const clubFilter = typeof maxPrecioUsd === 'number' ? ' AND a.precio_venta > 0 AND a.precio_venta < ?' : '';
+    const queryParams = typeof maxPrecioUsd === 'number' ? [subcategoriaId, maxPrecioUsd] : [subcategoriaId];
+
     const [rows] = await connection.query(
       `SELECT a.codigo_interno, a.item_id, a.marca_id, a.modelo, a.code, 
               COALESCE(a.precio_venta, 0) as precio_venta, a.ubicacion, a.stock_actual,
@@ -18,10 +21,12 @@ export async function getArticulosPorSubcategoria(subcategoriaId: number): Promi
       FROM articulos a
       JOIN items i ON a.item_id = i.id
       LEFT JOIN marcas m ON a.marca_id = m.id
-      WHERE a.item_id = ? AND a.ubicacion <> 'SIN STOCK'
+      WHERE a.item_id = ?
+        AND a.ubicacion <> 'SIN STOCK'
+        ${clubFilter}
       HAVING stock_real > 0
       ORDER BY a.precio_venta ASC, a.modelo ASC`,
-      [subcategoriaId]
+      queryParams
     );
     
     return rows as Articulo[];
@@ -260,6 +265,54 @@ export async function getCategorias(subcategoriaId: number, mostrarContenidoEspe
         connection.release();
       } catch (releaseError) {
         console.error('🔴 Error al liberar conexión en getCategorias:', releaseError);
+      }
+    }
+  }
+}
+
+export async function getCategoriasClubSubDolar(mostrarContenidoEspecial: boolean = false): Promise<categorias[]> {
+  let connection;
+  try {
+    connection = await db.getConnection();
+
+    const mostrarEspecial = mostrarContenidoEspecial ? 1 : 0;
+
+    const [rows] = await connection.query(
+      `SELECT i.*,
+              COUNT(DISTINCT a.codigo_interno) AS modelosDisponibles,
+              id.foto_portada,
+              id.foto1_url,
+              id.foto2_url,
+              id.foto3_url,
+              id.foto4_url,
+              id.descripcion,
+              MIN(CASE WHEN a.precio_venta > 0 THEN a.precio_venta ELSE NULL END) AS precioMinimo,
+              MAX(CASE WHEN a.precio_venta > 0 THEN a.precio_venta ELSE NULL END) AS precioMaximo
+       FROM items i
+       INNER JOIN articulos a ON i.id = a.item_id
+       LEFT JOIN item_detalle id ON i.id = id.item_id
+       WHERE i.club_sub_dolar = 1
+         AND i.disponible = 1
+         AND a.precio_venta > 0
+         AND a.precio_venta < 1
+         AND (calcular_stock_fisico(a.codigo_interno) - calcular_stock_comprometido(a.codigo_interno)) > 0
+         AND (? = 1 OR COALESCE(id.contenido_especial, 0) = 0)
+       GROUP BY i.id, i.nombre, i.subcategoria_id, i.disponible, i.club_sub_dolar,
+                id.foto_portada, id.foto1_url, id.foto2_url, id.foto3_url, id.foto4_url, id.descripcion
+       ORDER BY modelosDisponibles DESC, i.nombre ASC`,
+      [mostrarEspecial]
+    );
+
+    return rows as categorias[];
+  } catch (error) {
+    console.error('Error en getCategoriasClubSubDolar:', error);
+    throw error;
+  } finally {
+    if (connection) {
+      try {
+        connection.release();
+      } catch (releaseError) {
+        console.error('🔴 Error al liberar conexión en getCategoriasClubSubDolar:', releaseError);
       }
     }
   }

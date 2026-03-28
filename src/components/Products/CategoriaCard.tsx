@@ -10,9 +10,10 @@ import { useDolar } from "@/contexts/DolarContext";
 interface CategoriaCardProps {
   categoria: categorias;
   onClick?: () => void;
+  clubSubDolarMode?: boolean;
 }
 
-export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps) {
+export default function CategoriaCard({ categoria, onClick, clubSubDolarMode = false }: CategoriaCardProps) {
   const [imageError, setImageError] = useState(false);
 
   const { getPrecioConDescuento, isDistribuidor, esCategoriaExcluida } = useAuth();
@@ -20,6 +21,7 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
   const router = useRouter();
 
   const itemExcluido = esCategoriaExcluida(categoria.subcategoria_id);
+  const esSubDolarClub = Number(categoria.club_sub_dolar || 0) === 1;
 
   // ✅ OPTIMIZADO: Usar datos pre-cargados desde la API de categorías
   // en vez de hacer 2 API calls individuales por tarjeta
@@ -49,7 +51,10 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
   const handleCardClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     window.dispatchEvent(new CustomEvent('navigation-start'));
-    router.push(`/public/items/${categoria.id}`);
+    const itemUrl = clubSubDolarMode
+      ? `/public/items/${categoria.id}?clubSubDolar=1`
+      : `/public/items/${categoria.id}`;
+    router.push(itemUrl);
     if (onClick) {
       onClick();
     }
@@ -120,6 +125,11 @@ export default function CategoriaCard({ categoria, onClick }: CategoriaCardProps
       aria-label={`Ver detalles de ${categoria.nombre}`}
     >
       <div className="relative bg-white p-2 flex justify-center items-center h-72 md:h-80 border-b border-gray-100">
+        {esSubDolarClub && (
+          <span className="absolute top-3 left-3 z-10 text-xs font-semibold px-2 py-1 rounded-full border border-green-300 bg-green-100 text-green-800">
+            Sub dolar Club
+          </span>
+        )}
 
         {imageError || !imagenPrincipal ? (
           <img

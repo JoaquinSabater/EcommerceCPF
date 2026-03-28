@@ -9,9 +9,10 @@ interface ProductWithSuggestionsProps {
   producto: any;
   subcategoriaId: number; // Para exclusiones de descuento
   itemId: number; // Para APIs
+  clubSubDolarMode?: boolean;
 }
 
-export default function ProductWithSuggestions({ producto, subcategoriaId, itemId }: ProductWithSuggestionsProps) {
+export default function ProductWithSuggestions({ producto, subcategoriaId, itemId, clubSubDolarMode = false }: ProductWithSuggestionsProps) {
   const [sugerenciaActual, setSugerenciaActual] = useState('');
 
   const handleSugerenciaChange = (nuevaSugerencia: string) => {
@@ -32,6 +33,7 @@ export default function ProductWithSuggestions({ producto, subcategoriaId, itemI
             subcategoriaId={subcategoriaId}
             itemId={itemId}
             sugerenciaActual={sugerenciaActual}
+            clubSubDolarMode={clubSubDolarMode}
           />
         </div>
       </div>
@@ -48,6 +50,7 @@ export default function ProductWithSuggestions({ producto, subcategoriaId, itemI
             subcategoriaId={subcategoriaId}
             itemId={itemId}
             sugerenciaActual={sugerenciaActual}
+            clubSubDolarMode={clubSubDolarMode}
           />
         </div>
       </div>

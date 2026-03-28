@@ -22,9 +22,10 @@ interface ModelosSelectorProps {
   subcategoriaId: number; // Para exclusiones de descuento
   itemId: number; // Para APIs
   sugerenciaActual?: string;
+  clubSubDolarMode?: boolean;
 }
 
-export default function ModelosSelector({ subcategoriaId, itemId, sugerenciaActual = '' }: ModelosSelectorProps) {
+export default function ModelosSelector({ subcategoriaId, itemId, sugerenciaActual = '', clubSubDolarMode = false }: ModelosSelectorProps) {
   const [modelos, setModelos] = useState<Articulo[]>([]);
   const [articuloUnico, setArticuloUnico] = useState<Articulo | null>(null);
   const [seleccionados, setSeleccionados] = useState<ModeloSeleccionado[]>([]);
@@ -40,7 +41,6 @@ export default function ModelosSelector({ subcategoriaId, itemId, sugerenciaActu
   const { addToCart } = useCart();
   const { isAdmin, getPrecioConDescuento, isDistribuidor, esCategoriaExcluida } = useAuth();
 
-  // ✅ CORREGIR: Usar subcategoriaId para exclusiones
   const esSinDescuento = esCategoriaExcluida(subcategoriaId);
 
   useEffect(() => {
@@ -66,7 +66,7 @@ export default function ModelosSelector({ subcategoriaId, itemId, sugerenciaActu
 
     const fetchData = async () => {
       try {
-        const articulosResponse = await fetch(`/api/articulosPorSubcategoria?subcategoriaId=${itemId}`);
+        const articulosResponse = await fetch(`/api/articulosPorSubcategoria?subcategoriaId=${itemId}${clubSubDolarMode ? '&clubSubDolar=1' : ''}`);
         const articulosData = await articulosResponse.json();
 
         const articulos = articulosData.articulos || [];
@@ -101,7 +101,7 @@ export default function ModelosSelector({ subcategoriaId, itemId, sugerenciaActu
     };
 
     fetchData();
-  }, [itemId]);
+  }, [itemId, clubSubDolarMode]);
 
   if (esModoSimple) {
     return (
@@ -110,7 +110,8 @@ export default function ModelosSelector({ subcategoriaId, itemId, sugerenciaActu
         subcategoriaId={subcategoriaId}
         initialArticulo={articuloUnico}
         initialDolar={dolar}
-        sugerenciaActual={sugerenciaActual} 
+        sugerenciaActual={sugerenciaActual}
+        clubSubDolarMode={clubSubDolarMode}
       />
     );
   }

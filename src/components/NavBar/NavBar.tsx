@@ -34,6 +34,7 @@ export default function NavBar() {
     { title: 'Cables', path: '/public/cables' },
     { title: 'Cargadores', path: '/public/cargadores' },
     { title: 'Vidrios', path: '/public/vidrios' },
+    { title: 'Sub dolar Club', path: '/public/sub-dolar-club' },
     {
       title: 'Fundas',
       path: '/public/fundas',
@@ -142,6 +143,18 @@ export default function NavBar() {
       )}
 
       <nav className="sticky top-0 flex items-center justify-between p-4 lg:px-6 bg-white z-[9999] shadow-sm border-b border-gray-100">
+        {/* ✅ Logo fijo en desktop grande para evitar que desaparezca por overflow del menu */}
+        <div className="hidden 2xl:flex 2xl:flex-shrink-0 2xl:mr-6">
+          <Link href="/public" className="flex items-center">
+            <Image
+              src="/logo_orange_on_transparent.png"
+              width={40}
+              height={40}
+              alt="logo"
+            />
+          </Link>
+        </div>
+
         {/* ✅ Mobile Menu - Activo hasta 1536px (2xl) */}
         <div className="block 2xl:hidden">
           <Suspense fallback={null}>
@@ -151,7 +164,7 @@ export default function NavBar() {
 
         {/* ✅ Logo + Desktop Nav - Solo visible desde 1536px */}
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 2xl:static 2xl:translate-x-0 2xl:translate-y-0 flex items-center 2xl:gap-10 2xl:flex-1">
-          <Link href="/public" className="flex items-center">
+          <Link href="/public" className="flex items-center 2xl:hidden">
             <Image
               src="/logo_orange_on_transparent.png"
               width={40}

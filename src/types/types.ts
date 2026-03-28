@@ -26,6 +26,7 @@ export type categorias = {
   id: number;
   nombre: string;
   subcategoria_id: number;
+  club_sub_dolar?: number;
   imagen?: string;
   modelosDisponibles?: number;
   // Campos pre-cargados para evitar API calls individuales por tarjeta

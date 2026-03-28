@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
   
   const { searchParams } = new URL(request.url);
   const itemId = Number(searchParams.get("itemId"));
+  const clubSubDolarMode = searchParams.get('clubSubDolar') === '1';
 
   if (!itemId) {
     return NextResponse.json({ error: "itemId requerido" }, { status: 400 });
@@ -27,6 +28,8 @@ export async function GET(request: NextRequest) {
     // ✅ OPTIMIZADO: Calcular MIN/MAX directamente en SQL en vez de
     // traer TODOS los artículos y calcular en JS.
     // Usa stock_actual > 0 como filtro rápido en vez de stored functions.
+    const clubFilter = clubSubDolarMode ? 'AND a.precio_venta > 0 AND a.precio_venta < 1' : '';
+
     const [rows]: any = await db.query(
       `SELECT 
         MIN(CASE WHEN a.precio_venta > 0 THEN a.precio_venta ELSE NULL END) AS precioMinimo,
@@ -36,7 +39,8 @@ export async function GET(request: NextRequest) {
       FROM articulos a
       WHERE a.item_id = ? 
         AND a.ubicacion <> 'SIN STOCK'
-        AND a.stock_actual > 0`,
+        AND a.stock_actual > 0
+        ${clubFilter}`,
       [itemId]
     );
 

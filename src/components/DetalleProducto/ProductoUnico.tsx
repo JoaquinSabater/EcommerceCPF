@@ -13,6 +13,7 @@ interface ProductoUnicoProps {
   initialArticulo?: Articulo | null;
   initialDolar?: number;
   sugerenciaActual?: string;
+  clubSubDolarMode?: boolean;
 }
 
 export default function ProductoUnico({
@@ -20,7 +21,8 @@ export default function ProductoUnico({
   subcategoriaId,
   initialArticulo = null,
   initialDolar,
-  sugerenciaActual = ''
+  sugerenciaActual = '',
+  clubSubDolarMode = false
 }: ProductoUnicoProps) {
   const [articulo, setArticulo] = useState<Articulo | null>(initialArticulo);
   const [cantidad, setCantidad] = useState<number>(1);
@@ -103,7 +105,7 @@ export default function ProductoUnico({
 
     setLoading(true);
     
-    fetch(`/api/articulosPorSubcategoria?subcategoriaId=${itemId}`)
+    fetch(`/api/articulosPorSubcategoria?subcategoriaId=${itemId}${clubSubDolarMode ? '&clubSubDolar=1' : ''}`)
       .then(res => res.json())
       .then(data => {
         const articulosConStock = (data.articulos || []).filter((a: Articulo) => 
@@ -121,7 +123,7 @@ export default function ProductoUnico({
       .finally(() => {
         setLoading(false);
       });
-  }, [itemId, initialArticulo]);
+  }, [itemId, initialArticulo, clubSubDolarMode]);
 
   // ✅ Manejar cambio de cantidad
   const handleCantidadChange = (value: number) => {
