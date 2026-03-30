@@ -34,7 +34,7 @@ export default function NavBar() {
     { title: 'Cables', path: '/public/cables' },
     { title: 'Cargadores', path: '/public/cargadores' },
     { title: 'Vidrios', path: '/public/vidrios' },
-    { title: 'Sub dolar Club', path: '/public/sub-dolar-club' },
+    { title: 'Club Sub dolar', path: '/public/sub-dolar-club' },
     {
       title: 'Fundas',
       path: '/public/fundas',
