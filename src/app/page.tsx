@@ -1,7 +1,7 @@
 'use client';
 
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useAuth } from '@/hooks/useAuth'; // ✅ AGREGAR IMPORT
 import { LoginResponse } from '@/types/types';
 import Link from 'next/link';
@@ -11,6 +11,7 @@ export const dynamic = 'force-dynamic';
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login } = useAuth(); // ✅ USAR EL HOOK
   const [cuil, setCuil] = useState("");
   const [password, setPassword] = useState("");
@@ -18,6 +19,27 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [clienteDeshabilitado, setClienteDeshabilitado] = useState(false);
+  const [isRedirectingWithToken, setIsRedirectingWithToken] = useState(false);
+
+  useEffect(() => {
+    const token = searchParams.get('token');
+    if (!token) return;
+
+    setIsRedirectingWithToken(true);
+    router.replace(`/public?token=${encodeURIComponent(token)}`);
+  }, [router, searchParams]);
+
+  if (isRedirectingWithToken) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">Validando acceso...</h2>
+          <p className="text-gray-600">Redirigiendo al modo especial</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

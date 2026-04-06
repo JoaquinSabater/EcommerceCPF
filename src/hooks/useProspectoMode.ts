@@ -105,8 +105,8 @@ export function useProspectoMode() {
         localStorage.setItem('prospecto_data', JSON.stringify(data.prospecto));
         localStorage.setItem('prospecto_token', token);
         
-        // ✅ REDIRIGIR AL LOBBY SIN TOKEN EN URL
-        router.replace('/public');
+        // ✅ REDIRIGIR SEGUN EL TIPO DE LINK
+        router.replace(data.redirectTo || '/public');
         
       } else {
         console.error('❌ Token inválido:', data.message);

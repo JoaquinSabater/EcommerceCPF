@@ -5,6 +5,7 @@ import { sanitizeInput } from '@/lib/auth';
 
 // ✅ Token fijo para chatbot
 const CHATBOT_TOKEN = 'chatbot_access_token_2025_permanent';
+const CHATBOT_SUBDOLAR_TOKEN = 'chatbot_subdolar_access_token_2026_permanent';
 
 export async function POST(request: NextRequest) {
   let connection;
@@ -26,6 +27,7 @@ export async function POST(request: NextRequest) {
         success: true,
         message: 'Token de chatbot válido',
         isChatbot: true,
+        redirectTo: '/public',
         prospecto: {
           id: 0,
           nombre: 'Cliente Chatbot',
@@ -33,6 +35,24 @@ export async function POST(request: NextRequest) {
           telefono: '',
           cuit: '',
           negocio: 'Consulta via Chatbot'
+        }
+      });
+    }
+
+    // ✅ NUEVO: Token de chatbot que inicia directo en Sub dolar Club
+    if (token === CHATBOT_SUBDOLAR_TOKEN) {
+      return NextResponse.json({
+        success: true,
+        message: 'Token de chatbot Sub dolar válido',
+        isChatbot: true,
+        redirectTo: '/public/sub-dolar-club',
+        prospecto: {
+          id: 0,
+          nombre: 'Cliente Chatbot',
+          email: 'chatbot@sistema.com',
+          telefono: '',
+          cuit: '',
+          negocio: 'Consulta via Chatbot (Sub dolar Club)'
         }
       });
     }
@@ -71,6 +91,7 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Token válido',
       isChatbot: false,
+      redirectTo: '/public',
       prospecto: {
         id: tokenData.prospecto_id,
         nombre: tokenData.nombre,

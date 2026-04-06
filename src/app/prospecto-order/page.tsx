@@ -38,8 +38,14 @@ function ProspectoOrderContent() {
         // ✅ LIMPIAR COMPLETAMENTE CUALQUIER SESIÓN EXISTENTE
         localStorage.clear(); // Limpiar todo el localStorage
         
-        // ✅ CONFIGURAR MODO PROSPECTO LIMPIO
-        localStorage.setItem('prospecto_mode', 'true');
+        // ✅ CONFIGURAR MODO SEGUN EL TIPO DE TOKEN
+        if (data.isChatbot) {
+          localStorage.setItem('chatbot_mode', 'true');
+          localStorage.setItem('prospecto_mode', 'false');
+        } else {
+          localStorage.setItem('prospecto_mode', 'true');
+          localStorage.setItem('chatbot_mode', 'false');
+        }
         localStorage.setItem('prospecto_token', token);
         localStorage.setItem('prospecto_data', JSON.stringify(data.prospecto));
         localStorage.setItem('prospecto_cart', JSON.stringify([]));
@@ -52,7 +58,7 @@ function ProspectoOrderContent() {
         setLoading(false);
         
         setTimeout(() => {
-          window.location.href = '/public';
+          window.location.href = data.redirectTo || '/public';
         }, 2000);
         
       } else {
