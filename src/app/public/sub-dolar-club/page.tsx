@@ -28,6 +28,15 @@ export default async function SubDolarClubPage() {
       <div className="flex">
         <main className="flex-1">
           <div className="container mx-auto px-4 py-6">
+            <div className="text-center mb-8">
+              <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-orange-700 uppercase">
+                !Bienvenido al Club Sub Dolar!
+              </h1>
+              <p className="mt-2 text-base md:text-2xl text-gray-800 font-medium">
+                Una seleccion exclusiva de productos a precios increibles, todos por menos de 1 USD.
+              </p>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {categoriasClub.map((cat) => (
                 <CategoriaCard key={cat.id} categoria={cat} clubSubDolarMode={true} />
@@ -49,7 +58,14 @@ export default async function SubDolarClubPage() {
       <div className="flex">
         <main className="flex-1">
           <div className="container mx-auto px-4 py-6">
-            <h1 className="text-3xl font-bold text-gray-900 mb-6">Sub dolar Club</h1>
+            <div className="text-center mb-8">
+              <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-orange-600 uppercase">
+                !Bienvenido al Club Sub Dolar!
+              </h1>
+              <p className="mt-2 text-base md:text-2xl text-gray-800 font-medium">
+                Una seleccion exclusiva de productos a precios increibles, todos por menos de 1 USD.
+              </p>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {Array.from({ length: 8 }, (_, index) => (
                 <CategoriaCardSkeleton key={index} />
