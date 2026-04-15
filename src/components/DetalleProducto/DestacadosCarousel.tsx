@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import type { TouchEvent } from 'react';
-import { useRouter } from 'next/navigation';
 import { CldImage } from 'next-cloudinary';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import DetalleProductoModal from '@/components/Products/DetalleProductoModal';
 
 export interface DestacadoItem {
   id: number;
@@ -22,11 +22,12 @@ export default function DestacadosCarousel({
   productos,
   clubSubDolarMode = false,
 }: DestacadosCarouselProps) {
-  const router = useRouter();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [startX, setStartX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [cardsPerSlide, setCardsPerSlide] = useState(4);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
 
   useEffect(() => {
     const updateCardsPerSlide = () => {
@@ -51,7 +52,7 @@ export default function DestacadosCarousel({
       result.push(productos.slice(i, i + cardsPerSlide));
     }
     return result;
-  }, [productos]);
+  }, [productos, cardsPerSlide]);
 
   if (slides.length === 0) {
     return null;
@@ -69,11 +70,14 @@ export default function DestacadosCarousel({
     setCurrentSlide(index);
   };
 
-  const navigateToItem = (itemId: number) => {
-    const href = clubSubDolarMode
-      ? `/public/items/${itemId}?clubSubDolar=1`
-      : `/public/items/${itemId}`;
-    router.push(href);
+  const openItemModal = (itemId: number) => {
+    setSelectedItemId(String(itemId));
+    setModalOpen(true);
+  };
+
+  const closeItemModal = () => {
+    setModalOpen(false);
+    setSelectedItemId(null);
   };
 
   const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
@@ -113,7 +117,8 @@ export default function DestacadosCarousel({
   };
 
   return (
-    <div className="relative">
+    <>
+      <div className="relative">
       <div
         className="relative overflow-hidden"
         onTouchStart={handleTouchStart}
@@ -138,7 +143,7 @@ export default function DestacadosCarousel({
                     type="button"
                     onClick={() => {
                       if (!isDragging) {
-                        navigateToItem(producto.id);
+                        openItemModal(producto.id);
                       }
                     }}
                     className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white text-left shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
@@ -226,6 +231,16 @@ export default function DestacadosCarousel({
           </div>
         </>
       )}
-    </div>
+      </div>
+
+      {selectedItemId && (
+        <DetalleProductoModal
+          itemId={selectedItemId}
+          isOpen={modalOpen}
+          onClose={closeItemModal}
+          clubSubDolarMode={clubSubDolarMode}
+        />
+      )}
+    </>
   );
 }

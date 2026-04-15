@@ -98,13 +98,15 @@ interface DetalleProductoModalProps {
   isOpen: boolean;
   onClose: () => void;
   onUpdate?: (updatedProduct: any) => void;
+  clubSubDolarMode?: boolean;
 }
 
 export default function DetalleProductoModal({ 
   itemId, 
   isOpen, 
   onClose, 
-  onUpdate 
+  onUpdate,
+  clubSubDolarMode = false,
 }: DetalleProductoModalProps) {
   const [detalleProducto, setDetalleProducto] = useState<DetalleProducto | null>(null);
   const [rangoPrecio, setRangoPrecio] = useState<RangoPrecio | null>(null);
@@ -136,7 +138,7 @@ export default function DetalleProductoModal({
 
   const fetchRangoPrecio = async (id: string) => {
     try {
-      const response = await fetch(`/api/rangoPrecio?itemId=${id}`);
+      const response = await fetch(`/api/rangoPrecio?itemId=${id}${clubSubDolarMode ? '&clubSubDolar=1' : ''}`);
       if (!response.ok) {
         throw new Error('Error al obtener rango de precio');
       }
@@ -304,7 +306,7 @@ export default function DetalleProductoModal({
 
       loadData();
     }
-  }, [isOpen, itemId]);
+  }, [isOpen, itemId, clubSubDolarMode]);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -423,7 +425,8 @@ export default function DetalleProductoModal({
                   <ModelosSelector
                     subcategoriaId={detalleProducto.subcategoria_id} 
                     itemId={parseInt(itemId)} 
-                    sugerenciaActual={sugerenciaActual} 
+                    sugerenciaActual={sugerenciaActual}
+                    clubSubDolarMode={clubSubDolarMode}
                   />
                 </div>
                 
@@ -436,7 +439,8 @@ export default function DetalleProductoModal({
                   <ModelosSelector 
                     subcategoriaId={detalleProducto.subcategoria_id} 
                     itemId={parseInt(itemId)}
-                    sugerenciaActual={sugerenciaActual} 
+                    sugerenciaActual={sugerenciaActual}
+                    clubSubDolarMode={clubSubDolarMode}
                   />
                 </div>
               </div>

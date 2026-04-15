@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/data/mysql';
 
-export const revalidate = 300;
+export const dynamic = 'force-dynamic';
 
 interface ProductoDestacadoRow {
   id: number;
@@ -19,32 +19,28 @@ export async function GET(request: NextRequest) {
 
     const hasExclude = Number.isFinite(excludeItemId) && excludeItemId > 0;
 
-    const query = hasExclude
-      ? `SELECT
-           i.id,
-           i.nombre,
-           id.foto_portada,
-           id.foto1_url
-         FROM items i
-         INNER JOIN item_detalle id ON i.id = id.item_id
-         WHERE i.disponible = 1
-           AND id.destacar = 1
-           AND i.id <> ?
-         ORDER BY i.nombre ASC
-         LIMIT ?`
-      : `SELECT
-           i.id,
-           i.nombre,
-           id.foto_portada,
-           id.foto1_url
-         FROM items i
-         INNER JOIN item_detalle id ON i.id = id.item_id
-         WHERE i.disponible = 1
-           AND id.destacar = 1
-         ORDER BY i.nombre ASC
-         LIMIT ?`;
+    const query = `SELECT
+        i.id,
+        i.nombre,
+        id.foto_portada,
+        id.foto1_url
+      FROM items i
+      INNER JOIN item_detalle id ON i.id = id.item_id
+      WHERE i.disponible = 1
+        AND id.destacar = 1
+        AND (? IS NULL OR i.id <> ?)
+        AND EXISTS (
+          SELECT 1
+          FROM articulos a
+          WHERE a.item_id = i.id
+            AND a.ubicacion <> 'SIN STOCK'
+            AND (calcular_stock_fisico(a.codigo_interno) - calcular_stock_comprometido(a.codigo_interno)) > 0
+        )
+      ORDER BY i.nombre ASC
+      LIMIT ?`;
 
-    const params = hasExclude ? [excludeItemId, limit] : [limit];
+    const excludeValue = hasExclude ? excludeItemId : null;
+    const params = [excludeValue, excludeValue, limit];
     const [rows] = await db.query(query, params);
 
     return NextResponse.json(rows as ProductoDestacadoRow[]);

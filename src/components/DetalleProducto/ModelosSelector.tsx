@@ -61,16 +61,33 @@ export default function ModelosSelector({ subcategoriaId, itemId, sugerenciaActu
   }, [esSinDescuento]);
 
   useEffect(() => {
+    let isActive = true;
     setLoadingModelos(true);
     setArticuloUnico(null);
+    setModeloActual(null);
+    setSeleccionados([]);
+    setSearchTerm('');
+    const controller = new AbortController();
 
     const fetchData = async () => {
       try {
-        const articulosResponse = await fetch(`/api/articulosPorSubcategoria?subcategoriaId=${itemId}${clubSubDolarMode ? '&clubSubDolar=1' : ''}`);
+        const articulosResponse = await fetch(
+          `/api/articulosPorSubcategoria?subcategoriaId=${itemId}${clubSubDolarMode ? '&clubSubDolar=1' : ''}`,
+          { signal: controller.signal, cache: 'no-store' }
+        );
+
+        if (!articulosResponse.ok) {
+          throw new Error('No se pudieron obtener los articulos del item');
+        }
+
         const articulosData = await articulosResponse.json();
 
         const articulos = articulosData.articulos || [];
         const articulosConStock = articulos.filter((a: Articulo) => Number(a.stock_real || 0) > 0);
+
+        if (!isActive) {
+          return;
+        }
 
         setModelos(articulos);
 
@@ -84,23 +101,47 @@ export default function ModelosSelector({ subcategoriaId, itemId, sugerenciaActu
         }
 
         try {
-          const recomendacionesResponse = await fetch(`/api/recomendaciones?itemId=${itemId}`);
+          const recomendacionesResponse = await fetch(`/api/recomendaciones?itemId=${itemId}`, {
+            signal: controller.signal,
+            cache: 'no-store',
+          });
+
+          if (!recomendacionesResponse.ok) {
+            throw new Error('No se pudieron obtener recomendaciones');
+          }
+
           const recomendacionesData = await recomendacionesResponse.json();
+          if (!isActive) {
+            return;
+          }
           setModelosRecomendados(recomendacionesData.recomendaciones || []);
         } catch {
+          if (!isActive) {
+            return;
+          }
           setModelosRecomendados(["A25", "A15", "G04", "G14", "EDGE 50 ULTRA"]);
         }
       } catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') {
+          return;
+        }
+
         console.error('Error cargando modelos:', error);
         setModelos([]);
         setArticuloUnico(null);
         setEsModoSimple(false);
       } finally {
-        setLoadingModelos(false);
+        if (isActive) {
+          setLoadingModelos(false);
+        }
       }
     };
 
-    fetchData();
+    void fetchData();
+    return () => {
+      isActive = false;
+      controller.abort();
+    };
   }, [itemId, clubSubDolarMode]);
 
   if (esModoSimple) {

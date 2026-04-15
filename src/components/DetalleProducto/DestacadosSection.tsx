@@ -11,7 +11,7 @@ function getBaseUrlFromHeaders(host: string | null, proto: string | null): strin
   return `${proto || 'http'}://${host}`;
 }
 
-async function fetchDestacados(itemIdActual: number): Promise<DestacadoItem[]> {
+async function fetchDestacados(itemIdActual: number, clubSubDolarMode: boolean): Promise<DestacadoItem[]> {
   try {
     const hdrs = await headers();
     const configuredBaseUrl = process.env.NEXT_PUBLIC_BASE_URL;
@@ -46,7 +46,7 @@ export default async function DestacadosSection({
   itemIdActual,
   clubSubDolarMode,
 }: DestacadosSectionProps) {
-  const productosDestacados = await fetchDestacados(itemIdActual);
+  const productosDestacados = await fetchDestacados(itemIdActual, clubSubDolarMode);
 
   if (productosDestacados.length === 0) {
     return null;

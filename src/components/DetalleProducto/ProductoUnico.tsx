@@ -98,16 +98,29 @@ export default function ProductoUnico({
 
   // ✅ Cargar el artículo único
   useEffect(() => {
+    let isActive = true;
+    const controller = new AbortController();
+
     if (initialArticulo && initialArticulo.item_id === itemId) {
       setLoading(false);
-      return;
+      return () => {
+        isActive = false;
+        controller.abort();
+      };
     }
 
     setLoading(true);
     
-    fetch(`/api/articulosPorSubcategoria?subcategoriaId=${itemId}${clubSubDolarMode ? '&clubSubDolar=1' : ''}`)
+    fetch(`/api/articulosPorSubcategoria?subcategoriaId=${itemId}${clubSubDolarMode ? '&clubSubDolar=1' : ''}`, {
+      signal: controller.signal,
+      cache: 'no-store',
+    })
       .then(res => res.json())
       .then(data => {
+        if (!isActive) {
+          return;
+        }
+
         const articulosConStock = (data.articulos || []).filter((a: Articulo) => 
           Number(a.stock_real || 0) > 0
         );
@@ -117,12 +130,25 @@ export default function ProductoUnico({
         }
       })
       .catch(error => {
+        if (error instanceof Error && error.name === 'AbortError') {
+          return;
+        }
+
         console.error('Error cargando artículo:', error);
-        setArticulo(null);
+        if (isActive) {
+          setArticulo(null);
+        }
       })
       .finally(() => {
-        setLoading(false);
+        if (isActive) {
+          setLoading(false);
+        }
       });
+
+    return () => {
+      isActive = false;
+      controller.abort();
+    };
   }, [itemId, initialArticulo, clubSubDolarMode]);
 
   // ✅ Manejar cambio de cantidad
