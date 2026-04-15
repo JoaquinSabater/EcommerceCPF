@@ -4,6 +4,7 @@ import ProductWithSuggestions from '@/components/DetalleProducto/ProductWithSugg
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import BackButton from '@/components/ui/BackButton';
 import EditProductButton from '@/components/ui/EditProductButton';
+import DestacadosSection from '../../../../components/DetalleProducto/DestacadosSection';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -227,6 +228,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const { id } = await params;
   const { clubSubDolar } = await searchParams;
   const clubSubDolarMode = clubSubDolar === '1';
+  const itemIdActual = Number(id);
 
   try {
     // Obtener datos en paralelo
@@ -260,6 +262,11 @@ export default async function Page({ params, searchParams }: { params: Promise<{
                 clubSubDolarMode={clubSubDolarMode}
               />
             </Suspense>
+
+            <DestacadosSection
+              itemIdActual={itemIdActual}
+              clubSubDolarMode={clubSubDolarMode}
+            />
           </div>
         </div>
       </main>
