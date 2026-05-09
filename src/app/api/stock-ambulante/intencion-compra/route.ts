@@ -8,6 +8,7 @@ export async function POST(request: Request) {
     
     const {
       cliente_id,
+      prospecto_id,
       cliente_nombre,
       usuario_id,
       codigo_interno,
@@ -16,11 +17,12 @@ export async function POST(request: Request) {
     } = body;
 
     // Validaciones
-    if (!cliente_id || !usuario_id || !codigo_interno || !cantidad_solicitada) {
+    // Requerimos al menos cliente_id o prospecto_id, y usuario_id, codigo_interno y cantidad_solicitada
+    if ((!cliente_id && !prospecto_id) || !usuario_id || !codigo_interno || !cantidad_solicitada) {
       return NextResponse.json(
         { 
           success: false, 
-          error: 'Faltan campos requeridos: cliente_id, usuario_id, codigo_interno, cantidad_solicitada' 
+          error: 'Faltan campos requeridos: (cliente_id o prospecto_id), usuario_id, codigo_interno, cantidad_solicitada' 
         },
         { status: 400 }
       );
@@ -33,19 +35,21 @@ export async function POST(request: Request) {
       );
     }
 
-    // Insertar la intención de compra
+    // Insertar la intención de compra. Guardamos prospecto_id cuando venga, y cliente_id cuando venga.
     const [result] = await db.query<ResultSetHeader>(
       `INSERT INTO intencion_de_compra (
         cliente_id,
+        prospecto_id,
         cliente_nombre,
         usuario_id,
         codigo_interno,
         cantidad_solicitada,
         token_link
-      ) VALUES (?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [
-        cliente_id,
-        cliente_nombre,
+        cliente_id ?? null,
+        prospecto_id ?? null,
+        cliente_nombre ?? null,
         usuario_id,
         codigo_interno,
         cantidad_solicitada,
@@ -58,6 +62,7 @@ export async function POST(request: Request) {
     console.log('✅ Intención de compra creada:', {
       id: insertId,
       cliente_id,
+      prospecto_id,
       codigo_interno,
       cantidad_solicitada
     });
@@ -68,6 +73,7 @@ export async function POST(request: Request) {
       data: {
         id: insertId,
         cliente_id,
+        prospecto_id,
         codigo_interno,
         cantidad_solicitada
       }
@@ -87,6 +93,7 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const clienteId = searchParams.get('cliente_id');
+    const prospectoId = searchParams.get('prospecto_id');
     const usuarioId = searchParams.get('usuario_id');
 
     let query = 'SELECT * FROM intencion_de_compra WHERE 1=1';
@@ -95,6 +102,11 @@ export async function GET(request: Request) {
     if (clienteId) {
       query += ' AND cliente_id = ?';
       params.push(clienteId);
+    }
+
+    if (prospectoId) {
+      query += ' AND prospecto_id = ?';
+      params.push(prospectoId);
     }
 
     if (usuarioId) {

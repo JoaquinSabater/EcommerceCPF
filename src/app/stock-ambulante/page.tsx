@@ -34,8 +34,9 @@ interface StockAmbulanteResponse {
 
 interface IntencionCompra {
   id: number;
-  cliente_id: number;
-  cliente_nombre: string;
+  cliente_id?: number;
+  prospecto_id?: number;
+  cliente_nombre?: string;
   usuario_id: number;
   codigo_interno: string;
   cantidad_solicitada: number;
@@ -51,6 +52,7 @@ function StockAmbulanteContent() {
   // Obtener parámetros de la URL
   const token = searchParams.get('token');
   const clienteId = searchParams.get('cliente_id');
+  const prospectoId = searchParams.get('prospecto_id');
   const usuarioId = searchParams.get('usuario_id');
   
   const [articulos, setArticulos] = useState<ArticuloStockAmbulante[]>([]);
@@ -79,12 +81,13 @@ function StockAmbulanteContent() {
     fetchValorDolar();
     fetchStockAmbulante();
     fetchIntencionesPrevias();
-    
+
     // Obtener información del cliente si está disponible
     if (clienteId) {
       fetchClienteInfo();
     }
-  }, [usuarioId, clienteId]);
+  }, [usuarioId, clienteId, prospectoId]);
+  // Note: we intentionally do not fetch cliente info for prospectos
 
   const fetchValorDolar = async () => {
     try {
@@ -125,11 +128,21 @@ function StockAmbulanteContent() {
   };
 
   const fetchIntencionesPrevias = async () => {
-    if (!clienteId) return;
-    
+    // Soportar consultas por cliente o prospecto
+    if (!clienteId && !prospectoId) return;
+
     try {
-      console.log('🔍 Obteniendo intenciones previas del cliente:', clienteId);
-      const response = await fetch(`/api/stock-ambulante/intencion-compra?cliente_id=${clienteId}`);
+      if (clienteId) {
+        console.log('🔍 Obteniendo intenciones previas del cliente:', clienteId);
+      } else {
+        console.log('🔍 Obteniendo intenciones previas del prospecto:', prospectoId);
+      }
+
+      const query = clienteId
+        ? `/api/stock-ambulante/intencion-compra?cliente_id=${clienteId}`
+        : `/api/stock-ambulante/intencion-compra?prospecto_id=${prospectoId}`;
+
+      const response = await fetch(query);
       const data = await response.json();
       
       console.log('📦 Respuesta API intenciones:', data);
@@ -166,10 +179,13 @@ function StockAmbulanteContent() {
       }
 
       // 1. Obtener datos del stock ambulante a través de nuestro API route
+      // Si viene prospectoId, solicitamos la versión TOTAL del stock (servidor usará usuario_id=0)
+      const exportQuery = prospectoId
+        ? `/api/stock-ambulante/exportar?prospecto=1&usuario_id=${usuarioId}`
+        : `/api/stock-ambulante/exportar?usuario_id=${usuarioId}`;
+
       // Esto evita problemas de Mixed Content (HTTP/HTTPS) y CORS
-      const stockResponse = await fetch(
-        `/api/stock-ambulante/exportar?usuario_id=${usuarioId}`
-      );
+      const stockResponse = await fetch(exportQuery);
 
       if (!stockResponse.ok) {
         throw new Error('Error al obtener el stock ambulante');
@@ -228,6 +244,7 @@ function StockAmbulanteContent() {
         error,
         usuarioId,
         clienteId,
+        prospectoId,
         hasToken: !!token
       });
     } finally {
@@ -327,8 +344,9 @@ function StockAmbulanteContent() {
       return;
     }
 
-    if (!clienteId) {
-      showError('No se pudo identificar el cliente');
+    // Permitir enviar intención para cliente o prospecto
+    if (!clienteId && !prospectoId) {
+      showError('No se pudo identificar el cliente o prospecto');
       return;
     }
 
@@ -340,14 +358,15 @@ function StockAmbulanteContent() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          cliente_id: clienteId,
-          cliente_nombre: clienteNombre,
-          usuario_id: usuarioId,
-          codigo_interno: articulo.codigo_interno,
-          cantidad_solicitada: cantidad,
-          token_link: token,
-        })
+          body: JSON.stringify({
+            cliente_id: clienteId ?? undefined,
+            prospecto_id: prospectoId ?? undefined,
+            cliente_nombre: clienteNombre,
+            usuario_id: usuarioId,
+            codigo_interno: articulo.codigo_interno,
+            cantidad_solicitada: cantidad,
+            token_link: token,
+          })
       });
 
       const data = await response.json();
@@ -363,7 +382,8 @@ function StockAmbulanteContent() {
           ...prev,
           [articulo.codigo_interno]: {
             id: data.id || 0,
-            cliente_id: parseInt(clienteId),
+            cliente_id: clienteId ? parseInt(clienteId) : undefined,
+            prospecto_id: prospectoId ? parseInt(prospectoId) : undefined,
             cliente_nombre: clienteNombre,
             usuario_id: parseInt(usuarioId || '0'),
             codigo_interno: articulo.codigo_interno,
