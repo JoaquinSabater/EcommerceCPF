@@ -45,6 +45,26 @@ interface IntencionCompra {
   fecha_actualizacion: string;
 }
 
+interface ProspectoFormData {
+  telefono: string;
+  email: string;
+  nombre: string;
+  apellido: string;
+  cuit: string;
+  razon_social: string;
+}
+
+function datosProspectoCompletos(data: ProspectoFormData): boolean {
+  return Boolean(
+    data.telefono.trim() &&
+    data.email.trim() &&
+    data.nombre.trim() &&
+    data.apellido.trim() &&
+    data.cuit.trim() &&
+    data.razon_social.trim()
+  );
+}
+
 function StockAmbulanteContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -54,6 +74,7 @@ function StockAmbulanteContent() {
   const clienteId = searchParams.get('cliente_id');
   const prospectoId = searchParams.get('prospecto_id');
   const usuarioId = searchParams.get('usuario_id');
+  const esFlujoProspecto = Boolean(prospectoId);
   
   const [articulos, setArticulos] = useState<ArticuloStockAmbulante[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -69,6 +90,17 @@ function StockAmbulanteContent() {
   const [mensajeConfirmacion, setMensajeConfirmacion] = useState<{codigo: string, mensaje: string} | null>(null);
   const [intencionesPrevias, setIntencionesPrevias] = useState<{[key: string]: IntencionCompra}>({});
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [prospectoDatosCompletos, setProspectoDatosCompletos] = useState<boolean>(!esFlujoProspecto);
+  const [mostrarFormularioProspecto, setMostrarFormularioProspecto] = useState<boolean>(false);
+  const [guardandoDatosProspecto, setGuardandoDatosProspecto] = useState<boolean>(false);
+  const [prospectoFormData, setProspectoFormData] = useState<ProspectoFormData>({
+    telefono: '',
+    email: '',
+    nombre: '',
+    apellido: '',
+    cuit: '',
+    razon_social: ''
+  });
 
   useEffect(() => {
     // Solo validar que tengamos usuario_id (el token del link es opcional, solo para registro)
@@ -86,8 +118,95 @@ function StockAmbulanteContent() {
     if (clienteId) {
       fetchClienteInfo();
     }
+
+    // Obtener información del prospecto si está disponible
+    if (prospectoId) {
+      fetchProspectoInfo();
+    } else {
+      setProspectoDatosCompletos(true);
+    }
   }, [usuarioId, clienteId, prospectoId]);
   // Note: we intentionally do not fetch cliente info for prospectos
+
+  const fetchProspectoInfo = async () => {
+    if (!prospectoId) return;
+
+    try {
+      const response = await fetch(`/api/stock-ambulante/prospecto?prospecto_id=${prospectoId}`);
+      const data = await response.json();
+
+      if (data.success && data.data) {
+        const formData: ProspectoFormData = {
+          telefono: data.data.telefono || '',
+          email: data.data.email || '',
+          nombre: data.data.nombre || '',
+          apellido: data.data.apellido || '',
+          cuit: data.data.cuit || '',
+          razon_social: data.data.razon_social || ''
+        };
+
+        setProspectoFormData(formData);
+
+        const completosDesdeApi = Boolean(data.datosCompletos);
+        const completosEnFrontend = datosProspectoCompletos(formData);
+        const completos = completosDesdeApi || completosEnFrontend;
+
+        setProspectoDatosCompletos(completos);
+
+        if (completos) {
+          setClienteNombre(formData.razon_social || `${formData.nombre} ${formData.apellido}`.trim() || 'Prospecto');
+        }
+      }
+    } catch (error) {
+      console.error('Error al obtener datos del prospecto:', error);
+      setProspectoDatosCompletos(false);
+    }
+  };
+
+  const handleGuardarDatosProspecto = async () => {
+    if (!prospectoId) return;
+
+    if (!datosProspectoCompletos(prospectoFormData)) {
+      showWarning('Datos incompletos', 'Completá teléfono, mail, nombre, apellido, CUIT y razón social.');
+      return;
+    }
+
+    setGuardandoDatosProspecto(true);
+
+    try {
+      const response = await fetch('/api/stock-ambulante/prospecto', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          prospecto_id: prospectoId,
+          ...prospectoFormData
+        })
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        showError('Error al guardar datos', data.error);
+        return;
+      }
+
+      setProspectoDatosCompletos(true);
+      setMostrarFormularioProspecto(false);
+      setClienteNombre(
+        prospectoFormData.razon_social ||
+        `${prospectoFormData.nombre} ${prospectoFormData.apellido}`.trim() ||
+        'Prospecto'
+      );
+      showInfo('Datos guardados', 'Tus datos fueron actualizados correctamente. Ya podés reservar productos.');
+    } catch (error) {
+      console.error('Error al guardar datos del prospecto:', error);
+      showError('Error al guardar datos del prospecto');
+    } finally {
+      setGuardandoDatosProspecto(false);
+    }
+  };
 
   const fetchValorDolar = async () => {
     try {
@@ -334,6 +453,11 @@ function StockAmbulanteContent() {
   const handleEnviarIntencion = async (articulo: ArticuloStockAmbulante) => {
     const cantidad = cantidadesSeleccionadas[articulo.codigo_interno] || 0;
 
+    if (esFlujoProspecto && !prospectoDatosCompletos) {
+      showWarning('Datos requeridos', 'Para reservar productos primero tenés que completar tus datos.');
+      return;
+    }
+
     if (cantidad <= 0) {
       showWarning('Cantidad invalida', 'Ingresa una cantidad valida.');
       return;
@@ -477,6 +601,85 @@ function StockAmbulanteContent() {
                   </p>
                 </div>
               )}
+
+              {esFlujoProspecto && (
+                <div className="mt-4">
+                  {!prospectoDatosCompletos ? (
+                    <div>
+                      <button
+                        onClick={() => setMostrarFormularioProspecto((prev) => !prev)}
+                        className="px-4 py-2 bg-white text-orange-700 font-semibold rounded-lg border border-orange-200 hover:bg-orange-50 transition-colors"
+                      >
+                        Llenar mis datos
+                      </button>
+                      <p className="text-sm text-orange-100 mt-2">
+                        Para reservar productos primero tenés que completar tus datos.
+                      </p>
+
+                      {mostrarFormularioProspecto && (
+                        <div className="mt-3 bg-white text-gray-900 rounded-lg p-4 shadow-md grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <input
+                            type="text"
+                            placeholder="Teléfono"
+                            value={prospectoFormData.telefono}
+                            onChange={(e) => setProspectoFormData((prev) => ({ ...prev, telefono: e.target.value }))}
+                            className="w-full border border-gray-300 rounded px-3 py-2"
+                          />
+                          <input
+                            type="email"
+                            placeholder="Mail"
+                            value={prospectoFormData.email}
+                            onChange={(e) => setProspectoFormData((prev) => ({ ...prev, email: e.target.value }))}
+                            className="w-full border border-gray-300 rounded px-3 py-2"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Nombre"
+                            value={prospectoFormData.nombre}
+                            onChange={(e) => setProspectoFormData((prev) => ({ ...prev, nombre: e.target.value }))}
+                            className="w-full border border-gray-300 rounded px-3 py-2"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Apellido"
+                            value={prospectoFormData.apellido}
+                            onChange={(e) => setProspectoFormData((prev) => ({ ...prev, apellido: e.target.value }))}
+                            className="w-full border border-gray-300 rounded px-3 py-2"
+                          />
+                          <input
+                            type="text"
+                            placeholder="CUIT"
+                            value={prospectoFormData.cuit}
+                            onChange={(e) => setProspectoFormData((prev) => ({ ...prev, cuit: e.target.value }))}
+                            className="w-full border border-gray-300 rounded px-3 py-2"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Razón social"
+                            value={prospectoFormData.razon_social}
+                            onChange={(e) => setProspectoFormData((prev) => ({ ...prev, razon_social: e.target.value }))}
+                            className="w-full border border-gray-300 rounded px-3 py-2"
+                          />
+
+                          <div className="md:col-span-2">
+                            <button
+                              onClick={handleGuardarDatosProspecto}
+                              disabled={guardandoDatosProspecto}
+                              className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                            >
+                              {guardandoDatosProspecto ? 'Guardando...' : 'Guardar datos'}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="inline-flex items-center px-3 py-2 bg-green-100 text-green-800 rounded-lg text-sm font-semibold">
+                      Datos completos. Ya podés reservar productos.
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -547,7 +750,7 @@ function StockAmbulanteContent() {
       </div>
 
       {/* Tabla de productos */}
-      <div className="p-4 pt-0">"
+      <div className="p-4 pt-0">
         {articulos.length === 0 ? (
           <div className="bg-white rounded-lg shadow-sm p-8 text-center">
             <p className="text-gray-600">No hay artículos disponibles en el stock ambulante</p>
@@ -690,8 +893,18 @@ function StockAmbulanteContent() {
                               />
                               <button
                                 onClick={() => handleEnviarIntencion(articulo)}
-                                disabled={enviandoIntencion === articulo.codigo_interno || !cantidadesSeleccionadas[articulo.codigo_interno]}
-                                className="px-3 py-1 bg-orange-600 text-white text-xs font-medium rounded hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                                disabled={
+                                  enviandoIntencion === articulo.codigo_interno ||
+                                  !cantidadesSeleccionadas[articulo.codigo_interno]
+                                }
+                                aria-disabled={esFlujoProspecto && !prospectoDatosCompletos}
+                                className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+                                  enviandoIntencion === articulo.codigo_interno || !cantidadesSeleccionadas[articulo.codigo_interno]
+                                    ? 'bg-gray-300 text-gray-700 cursor-not-allowed'
+                                    : esFlujoProspecto && !prospectoDatosCompletos
+                                    ? 'bg-orange-300 text-white cursor-pointer opacity-80'
+                                    : 'bg-orange-600 text-white hover:bg-orange-700'
+                                }`}
                               >
                                 {enviandoIntencion === articulo.codigo_interno ? 'Enviando...' : 'Reservar'}
                               </button>
@@ -805,8 +1018,18 @@ function StockAmbulanteContent() {
                         />
                         <button
                           onClick={() => handleEnviarIntencion(articulo)}
-                          disabled={enviandoIntencion === articulo.codigo_interno || !cantidadesSeleccionadas[articulo.codigo_interno]}
-                          className="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
+                          disabled={
+                            enviandoIntencion === articulo.codigo_interno ||
+                            !cantidadesSeleccionadas[articulo.codigo_interno]
+                          }
+                          aria-disabled={esFlujoProspecto && !prospectoDatosCompletos}
+                          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${
+                            enviandoIntencion === articulo.codigo_interno || !cantidadesSeleccionadas[articulo.codigo_interno]
+                              ? 'bg-gray-300 text-gray-700 cursor-not-allowed'
+                              : esFlujoProspecto && !prospectoDatosCompletos
+                              ? 'bg-orange-300 text-white cursor-pointer opacity-90'
+                              : 'bg-orange-600 text-white hover:bg-orange-700'
+                          }`}
                         >
                           {enviandoIntencion === articulo.codigo_interno ? '...' : '📋 Reservar'}
                         </button>
