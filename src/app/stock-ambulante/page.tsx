@@ -86,8 +86,7 @@ function StockAmbulanteContent() {
   const [isCarruselOpen, setIsCarruselOpen] = useState(false);
   const [clienteNombre, setClienteNombre] = useState<string>('');
   const [cantidadesSeleccionadas, setCantidadesSeleccionadas] = useState<{[key: string]: number | undefined}>({});
-  const [enviandoIntencion, setEnviandoIntencion] = useState<string | null>(null);
-  const [mensajeConfirmacion, setMensajeConfirmacion] = useState<{codigo: string, mensaje: string} | null>(null);
+  const [enviandoSolicitud, setEnviandoSolicitud] = useState<boolean>(false);
   const [intencionesPrevias, setIntencionesPrevias] = useState<{[key: string]: IntencionCompra}>({});
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [prospectoDatosCompletos, setProspectoDatosCompletos] = useState<boolean>(!esFlujoProspecto);
@@ -450,31 +449,45 @@ function StockAmbulanteContent() {
     }));
   };
 
-  const handleEnviarIntencion = async (articulo: ArticuloStockAmbulante) => {
+  const itemsSeleccionados = articulos.filter((articulo) => {
     const cantidad = cantidadesSeleccionadas[articulo.codigo_interno] || 0;
+    return cantidad > 0;
+  });
 
+  const puedeSolicitar = itemsSeleccionados.length > 0;
+
+  const handleConfirmarSolicitud = async () => {
     if (esFlujoProspecto && !prospectoDatosCompletos) {
       showWarning('Datos requeridos', 'Para reservar productos primero tenés que completar tus datos.');
       return;
     }
 
-    if (cantidad <= 0) {
-      showWarning('Cantidad invalida', 'Ingresa una cantidad valida.');
-      return;
-    }
-
-    if (cantidad > articulo.cantidad_disponible) {
-      showWarning('Stock insuficiente', `La cantidad solicitada (${cantidad}) supera el stock disponible (${articulo.cantidad_disponible}).`);
-      return;
-    }
-
-    // Permitir enviar intención para cliente o prospecto
     if (!clienteId && !prospectoId) {
       showError('No se pudo identificar el cliente o prospecto');
       return;
     }
 
-    setEnviandoIntencion(articulo.codigo_interno);
+    if (!puedeSolicitar) {
+      showWarning('Sin productos', 'Ingresá al menos una cantidad mayor a 0 para solicitar productos.');
+      return;
+    }
+
+    const itemsPayload = itemsSeleccionados.map((articulo) => ({
+      codigo_interno: articulo.codigo_interno,
+      cantidad_solicitada: cantidadesSeleccionadas[articulo.codigo_interno] || 0,
+      stock_disponible: articulo.cantidad_disponible
+    }));
+
+    const itemSinStock = itemsPayload.find((item) => item.cantidad_solicitada > item.stock_disponible);
+    if (itemSinStock) {
+      showWarning(
+        'Stock insuficiente',
+        `La cantidad solicitada para ${itemSinStock.codigo_interno} supera el stock disponible (${itemSinStock.stock_disponible}).`
+      );
+      return;
+    }
+
+    setEnviandoSolicitud(true);
 
     try {
       const response = await fetch('/api/stock-ambulante/intencion-compra', {
@@ -482,54 +495,55 @@ function StockAmbulanteContent() {
         headers: {
           'Content-Type': 'application/json',
         },
-          body: JSON.stringify({
-            cliente_id: clienteId ?? undefined,
-            prospecto_id: prospectoId ?? undefined,
-            cliente_nombre: clienteNombre,
-            usuario_id: usuarioId,
-            codigo_interno: articulo.codigo_interno,
-            cantidad_solicitada: cantidad,
-            token_link: token,
-          })
+        body: JSON.stringify({
+          cliente_id: clienteId ?? undefined,
+          prospecto_id: prospectoId ?? undefined,
+          cliente_nombre: clienteNombre,
+          usuario_id: usuarioId,
+          token_link: token,
+          items: itemsPayload.map((item) => ({
+            codigo_interno: item.codigo_interno,
+            cantidad_solicitada: item.cantidad_solicitada
+          }))
+        })
       });
 
       const data = await response.json();
 
       if (data.success) {
-        setMensajeConfirmacion({
-          codigo: articulo.codigo_interno,
-          mensaje: '¡Intención de compra enviada! El vendedor será notificado.'
+        const ahora = new Date().toISOString();
+
+        setIntencionesPrevias((prev) => {
+          const next = { ...prev };
+          itemsPayload.forEach((item) => {
+            next[item.codigo_interno] = {
+              id: 0,
+              cliente_id: clienteId ? parseInt(clienteId) : undefined,
+              prospecto_id: prospectoId ? parseInt(prospectoId) : undefined,
+              cliente_nombre: clienteNombre,
+              usuario_id: parseInt(usuarioId || '0'),
+              codigo_interno: item.codigo_interno,
+              cantidad_solicitada: item.cantidad_solicitada,
+              token_link: token || '',
+              fecha_creacion: ahora,
+              fecha_actualizacion: ahora
+            };
+          });
+          return next;
         });
-        
-        // Actualizar las intenciones previas con la nueva
-        setIntencionesPrevias(prev => ({
-          ...prev,
-          [articulo.codigo_interno]: {
-            id: data.id || 0,
-            cliente_id: clienteId ? parseInt(clienteId) : undefined,
-            prospecto_id: prospectoId ? parseInt(prospectoId) : undefined,
-            cliente_nombre: clienteNombre,
-            usuario_id: parseInt(usuarioId || '0'),
-            codigo_interno: articulo.codigo_interno,
-            cantidad_solicitada: cantidad,
-            token_link: token || '',
-            fecha_creacion: new Date().toISOString(),
-            fecha_actualizacion: new Date().toISOString()
-          }
-        }));
-        
-        // Ocultar mensaje después de 3 segundos
-        setTimeout(() => {
-          setMensajeConfirmacion(null);
-        }, 3000);
+
+        showInfo(
+          'Solicitud enviada',
+          `Se registraron ${itemsPayload.length} producto${itemsPayload.length === 1 ? '' : 's'} correctamente.`
+        );
       } else {
-        showError('Error al enviar la intención de compra', data.error);
+        showError('Error al enviar la solicitud', data.error);
       }
     } catch (error) {
-      console.error('Error al enviar intención:', error);
-      showError('Error al enviar la intención de compra');
+      console.error('Error al enviar solicitud en lote:', error);
+      showError('Error al enviar la solicitud de productos');
     } finally {
-      setEnviandoIntencion(null);
+      setEnviandoSolicitud(false);
     }
   };
 
@@ -747,6 +761,21 @@ function StockAmbulanteContent() {
             </p>
           )}
         </div>
+
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+          <p className="text-sm text-gray-700">
+            {puedeSolicitar
+              ? `${itemsSeleccionados.length} producto${itemsSeleccionados.length === 1 ? '' : 's'} seleccionado${itemsSeleccionados.length === 1 ? '' : 's'} para solicitar`
+              : 'Ingresá cantidades para armar tu solicitud'}
+          </p>
+          <button
+            onClick={handleConfirmarSolicitud}
+            disabled={enviandoSolicitud || !puedeSolicitar}
+            className="px-5 py-2.5 bg-orange-600 text-white text-sm font-semibold rounded-lg hover:bg-orange-700 disabled:bg-gray-300 disabled:text-gray-600 disabled:cursor-not-allowed transition-colors"
+          >
+            {enviandoSolicitud ? 'Enviando solicitud...' : 'Confirmar solicitud'}
+          </button>
+        </div>
       </div>
 
       {/* Tabla de productos */}
@@ -788,7 +817,7 @@ function StockAmbulanteContent() {
                       Precio ARS
                     </th>
                     <th className="px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase tracking-wider">
-                      Intención de Compra
+                      Cantidad Solicitada
                     </th>
                   </tr>
                 </thead>
@@ -874,42 +903,15 @@ function StockAmbulanteContent() {
                       </td>
                       <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center gap-2 justify-center">
-                          {mensajeConfirmacion?.codigo === articulo.codigo_interno ? (
-                            <div className="flex items-center gap-1 text-green-600 text-xs font-medium">
-                              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                              </svg>
-                              <span>Enviado</span>
-                            </div>
-                          ) : (
-                            <>
-                              <input
-                                type="number"
-                                max={articulo.cantidad_disponible}
-                                value={cantidadesSeleccionadas[articulo.codigo_interno] ?? ''}
-                                onChange={(e) => handleCantidadChange(articulo.codigo_interno, e.target.value === '' ? undefined : parseInt(e.target.value))}
-                                className="w-16 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-orange-500"
-                                placeholder="0"
-                              />
-                              <button
-                                onClick={() => handleEnviarIntencion(articulo)}
-                                disabled={
-                                  enviandoIntencion === articulo.codigo_interno ||
-                                  !cantidadesSeleccionadas[articulo.codigo_interno]
-                                }
-                                aria-disabled={esFlujoProspecto && !prospectoDatosCompletos}
-                                className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
-                                  enviandoIntencion === articulo.codigo_interno || !cantidadesSeleccionadas[articulo.codigo_interno]
-                                    ? 'bg-gray-300 text-gray-700 cursor-not-allowed'
-                                    : esFlujoProspecto && !prospectoDatosCompletos
-                                    ? 'bg-orange-300 text-white cursor-pointer opacity-80'
-                                    : 'bg-orange-600 text-white hover:bg-orange-700'
-                                }`}
-                              >
-                                {enviandoIntencion === articulo.codigo_interno ? 'Enviando...' : 'Reservar'}
-                              </button>
-                            </>
-                          )}
+                          <input
+                            type="number"
+                            min="0"
+                            max={articulo.cantidad_disponible}
+                            value={cantidadesSeleccionadas[articulo.codigo_interno] ?? ''}
+                            onChange={(e) => handleCantidadChange(articulo.codigo_interno, e.target.value === '' ? undefined : parseInt(e.target.value))}
+                            className="w-20 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-orange-500"
+                            placeholder="0"
+                          />
                         </div>
                       </td>
                     </tr>
@@ -995,46 +997,20 @@ function StockAmbulanteContent() {
                   </div>
                   {/* Controles de Intención de Compra - Mobile */}
                   <div className="mt-3 pt-3 border-t border-gray-200" onClick={(e) => e.stopPropagation()}>
-                    {mensajeConfirmacion?.codigo === articulo.codigo_interno ? (
-                      <div className="flex items-center justify-center gap-2 text-green-600 text-sm font-medium py-2">
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                        </svg>
-                        <span>¡Intención enviada!</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <label className="text-xs font-medium text-gray-700 whitespace-nowrap">
-                          Reservar:
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          max={articulo.cantidad_disponible}
-                          value={cantidadesSeleccionadas[articulo.codigo_interno] ?? ''}
-                          onChange={(e) => handleCantidadChange(articulo.codigo_interno, e.target.value === '' ? undefined : parseInt(e.target.value))}
-                          className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                          placeholder="Cantidad"
-                        />
-                        <button
-                          onClick={() => handleEnviarIntencion(articulo)}
-                          disabled={
-                            enviandoIntencion === articulo.codigo_interno ||
-                            !cantidadesSeleccionadas[articulo.codigo_interno]
-                          }
-                          aria-disabled={esFlujoProspecto && !prospectoDatosCompletos}
-                          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${
-                            enviandoIntencion === articulo.codigo_interno || !cantidadesSeleccionadas[articulo.codigo_interno]
-                              ? 'bg-gray-300 text-gray-700 cursor-not-allowed'
-                              : esFlujoProspecto && !prospectoDatosCompletos
-                              ? 'bg-orange-300 text-white cursor-pointer opacity-90'
-                              : 'bg-orange-600 text-white hover:bg-orange-700'
-                          }`}
-                        >
-                          {enviandoIntencion === articulo.codigo_interno ? '...' : '📋 Reservar'}
-                        </button>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-2">
+                      <label className="text-xs font-medium text-gray-700 whitespace-nowrap">
+                        Cantidad:
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        max={articulo.cantidad_disponible}
+                        value={cantidadesSeleccionadas[articulo.codigo_interno] ?? ''}
+                        onChange={(e) => handleCantidadChange(articulo.codigo_interno, e.target.value === '' ? undefined : parseInt(e.target.value))}
+                        className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        placeholder="Cantidad"
+                      />
+                    </div>
                   </div>                </div>
               ))}
             </div>

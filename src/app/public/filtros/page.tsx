@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { ChevronLeftIcon, FunnelIcon, XMarkIcon, ChevronDownIcon, ChevronUpIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { ChevronLeftIcon, FunnelIcon, XMarkIcon, ChevronDownIcon, ChevronUpIcon, MagnifyingGlassIcon, Bars3Icon, Squares2X2Icon } from '@heroicons/react/24/outline';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createPortal } from 'react-dom';
 import FiltrosResults from '@/components/Filtros/FiltrosResults';
@@ -56,6 +56,8 @@ export default function FiltrosPage() {
   const [isSearching, setIsSearching] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [activeTab, setActiveTab] = useState<'filters' | 'search'>(initialSearch ? 'search' : 'filters');
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const [isDesktop, setIsDesktop] = useState(false);
   
   // Estados para el modal
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
@@ -68,6 +70,18 @@ export default function FiltrosPage() {
   // Referencias para detectar clicks afuera
   const marcasRef = useRef<HTMLDivElement>(null);
   const modelosRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const updateViewport = () => {
+      setIsDesktop(window.matchMedia('(min-width: 1024px)').matches);
+    };
+
+    updateViewport();
+    window.addEventListener('resize', updateViewport);
+    return () => window.removeEventListener('resize', updateViewport);
+  }, []);
+
+  const effectiveViewMode = isDesktop ? viewMode : 'list';
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // ✅ NUEVO: Efecto para procesar búsqueda inicial del URL
@@ -649,7 +663,7 @@ export default function FiltrosPage() {
         {currentResults.show ? (
           <>
             {/* Header de resultados */}
-            <div className="mb-4 flex items-center justify-between">
+            <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">
                   {activeTab === 'search' ? 'Resultados de búsqueda' : 'Productos filtrados'}
@@ -660,14 +674,48 @@ export default function FiltrosPage() {
                   </p>
                 )}
               </div>
-              <span className="text-sm text-gray-500">
-                {currentResults.count} producto{currentResults.count !== 1 ? 's' : ''} encontrado{currentResults.count !== 1 ? 's' : ''}
-              </span>
+              <div className="flex items-center gap-3 lg:justify-end">
+                <span className="text-sm text-gray-500">
+                  {currentResults.count} producto{currentResults.count !== 1 ? 's' : ''} encontrado{currentResults.count !== 1 ? 's' : ''}
+                </span>
+
+                <div className="hidden lg:inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white p-1 shadow-sm">
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('list')}
+                    className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                      effectiveViewMode === 'list'
+                        ? 'bg-orange-600 text-white'
+                        : 'text-gray-600 hover:bg-gray-100'
+                    }`}
+                    aria-pressed={effectiveViewMode === 'list'}
+                    aria-label="Vista lista"
+                  >
+                    <Bars3Icon className="h-4 w-4" />
+                    Lista
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('grid')}
+                    className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                      effectiveViewMode === 'grid'
+                        ? 'bg-orange-600 text-white'
+                        : 'text-gray-600 hover:bg-gray-100'
+                    }`}
+                    aria-pressed={effectiveViewMode === 'grid'}
+                    aria-label="Vista cuadrícula"
+                  >
+                    <Squares2X2Icon className="h-4 w-4" />
+                    Cuadrícula
+                  </button>
+                </div>
+              </div>
             </div>
 
             <FiltrosResults
               productos={currentResults.data}
               isLoading={currentResults.loading}
+              viewMode={effectiveViewMode}
               onItemClick={handleItemClick}
               onAddToCart={handleAddToCart}
             />

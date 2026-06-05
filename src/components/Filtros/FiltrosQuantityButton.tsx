@@ -14,6 +14,7 @@ interface FiltrosQuantityButtonProps {
   precio: number;
   onAddToCart?: (item: any) => void;
   className?: string;
+  compact?: boolean;
 }
 
 export default function FiltrosQuantityButton({
@@ -24,7 +25,8 @@ export default function FiltrosQuantityButton({
   maxStock,
   precio,
   onAddToCart,
-  className = ""
+  className = "",
+  compact = false
 }: FiltrosQuantityButtonProps) {
   const [quantity, setQuantity] = useState(0);
   const [isAdding, setIsAdding] = useState(false);
@@ -120,10 +122,10 @@ export default function FiltrosQuantityButton({
         <button
           onClick={() => handleQuantityChange(quantity - 1)}
           disabled={quantity <= 0}
-          className="flex items-center justify-center w-12 p-3 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors border-r border-gray-200"
+          className={`flex items-center justify-center hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors border-r border-gray-200 ${compact ? 'w-9 p-2' : 'w-12 p-3'}`}
           title={quantity <= 0 ? "No se puede reducir más" : "Reducir cantidad"}
         >
-          <MinusIcon className="w-4 h-4 text-gray-600" />
+          <MinusIcon className={`${compact ? 'w-3.5 h-3.5' : 'w-4 h-4'} text-gray-600`} />
         </button>
         
         {/* Input número - centro expandido */}
@@ -134,17 +136,17 @@ export default function FiltrosQuantityButton({
           value={quantity === 0 ? '' : quantity}
           onChange={(e) => handleInputChange(e.target.value)}
           placeholder="0"
-          className="flex-1 text-center py-3 border-0 focus:ring-0 text-sm font-medium placeholder-gray-400 bg-white"
+          className={`flex-1 text-center border-0 focus:ring-0 font-medium placeholder-gray-400 bg-white ${compact ? 'py-2 text-xs' : 'py-3 text-sm'}`}
         />
         
         {/* Botón plus - lado derecho */}
         <button
           onClick={() => handleQuantityChange(quantity + 1)}
           disabled={quantity >= maxStock}
-          className="flex items-center justify-center w-12 p-3 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors border-l border-gray-200"
+          className={`flex items-center justify-center hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors border-l border-gray-200 ${compact ? 'w-9 p-2' : 'w-12 p-3'}`}
           title={quantity >= maxStock ? `Stock máximo: ${maxStock}` : "Aumentar cantidad"}
         >
-          <PlusIcon className="w-4 h-4 text-gray-600" />
+          <PlusIcon className={`${compact ? 'w-3.5 h-3.5' : 'w-4 h-4'} text-gray-600`} />
         </button>
       </div>
 
@@ -160,7 +162,8 @@ export default function FiltrosQuantityButton({
         onClick={handleAddToCart}
         disabled={isAdding || quantity === 0 || quantity > maxStock}
         className={`
-          w-full px-4 py-3 rounded-lg font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2
+          w-full rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2
+          ${compact ? 'px-3 py-2 text-xs' : 'px-4 py-3 text-sm'}
           ${isAdding 
             ? 'bg-green-500 text-white' 
             : quantity === 0 
@@ -182,19 +185,19 @@ export default function FiltrosQuantityButton({
         )}
       </button>
       {maxStock <= 5 && maxStock > 0 && quantity < maxStock && (
-        <p className="text-xs text-amber-600 text-center">
+        <p className={`text-xs text-amber-600 text-center ${compact ? 'hidden' : ''}`}>
           ¡Últimas {maxStock} unidades!
         </p>
       )}
 
       {quantity >= maxStock && maxStock > 0 && (
-        <p className="text-xs text-red-600 text-center bg-red-50 px-2 py-1 rounded-full">
+        <p className={`text-xs text-red-600 text-center bg-red-50 px-2 py-1 rounded-full ${compact ? 'hidden' : ''}`}>
           ¡Máximo disponible!
         </p>
       )}
 
       {maxStock === 0 && (
-        <p className="text-xs text-red-600 text-center bg-red-50 px-2 py-1 rounded-full">
+        <p className={`text-xs text-red-600 text-center bg-red-50 px-2 py-1 rounded-full ${compact ? 'hidden' : ''}`}>
           Sin stock disponible
         </p>
       )}

@@ -21,6 +21,7 @@ interface ProductoFiltrado {
 interface FiltrosResultsProps {
   productos: ProductoFiltrado[];
   isLoading?: boolean;
+  viewMode?: 'list' | 'grid';
   onItemClick?: (producto: ProductoFiltrado) => void;
   onAddToCart?: (item: any) => void;
 }
@@ -28,10 +29,12 @@ interface FiltrosResultsProps {
 export default function FiltrosResults({ 
   productos, 
   isLoading = false,
+  viewMode = 'list',
   onItemClick, 
   onAddToCart 
 }: FiltrosResultsProps) {
   const { dolar } = useDolar();
+  const isGridView = viewMode === 'grid';
 
   const getImageSrc = (producto: ProductoFiltrado) => {
     return producto.foto_portada || producto.foto1_url;
@@ -86,102 +89,176 @@ export default function FiltrosResults({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">
-          Productos encontrados ({productos.length})
-        </h2>
-      </div>
-
-      <div className="space-y-3">
+      <div className={isGridView ? 'grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'space-y-3'}>
         {productos.map((producto: ProductoFiltrado, index) => (
           <div
             key={`${producto.codigo_interno}-${index}`}
-            className="bg-white rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow"
+            className={`bg-white rounded-lg border border-gray-200 hover:shadow-md transition-shadow ${
+              isGridView ? 'p-3 flex flex-col h-full' : 'p-4'
+            }`}
           >
-            <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-              
-              <div className="w-full h-48 sm:w-20 sm:h-24 flex-shrink-0 bg-white">
-                {getImageSrc(producto) ? (
-                  <CldImage
-                    src={getImageSrc(producto)!}
-                    alt={producto.item}
-                    width={400}
-                    height={600}
-                    className="w-full h-full object-contain rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
-                    onClick={(e) => handleItemClick(producto, e)}
-                    crop="fit"
-                    quality="auto"
-                    format="auto"
-                  />
-                ) : (
-                  <img
-                    src="/not-image.png"
-                    alt="Sin imagen"
-                    className="w-full h-full object-contain rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
-                    onClick={(e) => handleItemClick(producto, e)}
-                  />
-                )}
-              </div>
+            <div className={isGridView ? 'flex flex-col h-full gap-3' : 'flex flex-col sm:flex-row sm:items-start gap-4'}>
+              {isGridView ? (
+                <>
+                  <div className="w-full aspect-square bg-white rounded-lg overflow-hidden flex-shrink-0">
+                    {getImageSrc(producto) ? (
+                      <CldImage
+                        src={getImageSrc(producto)!}
+                        alt={producto.item}
+                        width={520}
+                        height={520}
+                        className="w-full h-full object-contain cursor-pointer hover:opacity-85 transition-opacity"
+                        onClick={(e) => handleItemClick(producto, e)}
+                        crop="fit"
+                        quality="auto"
+                        format="auto"
+                      />
+                    ) : (
+                      <img
+                        src="/not-image.png"
+                        alt="Sin imagen"
+                        className="w-full h-full object-contain cursor-pointer hover:opacity-85 transition-opacity"
+                        onClick={(e) => handleItemClick(producto, e)}
+                      />
+                    )}
+                  </div>
 
-              <div className="flex flex-col sm:flex-row sm:items-start gap-4 flex-1 min-w-0 w-full">
-                
-                <div className="flex-1 min-w-0">
-                  <button
-                    onClick={(e) => handleItemClick(producto, e)}
-                    className="text-left w-full hover:bg-transparent group"
-                    type="button"
-                  >
-                    <h3 className="font-medium text-gray-900 mb-1 group-hover:text-orange-600 transition-colors">
-                      {producto.item}
-                    </h3>
-                    
-                    <div className="flex flex-col gap-1">
-                      <p className="text-sm font-semibold text-gray-700">
-                        {producto.marca_modelo_completo}
-                      </p>
-                      
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-lg font-bold text-orange-600">
-                          ${Math.round(producto.precio_venta * dolar).toLocaleString('es-AR')}
+                  <div className="flex flex-1 flex-col gap-2 min-w-0">
+                    <button
+                      onClick={(e) => handleItemClick(producto, e)}
+                      className="text-left w-full hover:bg-transparent group"
+                      type="button"
+                    >
+                      <h3 className="text-sm font-semibold text-gray-900 leading-5 min-h-[2.5rem] overflow-hidden group-hover:text-orange-600 transition-colors">
+                        {producto.item}
+                      </h3>
+                    </button>
+
+                    <p className="text-xs font-semibold text-gray-600 leading-snug min-h-[2rem] overflow-hidden">
+                      {producto.marca_modelo_completo}
+                    </p>
+
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-base font-bold text-orange-600">
+                        ${Math.round(producto.precio_venta * dolar).toLocaleString('es-AR')}
+                      </span>
+                      {producto.stock_real <= 0 ? (
+                        <span className="text-[11px] text-red-700 bg-red-50 px-2 py-0.5 rounded-full">
+                          Sin stock
                         </span>
-                        {/* ✅ NUEVO: Solo mostrar indicadores de disponibilidad limitada */}
-                        {producto.stock_real <= 0 ? (
-                          <span className="text-sm text-red-600 bg-red-50 px-2 py-1 rounded-full">
-                            Sin stock
-                          </span>
-                        ) : producto.stock_real <= 10 ? (
-                          <span className="text-sm text-yellow-600 bg-yellow-50 px-2 py-1 rounded-full">
-                            Últimos disponibles
-                          </span>
-                        ) : null}
-                        <span className="text-sm text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
-                          {producto.marca_nombre}
+                      ) : producto.stock_real <= 10 ? (
+                        <span className="text-[11px] text-yellow-700 bg-yellow-50 px-2 py-0.5 rounded-full">
+                          Últimos
                         </span>
-                      </div>
-                      
-                      <p className="text-xs text-gray-500 mt-1">
-                        Código: {producto.codigo_interno}
-                      </p>
+                      ) : null}
+                      <span className="text-[11px] text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full">
+                        {producto.marca_nombre}
+                      </span>
                     </div>
-                  </button>
-                </div>
 
-                <div 
-                  className="w-full sm:w-48 flex-shrink-0" 
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <FiltrosQuantityButton
-                    itemId={producto.item_id}
-                    codigoInterno={producto.codigo_interno}
-                    itemName={producto.item}
-                    modelo={producto.marca_modelo_completo}
-                    maxStock={producto.stock_real}
-                    precio={producto.precio_venta}
-                    onAddToCart={onAddToCart}
-                    className=""
-                  />
-                </div>
-              </div>
+                    <p className="text-[11px] text-gray-500 truncate">
+                      Código: {producto.codigo_interno}
+                    </p>
+
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <FiltrosQuantityButton
+                        itemId={producto.item_id}
+                        codigoInterno={producto.codigo_interno}
+                        itemName={producto.item}
+                        modelo={producto.marca_modelo_completo}
+                        maxStock={producto.stock_real}
+                        precio={producto.precio_venta}
+                        onAddToCart={onAddToCart}
+                        className="mt-1"
+                        compact
+                      />
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="w-full h-48 sm:w-20 sm:h-24 flex-shrink-0 bg-white">
+                    {getImageSrc(producto) ? (
+                      <CldImage
+                        src={getImageSrc(producto)!}
+                        alt={producto.item}
+                        width={400}
+                        height={600}
+                        className="w-full h-full object-contain rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={(e) => handleItemClick(producto, e)}
+                        crop="fit"
+                        quality="auto"
+                        format="auto"
+                      />
+                    ) : (
+                      <img
+                        src="/not-image.png"
+                        alt="Sin imagen"
+                        className="w-full h-full object-contain rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={(e) => handleItemClick(producto, e)}
+                      />
+                    )}
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row sm:items-start gap-4 flex-1 min-w-0 w-full">
+                    <div className="flex-1 min-w-0">
+                      <button
+                        onClick={(e) => handleItemClick(producto, e)}
+                        className="text-left w-full hover:bg-transparent group"
+                        type="button"
+                      >
+                        <h3 className="font-medium text-gray-900 mb-1 group-hover:text-orange-600 transition-colors">
+                          {producto.item}
+                        </h3>
+
+                        <div className="flex flex-col gap-1">
+                          <p className="text-sm font-semibold text-gray-700">
+                            {producto.marca_modelo_completo}
+                          </p>
+
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-lg font-bold text-orange-600">
+                              ${Math.round(producto.precio_venta * dolar).toLocaleString('es-AR')}
+                            </span>
+                            {producto.stock_real <= 0 ? (
+                              <span className="text-sm text-red-600 bg-red-50 px-2 py-1 rounded-full">
+                                Sin stock
+                              </span>
+                            ) : producto.stock_real <= 10 ? (
+                              <span className="text-sm text-yellow-600 bg-yellow-50 px-2 py-1 rounded-full">
+                                Últimos disponibles
+                              </span>
+                            ) : null}
+                            <span className="text-sm text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
+                              {producto.marca_nombre}
+                            </span>
+                          </div>
+
+                          <p className="text-xs text-gray-500 mt-1">
+                            Código: {producto.codigo_interno}
+                          </p>
+                        </div>
+                      </button>
+                    </div>
+
+                    <div
+                      className="w-full sm:w-48 flex-shrink-0"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <FiltrosQuantityButton
+                        itemId={producto.item_id}
+                        codigoInterno={producto.codigo_interno}
+                        itemName={producto.item}
+                        modelo={producto.marca_modelo_completo}
+                        maxStock={producto.stock_real}
+                        precio={producto.precio_venta}
+                        onAddToCart={onAddToCart}
+                        className=""
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         ))}
