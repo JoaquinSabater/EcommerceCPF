@@ -65,6 +65,7 @@ export async function GET(request: NextRequest) {
         a.codigo_interno,
         i.id as item_id,
         i.nombre AS item,
+        i.de_a_10,
         a.modelo,
         m.nombre AS marca_nombre,
         a.precio_venta,

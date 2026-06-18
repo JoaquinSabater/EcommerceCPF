@@ -4,6 +4,7 @@ import { Listbox } from "@headlessui/react";
 import QuantityButton from "@/components/QuantityButton";
 import { Articulo } from "@/types/types";
 import { formatModeloDisplay, getStockDisponible, chunkModelos } from "./ModelosUtils";
+import { getMaxAllowedQuantity } from "@/lib/quantityRules";
 
 type ModeloSeleccionado = {
   articulo: Articulo;
@@ -15,6 +16,8 @@ interface ModelosListboxProps {
   setModeloActual: (modelo: Articulo | null) => void;
   cantidadActual: number;
   setCantidadActual: (cantidad: number) => void;
+  quantityStep: number;
+  maxCantidadActual: number;
   modelosFiltrados: Articulo[];
   seleccionados: ModeloSeleccionado[];
   searchTerm: string;
@@ -32,6 +35,8 @@ export default function ModelosListbox({
   setModeloActual,
   cantidadActual,
   setCantidadActual,
+  quantityStep,
+  maxCantidadActual,
   modelosFiltrados,
   seleccionados,
   searchTerm,
@@ -71,15 +76,16 @@ export default function ModelosListbox({
                     {chunk.map((m) => {
                       const displayInfo = formatModeloDisplay(m, esSinDescuento, dolar, getPrecioConDescuento);
                       const stockDisponible = getStockDisponible(m, seleccionados);
+                      const cantidadMaximaPermitida = getMaxAllowedQuantity(stockDisponible, m);
                       return (
                         <Listbox.Option 
                           key={m.codigo_interno} 
                           value={m} 
-                          disabled={stockDisponible <= 0}
+                          disabled={cantidadMaximaPermitida <= 0}
                           className={({ active }) => `
                             cursor-pointer select-none relative py-2 px-4
                             ${active ? 'bg-orange-100 text-orange-900' : 'text-gray-900'}
-                            ${stockDisponible <= 0 ? 'opacity-50 cursor-not-allowed' : ''}
+                            ${cantidadMaximaPermitida <= 0 ? 'opacity-50 cursor-not-allowed' : ''}
                           `}
                         >
                           <div className="flex justify-between items-center">
@@ -133,26 +139,26 @@ export default function ModelosListbox({
             <QuantityButton
               value={cantidadActual}
               onAdd={() => {
-                const stockDisponible = getStockDisponible(modeloActual, seleccionados);
-                if (cantidadActual < stockDisponible) {
-                  setCantidadActual(cantidadActual + 1);
+                if (cantidadActual + quantityStep <= maxCantidadActual) {
+                  setCantidadActual(cantidadActual + quantityStep);
                 }
               }}
-              onRemove={() => setCantidadActual(Math.max(1, cantidadActual - 1))}
+              onRemove={() => setCantidadActual(Math.max(0, cantidadActual - quantityStep))}
               onSet={onCantidadChange}
               modelo={modeloActual.modelo}
               hideModelo={true}
               size="normal"
-              maxStock={getStockDisponible(modeloActual, seleccionados)}
+              maxStock={maxCantidadActual}
+              quantityStep={quantityStep}
             />
           </div>
           <button
             className="flex-1 text-white px-4 py-2 rounded font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ backgroundColor: '#ea580c' }}
             onClick={onAddModelo}
-            disabled={getStockDisponible(modeloActual, seleccionados) <= 0}
+            disabled={maxCantidadActual <= 0 || cantidadActual <= 0}
           >
-            {getStockDisponible(modeloActual, seleccionados) <= 0 ? 'Sin stock' : 'Añadir modelo'}
+            {maxCantidadActual <= 0 ? 'Sin stock' : 'Añadir modelo'}
           </button>
         </div>
       )}

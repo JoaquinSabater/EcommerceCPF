@@ -13,6 +13,7 @@ interface ProductoFiltrado {
   marca_nombre: string;
   precio_venta: number;
   stock_real: number;
+  de_a_10?: number;
   foto1_url?: string;
   foto_portada?: string;
   marca_modelo_completo: string;
@@ -168,6 +169,7 @@ export default function FiltrosResults({
                         modelo={producto.marca_modelo_completo}
                         maxStock={producto.stock_real}
                         precio={producto.precio_venta}
+                        deA10={producto.de_a_10}
                         onAddToCart={onAddToCart}
                         className="mt-1"
                         compact
@@ -252,6 +254,7 @@ export default function FiltrosResults({
                         modelo={producto.marca_modelo_completo}
                         maxStock={producto.stock_real}
                         precio={producto.precio_venta}
+                        deA10={producto.de_a_10}
                         onAddToCart={onAddToCart}
                         className=""
                       />

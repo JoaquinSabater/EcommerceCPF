@@ -14,6 +14,7 @@ interface SearchResult {
   marca_nombre?: string; // ✅ Nueva propiedad
   precio_venta: number;
   stock_real: number;
+  de_a_10?: number;
   foto1_url?: string;
   foto_portada?: string;
   marca_modelo_completo?: string; // ✅ Nueva propiedad
@@ -163,6 +164,7 @@ export default function SearchResults({
                 modelo={formatModeloDisplay(result)}
                 maxStock={result.stock_real}
                 precio={result.precio_venta}
+                deA10={result.de_a_10}
                 onAddToCart={onAddToCart}
                 className="w-full sm:w-auto"
               />

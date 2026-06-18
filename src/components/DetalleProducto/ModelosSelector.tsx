@@ -12,6 +12,7 @@ import ModelosListbox from "./ModelosSelectorComponents/ModelosListbox";
 import ModelosSeleccionados from "./ModelosSelectorComponents/ModelosSeleccionados";
 import { formatModeloDisplay, getStockDisponible } from "./ModelosSelectorComponents/ModelosUtils";
 import { showError, showInfo, showSuccess, showWarning } from "@/lib/swal";
+import { getInitialQuantity, getMaxAllowedQuantity, getQuantityStep, normalizeQuantity } from "@/lib/quantityRules";
 
 type ModeloSeleccionado = {
   articulo: Articulo;
@@ -19,7 +20,7 @@ type ModeloSeleccionado = {
 };
 
 interface ModelosSelectorProps {
-  subcategoriaId: number; // Para exclusiones de descuento
+  subcategoriaId: number;
   itemId: number; // Para APIs
   sugerenciaActual?: string;
   clubSubDolarMode?: boolean;
@@ -169,7 +170,7 @@ export default function ModelosSelector({ subcategoriaId, itemId, sugerenciaActu
   const handleAddModelo = () => {
     if (modeloActual && cantidadActual > 0) {
       const stockDisponible = getStockDisponible(modeloActual, seleccionados);
-      const cantidadFinal = Math.min(cantidadActual, stockDisponible);
+      const cantidadFinal = normalizeQuantity(cantidadActual, modeloActual, stockDisponible);
       
       if (cantidadFinal <= 0) {
         showWarning('Stock insuficiente', `${modeloActual.modelo} tiene ${stockDisponible} unidades disponibles.`);
@@ -190,7 +191,7 @@ export default function ModelosSelector({ subcategoriaId, itemId, sugerenciaActu
   const handleCantidadChange = (value: number) => {
     if (modeloActual) {
       const stockDisponible = getStockDisponible(modeloActual, seleccionados);
-      const cantidadMaxima = Math.min(value, stockDisponible);
+      const cantidadMaxima = normalizeQuantity(value, modeloActual, stockDisponible);
       setCantidadActual(cantidadMaxima);
       
       if (value > stockDisponible) {
@@ -198,6 +199,15 @@ export default function ModelosSelector({ subcategoriaId, itemId, sugerenciaActu
       }
     } else {
       setCantidadActual(value);
+    }
+  };
+
+  const handleModeloActualChange = (modelo: Articulo | null) => {
+    setModeloActual(modelo);
+
+    if (modelo) {
+      const stockDisponible = getStockDisponible(modelo, seleccionados);
+      setCantidadActual(getInitialQuantity(modelo, stockDisponible));
     }
   };
 
@@ -246,13 +256,9 @@ export default function ModelosSelector({ subcategoriaId, itemId, sugerenciaActu
   };
 
   const handleSearchSelect = (modelo: Articulo) => {
-    setModeloActual(modelo);
+    handleModeloActualChange(modelo);
     setSearchTerm("");
     setIsSearchFocused(false);
-    const stockDisponible = getStockDisponible(modelo, seleccionados);
-    if (cantidadActual > stockDisponible) {
-      setCantidadActual(Math.max(1, stockDisponible));
-    }
   };
 
   const handleRecomendadoSelect = (modeloNombre: string) => {
@@ -260,8 +266,7 @@ export default function ModelosSelector({ subcategoriaId, itemId, sugerenciaActu
     if (modeloEncontrado) {
       const stockDisponible = getStockDisponible(modeloEncontrado, seleccionados);
       if (stockDisponible > 0) {
-        setModeloActual(modeloEncontrado);
-        setCantidadActual(1);
+        handleModeloActualChange(modeloEncontrado);
       } else {
         showWarning('Sin stock', `${modeloNombre} no tiene stock disponible.`);
       }
@@ -293,9 +298,11 @@ export default function ModelosSelector({ subcategoriaId, itemId, sugerenciaActu
 
       <ModelosListbox
         modeloActual={modeloActual}
-        setModeloActual={setModeloActual}
+        setModeloActual={handleModeloActualChange}
         cantidadActual={cantidadActual}
         setCantidadActual={setCantidadActual}
+        quantityStep={getQuantityStep(modeloActual)}
+        maxCantidadActual={modeloActual ? getMaxAllowedQuantity(getStockDisponible(modeloActual, seleccionados), modeloActual) : 0}
         modelosFiltrados={modelosFiltrados}
         seleccionados={seleccionados}
         searchTerm={searchTerm}

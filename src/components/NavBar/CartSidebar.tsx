@@ -11,6 +11,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useProspectoMode } from '@/hooks/useProspectoMode';
 import { useDolar } from '@/contexts/DolarContext';
 import { showError, showInfo, showSuccess, showWarning } from '@/lib/swal';
+import { getMaxAllowedQuantity, getQuantityStep } from '@/lib/quantityRules';
 
 interface PromoAPIResponse {
   active: boolean;
@@ -365,6 +366,8 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
                   const precioConDescuento = calcularPrecioFinal(item);
                   const precioFinalPesos = Math.round(precioConDescuento * dolar);
                   const stockDisponible = Number(item.stock_real || 0);
+                  const quantityStep = getQuantityStep(item);
+                  const maxCantidadPermitida = getMaxAllowedQuantity(stockDisponible, item);
                   const stockColor = item.cantidad > stockDisponible ? '#dc2626' : 
                                    stockDisponible > 10 ? '#16a34a' : '#ca8a04';
                   
@@ -443,13 +446,14 @@ export default function CartSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
                           <div className="flex-shrink-0">
                             <QuantityButton
                               value={item.cantidad}
-                              onAdd={() => changeQuantity(item.codigo_interno, 1)}
-                              onRemove={() => changeQuantity(item.codigo_interno, -1)}
+                              onAdd={() => changeQuantity(item.codigo_interno, quantityStep)}
+                              onRemove={() => changeQuantity(item.codigo_interno, -quantityStep)}
                               onSet={(val) => changeQuantity(item.codigo_interno, val - item.cantidad)}
                               modelo={item.modelo}
                               hideModelo={true}
                               size="normal"
-                              maxStock={stockDisponible}
+                              maxStock={maxCantidadPermitida}
+                              quantityStep={quantityStep}
                             />
                           </div>
                         </div>

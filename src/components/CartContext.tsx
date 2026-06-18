@@ -1,6 +1,7 @@
 "use client";
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { Articulo } from "@/types/types";
+import { getMaxAllowedQuantity, getQuantityStep, isDeA10, normalizeQuantity } from "@/lib/quantityRules";
 
 type CartItem = {
   codigo_interno: string;
@@ -10,6 +11,7 @@ type CartItem = {
   precio_venta: number; 
   sugerencia?: string;
   stock_real: number;
+  de_a_10?: number;
   // ✅ NUEVO: Agregar campos de imagen
   foto_portada?: string;
   foto1_url?: string;
@@ -92,6 +94,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
       if (item.cantidad > item.stock_real) {
         warnings.push(`${item.modelo}: solicitado ${item.cantidad}, disponible ${item.stock_real}`);
       }
+      if (isDeA10(item) && item.cantidad % 10 !== 0) {
+        warnings.push(`${item.modelo}: la cantidad debe ser multiplo de 10`);
+      }
     });
     
     return {
@@ -103,14 +108,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const addToCart = async (articulo: Articulo, nombre: string, cantidad: number = 1, sugerencia: string = '') => {
     setCart((prev) => {
       const found = prev.find((i) => i.codigo_interno === articulo.codigo_interno);
+      const stockDisponibleInicial = Number(articulo.stock_real || found?.stock_real || 0);
+      const quantityRuleItem = { de_a_10: articulo.de_a_10 ?? found?.de_a_10 ?? 0 };
+      const cantidadNormalizada = normalizeQuantity(cantidad, quantityRuleItem, stockDisponibleInicial);
+
+      if (cantidadNormalizada <= 0) {
+        return prev;
+      }
+
       if (found) {
         // ✅ SILENCIOSO: No exceder stock disponible (sin alert)
         const stockDisponible = Number(articulo.stock_real || found.stock_real || 0);
-        const nuevaCantidad = found.cantidad + cantidad;
+        const nuevaCantidad = normalizeQuantity(found.cantidad + cantidadNormalizada, quantityRuleItem, stockDisponible);
         
         if (nuevaCantidad > stockDisponible) {
           // ✅ SILENCIOSO: Solo agregar hasta el máximo disponible
-          const cantidadMaximaAAgregar = Math.max(0, stockDisponible - found.cantidad);
+          const stockMaximoPermitido = getMaxAllowedQuantity(stockDisponible, quantityRuleItem);
+          const cantidadMaximaAAgregar = Math.max(0, stockMaximoPermitido - found.cantidad);
           if (cantidadMaximaAAgregar <= 0) {
             return prev; // No se puede agregar nada
           }
@@ -119,10 +133,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
             i.codigo_interno === articulo.codigo_interno
               ? { 
                   ...i, 
-                  cantidad: stockDisponible, // ✅ Establecer al máximo disponible
+                  cantidad: stockMaximoPermitido, // ✅ Establecer al máximo disponible
                   precio_venta: articulo.precio_venta || i.precio_venta,
                   sugerencia: sugerencia || i.sugerencia,
-                  stock_real: Number(articulo.stock_real || i.stock_real || 0)
+                  stock_real: Number(articulo.stock_real || i.stock_real || 0),
+                  de_a_10: Number(articulo.de_a_10 ?? i.de_a_10 ?? 0)
                 }
               : i
           );
@@ -136,7 +151,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 cantidad: nuevaCantidad,
                 precio_venta: articulo.precio_venta || i.precio_venta,
                 sugerencia: sugerencia || i.sugerencia,
-                stock_real: Number(articulo.stock_real || i.stock_real || 0)
+                stock_real: Number(articulo.stock_real || i.stock_real || 0),
+                de_a_10: Number(articulo.de_a_10 ?? i.de_a_10 ?? 0)
               }
             : i
         );
@@ -145,12 +161,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
       
       // ✅ SILENCIOSO: Stock para nuevo item (sin alert)
       const stockDisponible = Number(articulo.stock_real || 0);
-      if (cantidad > stockDisponible) {
+      let cantidadFinal = cantidadNormalizada;
+      const stockMaximoPermitido = getMaxAllowedQuantity(stockDisponible, quantityRuleItem);
+      if (cantidadFinal > stockMaximoPermitido) {
         if (stockDisponible <= 0) {
           return prev; // No agregar nada si no hay stock
         }
         // ✅ Agregar solo la cantidad disponible
-        cantidad = stockDisponible;
+        cantidadFinal = stockMaximoPermitido;
       }
       
       // ✅ NUEVO: Obtener imagen del producto de forma asíncrona
@@ -158,10 +176,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
         codigo_interno: articulo.codigo_interno,
         modelo: articulo.modelo,
         item_nombre: articulo.item_nombre || nombre || 'Sin nombre',
-        cantidad: cantidad,
+        cantidad: cantidadFinal,
         precio_venta: Number(articulo.precio_venta) || 0,
         sugerencia: sugerencia,
         stock_real: Number(articulo.stock_real || 0),
+        de_a_10: Number(quantityRuleItem.de_a_10 || 0),
         item_id: articulo.item_id,
         subcategoria_id: (articulo as any).subcategoria_id,
         foto_portada: '',
@@ -203,7 +222,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       prev
         .map((i) =>
           i.codigo_interno === codigo_interno
-            ? { ...i, cantidad: i.cantidad - 1 }
+            ? { ...i, cantidad: i.cantidad - getQuantityStep(i) }
             : i
         )
         .filter((i) => i.cantidad > 0)
@@ -215,13 +234,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
       prev
         .map((i) => {
           if (i.codigo_interno === codigo_interno) {
-            const nuevaCantidad = Math.max(i.cantidad + delta, 0);
+            const stockDisponible = Number(i.stock_real || 0);
+            const nuevaCantidad = normalizeQuantity(i.cantidad + delta, i, stockDisponible);
             
             // ✅ SILENCIOSO: No exceder stock disponible al incrementar (sin alert)
             if (delta > 0) {
-              const stockDisponible = Number(i.stock_real || 0);
               if (nuevaCantidad > stockDisponible) {
-                return { ...i, cantidad: stockDisponible }; // ✅ Establecer al máximo silenciosamente
+                return { ...i, cantidad: getMaxAllowedQuantity(stockDisponible, i) }; // ✅ Establecer al máximo silenciosamente
               }
             }
             
@@ -242,14 +261,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
         } else {
           // ✅ SILENCIOSO: No exceder stock disponible (sin alert)
           const stockDisponible = Number(articulo?.stock_real || found.stock_real || 0);
-          const cantidadFinal = Math.min(cantidad, stockDisponible);
+          const cantidadFinal = normalizeQuantity(cantidad, articulo ?? found, stockDisponible);
           
           return prev.map((i) =>
             i.codigo_interno === codigo_interno
               ? { 
                   ...i, 
                   cantidad: Math.max(cantidadFinal, 0),
-                  stock_real: Number(articulo?.stock_real || i.stock_real || 0)
+                  stock_real: Number(articulo?.stock_real || i.stock_real || 0),
+                  de_a_10: Number(articulo?.de_a_10 ?? i.de_a_10 ?? 0)
                 }
               : i
           );
@@ -257,7 +277,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       } else if (cantidad > 0 && articulo) {
         // ✅ SILENCIOSO: Stock para nuevo item (sin alert)
         const stockDisponible = Number(articulo.stock_real || 0);
-        const cantidadFinal = Math.min(cantidad, stockDisponible);
+        const cantidadFinal = normalizeQuantity(cantidad, articulo, stockDisponible);
         
         if (cantidadFinal <= 0) {
           return prev; // No agregar si no hay stock
@@ -271,6 +291,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           precio_venta: articulo.precio_venta,
           sugerencia: '',
           stock_real: Number(articulo.stock_real || 0),
+          de_a_10: Number(articulo.de_a_10 || 0),
           item_id: articulo.item_id,
           subcategoria_id: (articulo as any).subcategoria_id,
           foto_portada: '',

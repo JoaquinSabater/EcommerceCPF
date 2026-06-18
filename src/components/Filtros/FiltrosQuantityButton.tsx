@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { MinusIcon, PlusIcon, ShoppingCartIcon } from '@heroicons/react/24/outline';
 import { useCart } from '@/components/CartContext';
 import { Articulo } from '@/types/types';
+import { getMaxAllowedQuantity, getQuantityStep, normalizeQuantity } from '@/lib/quantityRules';
 
 interface FiltrosQuantityButtonProps {
   itemId: number;
@@ -12,6 +13,7 @@ interface FiltrosQuantityButtonProps {
   modelo: string;
   maxStock: number;
   precio: number;
+  deA10?: number;
   onAddToCart?: (item: any) => void;
   className?: string;
   compact?: boolean;
@@ -24,6 +26,7 @@ export default function FiltrosQuantityButton({
   modelo,
   maxStock,
   precio,
+  deA10 = 0,
   onAddToCart,
   className = "",
   compact = false
@@ -32,6 +35,9 @@ export default function FiltrosQuantityButton({
   const [isAdding, setIsAdding] = useState(false);
   const [error, setError] = useState('');
   const { addToCart } = useCart();
+  const quantityRuleItem = { de_a_10: deA10 };
+  const quantityStep = getQuantityStep(quantityRuleItem);
+  const maxCantidadPermitida = getMaxAllowedQuantity(maxStock, quantityRuleItem);
 
   const handleQuantityChange = (newQuantity: number) => {
     setError('');
@@ -41,12 +47,12 @@ export default function FiltrosQuantityButton({
       return;
     }
     
-    if (newQuantity > maxStock) {
-      setError(`Solo hay ${maxStock} unidades disponibles`);
+    if (newQuantity > maxCantidadPermitida) {
+      setError(`Solo hay ${maxCantidadPermitida} unidades disponibles`);
       return;
     }
     
-    setQuantity(newQuantity);
+    setQuantity(normalizeQuantity(newQuantity, quantityRuleItem, maxStock));
   };
 
   const handleInputChange = (value: string) => {
@@ -68,8 +74,8 @@ export default function FiltrosQuantityButton({
       return;
     }
     
-    if (quantity > maxStock) {
-      setError(`Solo hay ${maxStock} unidades disponibles`);
+    if (quantity > maxCantidadPermitida) {
+      setError(`Solo hay ${maxCantidadPermitida} unidades disponibles`);
       return;
     }
 
@@ -87,7 +93,8 @@ export default function FiltrosQuantityButton({
         ubicacion: '',
         stock_actual: maxStock,
         stock_real: maxStock,
-        item_nombre: itemName
+        item_nombre: itemName,
+        de_a_10: deA10
       };
 
       addToCart(articulo, itemName, quantity, '');
@@ -100,7 +107,8 @@ export default function FiltrosQuantityButton({
           modelo: modelo,
           precio: precio,
           cantidad: quantity,
-          stock_disponible: maxStock
+          stock_disponible: maxStock,
+          de_a_10: deA10
         });
       }
 
@@ -120,7 +128,7 @@ export default function FiltrosQuantityButton({
       <div className="flex items-stretch border border-gray-300 rounded-lg overflow-hidden bg-white w-full">
         {/* Botón menos - lado izquierdo */}
         <button
-          onClick={() => handleQuantityChange(quantity - 1)}
+          onClick={() => handleQuantityChange(quantity - quantityStep)}
           disabled={quantity <= 0}
           className={`flex items-center justify-center hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors border-r border-gray-200 ${compact ? 'w-9 p-2' : 'w-12 p-3'}`}
           title={quantity <= 0 ? "No se puede reducir más" : "Reducir cantidad"}
@@ -132,7 +140,8 @@ export default function FiltrosQuantityButton({
         <input
           type="number"
           min="0"
-          max={maxStock}
+          max={maxCantidadPermitida}
+          step={quantityStep}
           value={quantity === 0 ? '' : quantity}
           onChange={(e) => handleInputChange(e.target.value)}
           placeholder="0"
@@ -141,10 +150,10 @@ export default function FiltrosQuantityButton({
         
         {/* Botón plus - lado derecho */}
         <button
-          onClick={() => handleQuantityChange(quantity + 1)}
-          disabled={quantity >= maxStock}
+          onClick={() => handleQuantityChange(quantity + quantityStep)}
+          disabled={quantity + quantityStep > maxCantidadPermitida}
           className={`flex items-center justify-center hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors border-l border-gray-200 ${compact ? 'w-9 p-2' : 'w-12 p-3'}`}
-          title={quantity >= maxStock ? `Stock máximo: ${maxStock}` : "Aumentar cantidad"}
+          title={quantity + quantityStep > maxCantidadPermitida ? `Stock máximo: ${maxCantidadPermitida}` : "Aumentar cantidad"}
         >
           <PlusIcon className={`${compact ? 'w-3.5 h-3.5' : 'w-4 h-4'} text-gray-600`} />
         </button>
@@ -160,7 +169,7 @@ export default function FiltrosQuantityButton({
       {/* ✅ NUEVO: Botón agregar ocupando todo el ancho */}
       <button
         onClick={handleAddToCart}
-        disabled={isAdding || quantity === 0 || quantity > maxStock}
+        disabled={isAdding || quantity === 0 || quantity > maxCantidadPermitida}
         className={`
           w-full rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2
           ${compact ? 'px-3 py-2 text-xs' : 'px-4 py-3 text-sm'}
@@ -172,7 +181,7 @@ export default function FiltrosQuantityButton({
           }
         `}
         style={quantity > 0 && !isAdding ? { backgroundColor: '#ea580c' } : {}}
-        title={quantity === 0 ? "Selecciona una cantidad" : quantity > maxStock ? `Stock máximo: ${maxStock}` : "Agregar al carrito"}
+        title={quantity === 0 ? "Selecciona una cantidad" : quantity > maxCantidadPermitida ? `Stock máximo: ${maxCantidadPermitida}` : "Agregar al carrito"}
       >
         {isAdding ? (
           <>
@@ -184,19 +193,19 @@ export default function FiltrosQuantityButton({
           </>
         )}
       </button>
-      {maxStock <= 5 && maxStock > 0 && quantity < maxStock && (
+      {maxCantidadPermitida <= 5 && maxCantidadPermitida > 0 && quantity < maxCantidadPermitida && (
         <p className={`text-xs text-amber-600 text-center ${compact ? 'hidden' : ''}`}>
-          ¡Últimas {maxStock} unidades!
+          ¡Últimas {maxCantidadPermitida} unidades!
         </p>
       )}
 
-      {quantity >= maxStock && maxStock > 0 && (
+      {quantity + quantityStep > maxCantidadPermitida && maxCantidadPermitida > 0 && (
         <p className={`text-xs text-red-600 text-center bg-red-50 px-2 py-1 rounded-full ${compact ? 'hidden' : ''}`}>
           ¡Máximo disponible!
         </p>
       )}
 
-      {maxStock === 0 && (
+      {maxCantidadPermitida === 0 && (
         <p className={`text-xs text-red-600 text-center bg-red-50 px-2 py-1 rounded-full ${compact ? 'hidden' : ''}`}>
           Sin stock disponible
         </p>

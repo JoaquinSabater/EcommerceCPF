@@ -17,6 +17,7 @@ export interface Articulo {
   item_nombre?: string;
   marca_nombre?: string;
   cantidad?: number;
+  de_a_10?: number;
   es_pesificado?: number;
   precio_pesos?: number;
   stock_real?: number;
@@ -27,6 +28,7 @@ export type categorias = {
   nombre: string;
   subcategoria_id: number;
   club_sub_dolar?: number;
+  de_a_10?: number;
   imagen?: string;
   modelosDisponibles?: number;
   // Campos pre-cargados para evitar API calls individuales por tarjeta

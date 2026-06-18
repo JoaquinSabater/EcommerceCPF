@@ -15,6 +15,7 @@ export async function getArticulosPorSubcategoria(subcategoriaId: number, maxPre
               COALESCE(a.precio_venta, 0) as precio_venta, a.ubicacion, a.stock_actual,
               calcular_stock_fisico(a.codigo_interno) - calcular_stock_comprometido(a.codigo_interno) AS stock_real,
               i.nombre AS item_nombre,
+              i.de_a_10,
               m.nombre AS marca_nombre,
               a.es_pesificado,
               COALESCE(a.precio_pesos, 0) as precio_pesos
@@ -49,6 +50,7 @@ export interface ItemAdmin {
   nombre: string;
   subcategoria_id: number;
   disponible: boolean | null;
+  de_a_10: boolean | null;
   contenido_especial: boolean | null;
   subcategoria_nombre?: string;
   total_articulos?: number;
@@ -65,6 +67,7 @@ export async function getAllItems(): Promise<ItemAdmin[]> {
         i.nombre,
         i.subcategoria_id,
         i.disponible,
+        i.de_a_10,
         COALESCE(id.contenido_especial, 0) AS contenido_especial,
         s.nombre AS subcategoria_nombre,
         COUNT(a.codigo_interno) AS total_articulos
@@ -72,7 +75,7 @@ export async function getAllItems(): Promise<ItemAdmin[]> {
       LEFT JOIN subcategorias s ON i.subcategoria_id = s.id
       LEFT JOIN articulos a ON i.id = a.item_id
       LEFT JOIN item_detalle id ON i.id = id.item_id
-      GROUP BY i.id, i.nombre, i.subcategoria_id, i.disponible, id.contenido_especial, s.nombre
+      GROUP BY i.id, i.nombre, i.subcategoria_id, i.disponible, i.de_a_10, id.contenido_especial, s.nombre
       ORDER BY s.nombre ASC, i.nombre ASC
     `;
 
@@ -83,6 +86,7 @@ export async function getAllItems(): Promise<ItemAdmin[]> {
       ...row,
       // Convertir disponible: 1 -> true, 0 -> false, null -> false
       disponible: row.disponible === 1 ? true : row.disponible === 0 ? false : false,
+      de_a_10: row.de_a_10 === 1 ? true : false,
       // Convertir contenido_especial: 1 -> true, 0 -> false
       contenido_especial: row.contenido_especial === 1 ? true : false
     })) as ItemAdmin[];

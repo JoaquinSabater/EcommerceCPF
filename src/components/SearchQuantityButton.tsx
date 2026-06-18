@@ -5,6 +5,7 @@ import QuantityButton from "@/components/QuantityButton";
 import { ShoppingCartIcon } from "@heroicons/react/24/outline";
 import { useCart } from "@/components/CartContext";
 import { showError, showSuccess } from "@/lib/swal";
+import { getMaxAllowedQuantity, getQuantityStep, normalizeQuantity } from "@/lib/quantityRules";
 
 interface SearchQuantityButtonProps {
   itemId: number;
@@ -13,6 +14,7 @@ interface SearchQuantityButtonProps {
   modelo: string;
   maxStock: number;
   precio: number;
+  deA10?: number;
   onAddToCart?: (item: any) => void;
   className?: string;
 }
@@ -24,32 +26,32 @@ export default function SearchQuantityButton({
   modelo,
   maxStock, 
   precio,
+  deA10 = 0,
   onAddToCart,
   className = "" 
 }: SearchQuantityButtonProps) {
   const [quantity, setQuantity] = useState(0);
   const [isAdding, setIsAdding] = useState(false);
   const { addToCart } = useCart();
+  const quantityRuleItem = { de_a_10: deA10 };
+  const quantityStep = getQuantityStep(quantityRuleItem);
+  const maxCantidadPermitida = getMaxAllowedQuantity(maxStock, quantityRuleItem);
 
   const handleAdd = () => {
-    if (quantity >= maxStock) {
+    if (quantity + quantityStep > maxCantidadPermitida) {
       return; // No hacer nada si se alcanzó el máximo
     }
-    setQuantity(prev => prev + 1);
+    setQuantity(prev => prev + quantityStep);
   };
 
   // ✅ CORREGIDO: handleSet sin alert
   const handleSet = (value: number) => {
-    if (value > maxStock) {
-      setQuantity(maxStock);
-    } else if (value >= 0) {
-      setQuantity(value);
-    }
+    setQuantity(normalizeQuantity(value, quantityRuleItem, maxStock));
   };
 
   const handleRemove = () => {
     if (quantity > 0) {
-      setQuantity(prev => prev - 1);
+      setQuantity(prev => Math.max(0, prev - quantityStep));
     }
   };
 
@@ -70,7 +72,8 @@ export default function SearchQuantityButton({
         ubicacion: '',
         stock_actual: maxStock,
         stock_real: maxStock, // ✅ IMPORTANTE: CartContext usa stock_real
-        item_nombre: itemName
+        item_nombre: itemName,
+        de_a_10: deA10
       };
 
       console.log('🛒 Agregando al carrito desde búsqueda:', {
@@ -90,7 +93,8 @@ export default function SearchQuantityButton({
           modelo,
           precio,
           quantity,
-          maxStock
+          maxStock,
+          de_a_10: deA10
         };
         onAddToCart(cartItem);
       }
@@ -118,15 +122,16 @@ export default function SearchQuantityButton({
           modelo={modelo}
           hideModelo={true}
           size="normal"
-          maxStock={maxStock}
+          maxStock={maxCantidadPermitida}
+          quantityStep={quantityStep}
         />
       </div>
 
-      {quantity > 0 && quantity <= maxStock && (
+      {quantity > 0 && quantity <= maxCantidadPermitida && (
         <div className="flex justify-center">
           <button
             onClick={handleAddToCart}
-            disabled={isAdding || maxStock <= 0}
+            disabled={isAdding || maxCantidadPermitida <= 0}
             className="flex items-center justify-center gap-2 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md min-w-[100px]"
             style={{ backgroundColor: '#ea580c' }}
           >

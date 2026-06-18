@@ -6,6 +6,7 @@ import { Articulo } from "@/types/types";
 import { useCart } from "@/components/CartContext";
 import { useAuth } from "@/hooks/useAuth";
 import { showSuccess } from "@/lib/swal";
+import { getInitialQuantity, getMaxAllowedQuantity, getQuantityStep, isDeA10, normalizeQuantity } from "@/lib/quantityRules";
 
 interface ProductoUnicoProps {
   itemId: number;
@@ -102,6 +103,7 @@ export default function ProductoUnico({
     const controller = new AbortController();
 
     if (initialArticulo && initialArticulo.item_id === itemId) {
+      setCantidad(getInitialQuantity(initialArticulo, Number(initialArticulo.stock_real || 0)));
       setLoading(false);
       return () => {
         isActive = false;
@@ -127,6 +129,7 @@ export default function ProductoUnico({
         
         if (articulosConStock.length === 1) {
           setArticulo(articulosConStock[0]);
+          setCantidad(getInitialQuantity(articulosConStock[0], Number(articulosConStock[0].stock_real || 0)));
         }
       })
       .catch(error => {
@@ -155,8 +158,8 @@ export default function ProductoUnico({
   const handleCantidadChange = (value: number) => {
     if (articulo) {
       const stockDisponible = Number(articulo.stock_real || 0);
-      const cantidadFinal = Math.min(value, stockDisponible);
-      setCantidad(Math.max(1, cantidadFinal));
+      const cantidadFinal = normalizeQuantity(value, articulo, stockDisponible, isDeA10(articulo) ? 0 : 1);
+      setCantidad(cantidadFinal);
     }
   };
 
@@ -164,7 +167,7 @@ export default function ProductoUnico({
   const handleAddToCart = () => {
     if (articulo && cantidad > 0) {
       const stockDisponible = Number(articulo.stock_real || 0);
-      const cantidadFinal = Math.min(cantidad, stockDisponible);
+      const cantidadFinal = normalizeQuantity(cantidad, articulo, stockDisponible);
       
       if (cantidadFinal <= 0) {
         return;
@@ -189,7 +192,7 @@ export default function ProductoUnico({
         : `✅ Se agregó ${articulo.modelo} al carrito${tipoProducto}. Total: $${Math.round(totalArs).toLocaleString()} ARS${tieneDescuento ? ' (con descuento distribuidor)' : ''}`;
         
       showSuccess('Producto agregado', mensaje);
-      setCantidad(1);
+      setCantidad(getInitialQuantity(articulo, stockDisponible));
     }
   };
 
@@ -214,6 +217,8 @@ export default function ProductoUnico({
 
   const displayInfo = formatModeloDisplay(articulo);
   const stockDisponible = displayInfo.stockReal;
+  const quantityStep = getQuantityStep(articulo);
+  const maxCantidadPermitida = getMaxAllowedQuantity(stockDisponible, articulo);
 
   return (
     <div className="w-full mt-4 rounded-lg bg-white shadow-sm p-4">
@@ -276,16 +281,17 @@ export default function ProductoUnico({
           <QuantityButton
             value={cantidad}
             onAdd={() => {
-              if (cantidad < stockDisponible) {
-                setCantidad(cantidad + 1);
+              if (cantidad + quantityStep <= maxCantidadPermitida) {
+                setCantidad(cantidad + quantityStep);
               }
             }}
-            onRemove={() => setCantidad(Math.max(1, cantidad - 1))}
+            onRemove={() => setCantidad(Math.max(isDeA10(articulo) ? 0 : 1, cantidad - quantityStep))}
             onSet={handleCantidadChange}
             modelo={articulo.modelo}
             hideModelo={false} // ✅ Mostrar el modelo en el QuantityButton grande
             size="large" // ✅ Tamaño grande
-            maxStock={stockDisponible}
+            maxStock={maxCantidadPermitida}
+            quantityStep={quantityStep}
           />
         </div>
       </div>
@@ -296,9 +302,9 @@ export default function ProductoUnico({
         className="w-full text-white px-6 py-3 rounded font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         style={{ backgroundColor: '#ea580c' }}
         onClick={handleAddToCart}
-        disabled={stockDisponible <= 0}
+        disabled={maxCantidadPermitida <= 0 || cantidad <= 0}
       >
-        {stockDisponible <= 0 
+        {maxCantidadPermitida <= 0 
           ? 'Sin stock' 
           : `Añadir al carrito${esElectronica ? ' (Electrónica)' : ''}${sugerenciaActual ? ' con sugerencias ✨' : ''}${!esElectronica && isDistribuidor() ? ' (20% OFF)' : ''}`
         }

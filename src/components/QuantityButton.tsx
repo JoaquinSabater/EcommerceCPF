@@ -10,6 +10,7 @@ type QuantityButtonProps = {
   hideModelo?: boolean;
   size?: "xs" | "normal" | "large";
   maxStock?: number;
+  quantityStep?: number;
 };
 
 export default function QuantityButton({
@@ -21,6 +22,7 @@ export default function QuantityButton({
   hideModelo = false,
   size = "normal",
   maxStock,
+  quantityStep = 1,
 }: QuantityButtonProps) {
   const [editing, setEditing] = useState(false);
   const [inputValue, setInputValue] = useState<string>(String(value));
@@ -39,6 +41,7 @@ export default function QuantityButton({
         parsed = maxStock;
         setInputValue(String(maxStock));
       }
+      parsed = Math.floor(parsed / quantityStep) * quantityStep;
       if (parsed !== value) onSet(parsed);
     } else {
       setInputValue(String(value));
@@ -47,7 +50,7 @@ export default function QuantityButton({
 
   // ✅ CORREGIDO: Solo verificar límite, sin alert
   const handleAdd = () => {
-    if (maxStock !== undefined && value >= maxStock) {
+    if (maxStock !== undefined && value + quantityStep > maxStock) {
       return; // No hacer nada si se alcanzó el máximo
     }
     onAdd(); // Solo ejecutar si no se excede el stock
@@ -66,7 +69,7 @@ export default function QuantityButton({
   };
 
   // ✅ NUEVO: Verificar si el botón + debe estar deshabilitado
-  const isPlusDisabled = maxStock !== undefined && value >= maxStock;
+  const isPlusDisabled = maxStock !== undefined && value + quantityStep > maxStock;
 
   // Tamaños mejorados
   const buttonSize =
@@ -128,6 +131,7 @@ export default function QuantityButton({
             type="number"
             min={0}
             max={maxStock}
+            step={quantityStep}
             className={`text-center border border-gray-300 rounded-md bg-white outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 mx-1 ${buttonSize} ${fontSize}`}
             value={inputValue}
             autoFocus
@@ -163,7 +167,7 @@ export default function QuantityButton({
       </div>
       
       {/* ✅ NUEVO: Cartelito cuando se alcanza el límite máximo */}
-      {maxStock !== undefined && value >= maxStock && maxStock > 0 && (
+      {maxStock !== undefined && value + quantityStep > maxStock && maxStock > 0 && (
         <p className="text-xs text-red-600 text-center mt-1 bg-red-50 px-2 py-1 rounded-full">
           ¡Máximo disponible!
         </p>
