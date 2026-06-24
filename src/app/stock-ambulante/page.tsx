@@ -40,6 +40,7 @@ interface IntencionCompra {
   usuario_id: number;
   codigo_interno: string;
   cantidad_solicitada: number;
+  cantidad_reservada?: number;
   token_link: string;
   fecha_creacion: string;
   fecha_actualizacion: string;
@@ -52,6 +53,12 @@ interface ProspectoFormData {
   apellido: string;
   cuit: string;
   razon_social: string;
+}
+
+interface UltimaReserva {
+  productos: number;
+  unidades: number;
+  fecha: Date;
 }
 
 function datosProspectoCompletos(data: ProspectoFormData): boolean {
@@ -88,6 +95,7 @@ function StockAmbulanteContent() {
   const [cantidadesSeleccionadas, setCantidadesSeleccionadas] = useState<{[key: string]: number | undefined}>({});
   const [enviandoSolicitud, setEnviandoSolicitud] = useState<boolean>(false);
   const [intencionesPrevias, setIntencionesPrevias] = useState<{[key: string]: IntencionCompra}>({});
+  const [ultimaReserva, setUltimaReserva] = useState<UltimaReserva | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [prospectoDatosCompletos, setProspectoDatosCompletos] = useState<boolean>(!esFlujoProspecto);
   const [mostrarFormularioProspecto, setMostrarFormularioProspecto] = useState<boolean>(false);
@@ -256,9 +264,19 @@ function StockAmbulanteContent() {
         console.log('🔍 Obteniendo intenciones previas del prospecto:', prospectoId);
       }
 
-      const query = clienteId
-        ? `/api/stock-ambulante/intencion-compra?cliente_id=${clienteId}`
-        : `/api/stock-ambulante/intencion-compra?prospecto_id=${prospectoId}`;
+      const params = new URLSearchParams();
+
+      if (clienteId) {
+        params.set('cliente_id', clienteId);
+      } else if (prospectoId) {
+        params.set('prospecto_id', prospectoId);
+      }
+
+      if (token) {
+        params.set('token_link', token);
+      }
+
+      const query = `/api/stock-ambulante/intencion-compra?${params.toString()}`;
 
       const response = await fetch(query);
       const data = await response.json();
@@ -268,15 +286,15 @@ function StockAmbulanteContent() {
       if (data.success && data.data && Array.isArray(data.data)) {
         // Crear un mapa de código_interno -> intención
         const intencionesMap: {[key: string]: IntencionCompra} = {};
-        const cantidadesMap: {[key: string]: number} = {};
         
         data.data.forEach((intencion: IntencionCompra) => {
-          intencionesMap[intencion.codigo_interno] = intencion;
-          cantidadesMap[intencion.codigo_interno] = intencion.cantidad_solicitada;
+          if (!intencionesMap[intencion.codigo_interno]) {
+            intencionesMap[intencion.codigo_interno] = intencion;
+          }
         });
         
         setIntencionesPrevias(intencionesMap);
-        setCantidadesSeleccionadas(cantidadesMap);
+        setUltimaReserva(calcularResumenReserva(Object.values(intencionesMap)));
         
         console.log('✅ Intenciones previas cargadas:', Object.keys(intencionesMap).length);
       }
@@ -442,6 +460,25 @@ function StockAmbulanteContent() {
     );
   });
 
+  const getCantidadReservada = (intencion: IntencionCompra) => {
+    return Number(intencion.cantidad_solicitada ?? intencion.cantidad_reservada ?? 0);
+  };
+
+  const calcularResumenReserva = (intenciones: IntencionCompra[]): UltimaReserva | null => {
+    if (intenciones.length === 0) return null;
+
+    const unidades = intenciones.reduce((total, intencion) => total + getCantidadReservada(intencion), 0);
+    const fechas = intenciones
+      .map((intencion) => new Date(intencion.fecha_actualizacion || intencion.fecha_creacion))
+      .filter((fecha) => !Number.isNaN(fecha.getTime()));
+
+    return {
+      productos: intenciones.length,
+      unidades,
+      fecha: fechas.length > 0 ? new Date(Math.max(...fechas.map((fecha) => fecha.getTime()))) : new Date()
+    };
+  };
+
   const handleCantidadChange = (codigoInterno: string, cantidad: number | undefined) => {
     setCantidadesSeleccionadas(prev => ({
       ...prev,
@@ -456,7 +493,21 @@ function StockAmbulanteContent() {
 
   const puedeSolicitar = itemsSeleccionados.length > 0;
 
+  const getResumenUltimaReserva = () => {
+    if (!ultimaReserva) return '';
+
+    const productosLabel = `${ultimaReserva.productos} producto${ultimaReserva.productos === 1 ? '' : 's'}`;
+    const unidadesLabel = `${ultimaReserva.unidades} unidad${ultimaReserva.unidades === 1 ? '' : 'es'}`;
+    const hora = ultimaReserva.fecha.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+
+    return `Ya reservaste ${productosLabel} por un total de ${unidadesLabel}. Ultima reserva: ${hora}.`;
+  };
+
   const handleConfirmarSolicitud = async () => {
+    if (enviandoSolicitud) {
+      return;
+    }
+
     if (esFlujoProspecto && !prospectoDatosCompletos) {
       showWarning('Datos requeridos', 'Para reservar productos primero tenés que completar tus datos.');
       return;
@@ -468,7 +519,12 @@ function StockAmbulanteContent() {
     }
 
     if (!puedeSolicitar) {
-      showWarning('Sin productos', 'Ingresá al menos una cantidad mayor a 0 para solicitar productos.');
+      showWarning(
+        'Sin productos nuevos',
+        ultimaReserva
+          ? 'La ultima reserva ya fue guardada. Para hacer otra solicitud, carga nuevas cantidades.'
+          : 'Ingresa al menos una cantidad mayor a 0 para solicitar productos.'
+      );
       return;
     }
 
@@ -512,6 +568,7 @@ function StockAmbulanteContent() {
 
       if (data.success) {
         const ahora = new Date().toISOString();
+        const totalUnidades = itemsPayload.reduce((total, item) => total + item.cantidad_solicitada, 0);
 
         setIntencionesPrevias((prev) => {
           const next = { ...prev };
@@ -529,12 +586,14 @@ function StockAmbulanteContent() {
               fecha_actualizacion: ahora
             };
           });
+          setUltimaReserva(calcularResumenReserva(Object.values(next)));
           return next;
         });
+        setCantidadesSeleccionadas({});
 
         showInfo(
           'Solicitud enviada',
-          `Se registraron ${itemsPayload.length} producto${itemsPayload.length === 1 ? '' : 's'} correctamente.`
+          `Reserva registrada correctamente. Se guardaron ${itemsPayload.length} producto${itemsPayload.length === 1 ? '' : 's'} por un total de ${totalUnidades} unidad${totalUnidades === 1 ? '' : 'es'}.`
         );
       } else {
         showError('Error al enviar la solicitud', data.error);
@@ -766,16 +825,29 @@ function StockAmbulanteContent() {
           <p className="text-sm text-gray-700">
             {puedeSolicitar
               ? `${itemsSeleccionados.length} producto${itemsSeleccionados.length === 1 ? '' : 's'} seleccionado${itemsSeleccionados.length === 1 ? '' : 's'} para solicitar`
-              : 'Ingresá cantidades para armar tu solicitud'}
+              : ultimaReserva
+              ? 'La ultima reserva ya fue guardada. Carga nuevas cantidades para hacer otra solicitud.'
+              : 'Ingresa cantidades para armar tu solicitud'}
           </p>
           <button
             onClick={handleConfirmarSolicitud}
-            disabled={enviandoSolicitud || !puedeSolicitar}
-            className="px-5 py-2.5 bg-orange-600 text-white text-sm font-semibold rounded-lg hover:bg-orange-700 disabled:bg-gray-300 disabled:text-gray-600 disabled:cursor-not-allowed transition-colors"
+            disabled={enviandoSolicitud}
+            className={`px-5 py-2.5 text-sm font-semibold rounded-lg transition-colors disabled:bg-gray-300 disabled:text-gray-600 disabled:cursor-not-allowed ${
+              puedeSolicitar
+                ? 'bg-orange-600 text-white hover:bg-orange-700'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
           >
             {enviandoSolicitud ? 'Enviando solicitud...' : 'Confirmar solicitud'}
           </button>
         </div>
+
+        {ultimaReserva && (
+          <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+            <p className="font-semibold">Reserva registrada correctamente.</p>
+            <p>{getResumenUltimaReserva()}</p>
+          </div>
+        )}
       </div>
 
       {/* Tabla de productos */}

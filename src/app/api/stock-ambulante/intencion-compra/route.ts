@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/data/mysql';
-import { ResultSetHeader } from 'mysql2';
+import { ResultSetHeader, RowDataPacket } from 'mysql2';
 
 interface ItemIntencionPayload {
   codigo_interno: string;
   cantidad_solicitada: number;
+}
+
+interface IntencionExistenteRow extends RowDataPacket {
+  id: number;
 }
 
 export async function POST(request: Request) {
@@ -64,12 +68,60 @@ export async function POST(request: Request) {
     }
 
     const connection = await db.getConnection();
-    const insertados: Array<{ id: number; codigo_interno: string; cantidad_solicitada: number }> = [];
+    const clienteIdNormalizado = cliente_id ?? null;
+    const prospectoIdNormalizado = prospecto_id ?? null;
+    const tokenLinkNormalizado = token_link ?? null;
+    const insertados: Array<{ id: number; codigo_interno: string; cantidad_solicitada: number; accion: 'insertado' | 'actualizado' }> = [];
 
     try {
       await connection.beginTransaction();
 
       for (const item of itemsPayload) {
+        const [existentes] = await connection.query<IntencionExistenteRow[]>(
+          `SELECT id
+           FROM intencion_de_compra
+           WHERE cliente_id <=> ?
+             AND prospecto_id <=> ?
+             AND token_link <=> ?
+             AND codigo_interno = ?
+           ORDER BY id DESC
+           LIMIT 1
+           FOR UPDATE`,
+          [
+            clienteIdNormalizado,
+            prospectoIdNormalizado,
+            tokenLinkNormalizado,
+            item.codigo_interno
+          ]
+        );
+
+        const existente = existentes[0];
+
+        if (existente) {
+          await connection.query<ResultSetHeader>(
+            `UPDATE intencion_de_compra
+             SET cliente_nombre = ?,
+                 usuario_id = ?,
+                 cantidad_solicitada = ?,
+                 fecha_actualizacion = NOW()
+             WHERE id = ?`,
+            [
+              cliente_nombre ?? null,
+              usuario_id,
+              item.cantidad_solicitada,
+              existente.id
+            ]
+          );
+
+          insertados.push({
+            id: existente.id,
+            codigo_interno: item.codigo_interno,
+            cantidad_solicitada: item.cantidad_solicitada,
+            accion: 'actualizado'
+          });
+          continue;
+        }
+
         const [result] = await connection.query<ResultSetHeader>(
           `INSERT INTO intencion_de_compra (
             cliente_id,
@@ -81,20 +133,21 @@ export async function POST(request: Request) {
             token_link
           ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
           [
-            cliente_id ?? null,
-            prospecto_id ?? null,
+            clienteIdNormalizado,
+            prospectoIdNormalizado,
             cliente_nombre ?? null,
             usuario_id,
             item.codigo_interno,
             item.cantidad_solicitada,
-            token_link
+            tokenLinkNormalizado
           ]
         );
 
         insertados.push({
           id: result.insertId,
           codigo_interno: item.codigo_interno,
-          cantidad_solicitada: item.cantidad_solicitada
+          cantidad_solicitada: item.cantidad_solicitada,
+          accion: 'insertado'
         });
       }
 
@@ -142,6 +195,7 @@ export async function GET(request: Request) {
     const clienteId = searchParams.get('cliente_id');
     const prospectoId = searchParams.get('prospecto_id');
     const usuarioId = searchParams.get('usuario_id');
+    const tokenLink = searchParams.get('token_link');
 
     let query = 'SELECT * FROM intencion_de_compra WHERE 1=1';
     const params: any[] = [];
@@ -161,7 +215,12 @@ export async function GET(request: Request) {
       params.push(usuarioId);
     }
 
-    query += ' ORDER BY fecha_creacion DESC';
+    if (tokenLink) {
+      query += ' AND token_link = ?';
+      params.push(tokenLink);
+    }
+
+    query += ' ORDER BY fecha_actualizacion DESC, fecha_creacion DESC';
 
     const intenciones = await db.query(query, params);
 
