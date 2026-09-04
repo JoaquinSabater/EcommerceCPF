@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { ChevronLeftIcon, FunnelIcon, XMarkIcon, ChevronDownIcon, ChevronUpIcon, MagnifyingGlassIcon, Bars3Icon, Squares2X2Icon } from '@heroicons/react/24/outline';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { ChevronLeftIcon, FunnelIcon, XMarkIcon, ChevronDownIcon, ChevronUpIcon, MagnifyingGlassIcon, Bars3Icon, Squares2X2Icon, BarsArrowUpIcon } from '@heroicons/react/24/outline';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createPortal } from 'react-dom';
 import FiltrosResults from '@/components/Filtros/FiltrosResults';
@@ -57,6 +57,7 @@ export default function FiltrosPage() {
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [activeTab, setActiveTab] = useState<'filters' | 'search'>(initialSearch ? 'search' : 'filters');
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const [sortSearchByPrice, setSortSearchByPrice] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
   
   // Estados para el modal
@@ -358,6 +359,21 @@ export default function FiltrosPage() {
   };
 
   const currentResults = getCurrentResults();
+  const displayedResults = useMemo(() => {
+    if (activeTab !== 'search' || !sortSearchByPrice) {
+      return currentResults.data;
+    }
+
+    return [...currentResults.data].sort((a, b) => {
+      const precioA = Number(a.precio_venta);
+      const precioB = Number(b.precio_venta);
+
+      if (!Number.isFinite(precioA)) return 1;
+      if (!Number.isFinite(precioB)) return -1;
+
+      return precioA - precioB;
+    });
+  }, [activeTab, currentResults.data, sortSearchByPrice]);
 
   if (isLoading) {
     return (
@@ -674,10 +690,27 @@ export default function FiltrosPage() {
                   </p>
                 )}
               </div>
-              <div className="flex items-center gap-3 lg:justify-end">
+              <div className="flex flex-wrap items-center gap-3 lg:justify-end">
                 <span className="text-sm text-gray-500">
                   {currentResults.count} producto{currentResults.count !== 1 ? 's' : ''} encontrado{currentResults.count !== 1 ? 's' : ''}
                 </span>
+
+                {activeTab === 'search' && (
+                  <button
+                    type="button"
+                    onClick={() => setSortSearchByPrice((isActive) => !isActive)}
+                    className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium shadow-sm transition-colors ${
+                      sortSearchByPrice
+                        ? 'border-orange-600 bg-orange-600 text-white'
+                        : 'border-gray-200 bg-white text-gray-600 hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700'
+                    }`}
+                    aria-pressed={sortSearchByPrice}
+                    title={sortSearchByPrice ? 'Volver al orden por relevancia' : 'Ordenar por precio de menor a mayor'}
+                  >
+                    <BarsArrowUpIcon className="h-4 w-4" />
+                    Precio: menor a mayor
+                  </button>
+                )}
 
                 <div className="hidden lg:inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white p-1 shadow-sm">
                   <button
@@ -713,7 +746,7 @@ export default function FiltrosPage() {
             </div>
 
             <FiltrosResults
-              productos={currentResults.data}
+              productos={displayedResults}
               isLoading={currentResults.loading}
               viewMode={effectiveViewMode}
               onItemClick={handleItemClick}
